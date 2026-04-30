@@ -294,6 +294,87 @@ export async function recordPlayerStat(formData: FormData) {
   revalidatePath(`/admin/matches/${matchId}`);
 }
 
+// ─── USERS ──────────────────────────────────────────────
+
+export async function toggleAdmin(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const userId = formData.get("userId") as string | null;
+  if (!userId) return;
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isAdmin: true },
+  });
+  if (!target) return;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { isAdmin: !target.isAdmin },
+  });
+
+  revalidatePath("/admin/users");
+}
+
+// ─── FACEIT IMPORT (skeleton) ───────────────────────────
+
+/**
+ * Импорт статистики матча с FACEIT.
+ * Принимает FACEIT match ID (например "1-abc-123") и пуллит статы через FACEIT Data API.
+ *
+ * ⚠ TODO: добавить FACEIT_API_KEY в env vars (получить на https://developers.faceit.com)
+ * Endpoints:
+ *   GET https://open.faceit.com/data/v4/matches/{match_id}
+ *   GET https://open.faceit.com/data/v4/matches/{match_id}/stats
+ *
+ * Ответ stats содержит per-player:
+ *   - Kills, Deaths, Assists, Headshots %, K/R Ratio, ADR, MVPs
+ *   - Имя игрока матчится через playerId / nickname
+ *
+ * Шаги функции:
+ *   1. Парсим matchUrl или matchId
+ *   2. Делаем fetch на FACEIT API
+ *   3. Для каждого игрока в нашем матче — ищем по nickname или steamId
+ *   4. upsert MatchPlayerStat с рассчитанным rating
+ *   5. Сохраняем счёт по картам
+ */
+export async function importFaceitMatch(formData: FormData): Promise<void> {
+  "use server";
+  await requireAdmin();
+
+  const apiKey = process.env.FACEIT_API_KEY;
+  if (!apiKey) {
+    console.warn("FACEIT_API_KEY не настроен. developers.faceit.com");
+    return;
+  }
+
+  const matchUrlOrId = ((formData.get("faceitMatch") as string) || "").trim();
+  if (!matchUrlOrId) return;
+
+  const matchIdMatch = matchUrlOrId.match(/(?:room\/)?(1-[a-z0-9-]+)/i);
+  const matchId = matchIdMatch?.[1] ?? matchUrlOrId;
+
+  try {
+    const response = await fetch(
+      `https://open.faceit.com/data/v4/matches/${matchId}/stats`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.warn(`FACEIT API: ${response.status} ${response.statusText}`);
+      return;
+    }
+
+    // TODO: распарсить data.rounds[0].teams[*].players[*] и заполнить MatchPlayerStat
+    // const data = await response.json();
+  } catch (e) {
+    console.error(`FACEIT import error: ${(e as Error).message}`);
+  }
+}
+
 // ─── NEWS ───────────────────────────────────────────────
 
 export async function createNews(

@@ -116,7 +116,30 @@
 - Поиск по тегам и онлайн-статусу.
 - Уведомления: приглашение в команду, начало матча, новое сообщение.
 
-### 4.6.1. Статистика игроков (HLTV-style)
+### 4.6.0. Интеграции с игровыми API
+
+**Реальная картина по автоматизации статистики:**
+
+| Игра | Источник | Статус |
+|---|---|---|
+| CS2 | **FACEIT Data API** | ✅ Скелет в `importFaceitMatch` action. Парсер дописываем по необходимости. Только для матчей сыгранных на FACEIT. Получить ключ: developers.faceit.com |
+| CS2 | Steam Web API для матчей | ❌ Valve не открывает счёт/статистику матчей CS2 |
+| CS2 | Cybershoke / FastCup | ❌ Закрытые системы, нет публичного API |
+| CS2 | Парсинг demo-файлов (.dem) | ⚠ Сложно. Библиотеки `demoinfocs-go` или `awpy`. Откладываем |
+| Dota 2 | **OpenDota API** (бесплатный) | ⚠ Зарезервировано в roadmap. Полная стата по match ID |
+| PUBG | **PUBG Developer API** | ⚠ Зарезервировано. Stats per match: kills, damage, distance |
+
+**Принцип работы:**
+- Админ вводит match URL/ID соответствующей платформы → action делает fetch к их API → парсит ответ → upsert MatchPlayerStat для каждого игрока (matching по nickname/steamId).
+- Ручной ввод статистики всегда доступен как fallback.
+- ID матча нужно как-то связать с нашим Match.id — пока через `resultProofUrl` (можно положить FACEIT URL).
+
+**Env vars для интеграций:**
+- `FACEIT_API_KEY` — для CS2 матчей с FACEIT
+- `OPENDOTA_API_KEY` — для Dota 2 (опционально, OpenDota работает без ключа но с лимитом)
+- `PUBG_API_KEY` — для PUBG матчей
+
+## 4.6.1. Статистика игроков (HLTV-style)
 
 **Эталон:** https://www.hltv.org/stats/players/24144/molodoy
 

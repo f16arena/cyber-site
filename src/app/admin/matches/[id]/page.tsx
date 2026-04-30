@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
-import { setMatchResult, recordPlayerStat } from "../../actions";
+import { setMatchResult, recordPlayerStat, importFaceitMatch } from "../../actions";
 
 export default async function AdminMatchPage({
   params,
@@ -108,6 +108,39 @@ export default async function AdminMatchPage({
             </div>
           </div>
         </div>
+
+        {/* FACEIT Import */}
+        {game === "CS2" && (
+          <section className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-5 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono font-bold px-2 py-1 rounded border bg-orange-500/15 text-orange-300 border-orange-500/40">
+                FACEIT
+              </span>
+              <span className="text-xs font-mono text-zinc-400">
+                Авто-импорт статистики матча
+              </span>
+            </div>
+            <form
+              action={importFaceitMatch}
+              className="flex flex-col sm:flex-row gap-3 items-start"
+            >
+              <input
+                name="faceitMatch"
+                placeholder="https://www.faceit.com/en/cs2/room/1-abc-123 или 1-abc-123"
+                className="flex-1 bg-zinc-900/60 border border-zinc-700 rounded h-11 px-4 text-sm focus:outline-none focus:border-orange-400 transition-colors font-mono"
+              />
+              <button
+                type="submit"
+                className="h-11 px-6 rounded font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 transition-all"
+              >
+                Импортировать
+              </button>
+            </form>
+            <p className="text-[10px] font-mono text-zinc-500 mt-2">
+              Требуется FACEIT_API_KEY. Получить: developers.faceit.com
+            </p>
+          </section>
+        )}
 
         {/* Result form */}
         <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-6 mb-8">
