@@ -1,18 +1,11 @@
 import Link from "next/link";
-import { UserMenu } from "@/components/UserMenu";
-
-const navLinks = [
-  { href: "/tournaments", label: "Турниры" },
-  { href: "/matches", label: "Матчи" },
-  { href: "/teams", label: "Команды" },
-  { href: "/players", label: "Игроки" },
-  { href: "/news", label: "Новости" },
-  { href: "/streams", label: "Стримы" },
-];
+import { prisma } from "@/lib/prisma";
+import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+import type { Game } from "@prisma/client";
 
 const games = [
   {
-    code: "CS2",
+    code: "CS2" as const,
     name: "Counter-Strike 2",
     format: "Double Elimination · 5v5",
     accent: "from-amber-400 via-orange-500 to-red-600",
@@ -20,7 +13,7 @@ const games = [
     border: "hover:border-orange-500/60",
   },
   {
-    code: "DOTA2",
+    code: "DOTA2" as const,
     name: "Dota 2",
     format: "Single Elimination · 5v5",
     accent: "from-rose-500 via-red-600 to-red-800",
@@ -28,7 +21,7 @@ const games = [
     border: "hover:border-rose-500/60",
   },
   {
-    code: "PUBG",
+    code: "PUBG" as const,
     name: "PUBG",
     format: "Squad Battle Royale · 4v4",
     accent: "from-yellow-300 via-amber-500 to-yellow-600",
@@ -37,186 +30,22 @@ const games = [
   },
 ];
 
-const liveMatches = [
-  {
-    game: "CS2",
-    teamA: { name: "Tulpar", score: 12, logo: "T" },
-    teamB: { name: "Saryarqa", score: 7, logo: "S" },
-    map: "Mirage",
-    stage: "QCL · Полуфинал",
-  },
-  {
-    game: "DOTA2",
-    teamA: { name: "Aqsunqar", score: 1, logo: "A" },
-    teamB: { name: "Berkut", score: 0, logo: "B" },
-    map: "Game 2 · BO3",
-    stage: "DPC KZ · Группа A",
-  },
-];
-
-const upcomingMatches = [
-  {
-    game: "CS2",
-    time: "Сегодня · 20:00",
-    teamA: "Almaty Wolves",
-    teamB: "Astana Esports",
-    stage: "Чемпионат КЗ",
-  },
-  {
-    game: "CS2",
-    time: "Сегодня · 22:00",
-    teamA: "Steppe Five",
-    teamB: "Karaganda KZ",
-    stage: "Чемпионат КЗ",
-  },
-  {
-    game: "DOTA2",
-    time: "Завтра · 18:30",
-    teamA: "Nomad Gaming",
-    teamB: "Aral Five",
-    stage: "Группа B",
-  },
-  {
-    game: "PUBG",
-    time: "Завтра · 21:00",
-    teamA: "Squad Astana",
-    teamB: "Almaty Wolves",
-    stage: "Финал серии",
-  },
-  {
-    game: "CS2",
-    time: "Сб · 19:00",
-    teamA: "Tulpar",
-    teamB: "Aqsunqar",
-    stage: "Полуфинал · BO3",
-  },
-];
-
-const recentResults = [
-  {
-    game: "CS2",
-    teamA: { name: "Tulpar", score: 16, won: true },
-    teamB: { name: "Beibarys", score: 11, won: false },
-    when: "2ч назад",
-    map: "Inferno",
-  },
-  {
-    game: "DOTA2",
-    teamA: { name: "Berkut", score: 2, won: true },
-    teamB: { name: "Steppe Wolves", score: 0, won: false },
-    when: "5ч назад",
-    map: "BO3",
-  },
-  {
-    game: "CS2",
-    teamA: { name: "Aqsunqar", score: 13, won: false },
-    teamB: { name: "Astana Esports", score: 16, won: true },
-    when: "Вчера",
-    map: "Anubis",
-  },
-];
-
-const newsFeed = [
-  {
-    tag: "ТУРНИРЫ",
-    title: "Открыт приём заявок на летний чемпионат CS2",
-    excerpt:
-      "Призовой фонд 1.2 млн ₸. Регистрация команд до 15 июня, формат double elimination.",
-    time: "1ч назад",
-    accent: "border-l-violet-500",
-    badgeColor: "bg-violet-500/15 text-violet-300 border-violet-500/30",
-  },
-  {
-    tag: "MVP",
-    title: "Tulpar выигрывает первый этап весеннего сезона",
-    excerpt:
-      "Команда из Алматы прошла без поражений. MVP турнира — снайпер с ником k1ller_kz.",
-    time: "5ч назад",
-    accent: "border-l-amber-500",
-    badgeColor: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  },
-  {
-    tag: "СПОНСОРЫ",
-    title: "Beeline KZ становится title-спонсором сезона",
-    excerpt:
-      "Партнёрский пакет включает кубок имени бренда и эксклюзивные стримы.",
-    time: "Вчера",
-    accent: "border-l-fuchsia-500",
-    badgeColor: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30",
-  },
-  {
-    tag: "DOTA 2",
-    title: "Анонсирована Dota 2 KZ Open League",
-    excerpt:
-      "Регулярная лига по Dota 2, 16 команд, формат — групповой этап + плейофф.",
-    time: "2 дня назад",
-    accent: "border-l-rose-500",
-    badgeColor: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  },
-];
-
-const topTeams = [
-  { rank: 1, name: "Tulpar", points: 1842, change: "+24", country: "🇰🇿" },
-  { rank: 2, name: "Aqsunqar", points: 1714, change: "+8", country: "🇰🇿" },
-  { rank: 3, name: "Saryarqa", points: 1689, change: "-12", country: "🇰🇿" },
-  { rank: 4, name: "Astana Esports", points: 1650, change: "+5", country: "🇰🇿" },
-  { rank: 5, name: "Berkut", points: 1622, change: "0", country: "🇰🇿" },
-];
-
-const topPlayers = [
-  { rank: 1, nick: "k1ller_kz", team: "Tulpar", rating: "1.34", role: "AWP" },
-  { rank: 2, nick: "Nomad", team: "Aqsunqar", rating: "1.28", role: "Rifler" },
-  { rank: 3, nick: "Khan", team: "Saryarqa", rating: "1.21", role: "IGL" },
-  { rank: 4, nick: "Batyr", team: "Astana", rating: "1.17", role: "Rifler" },
-  { rank: 5, nick: "S1eepy", team: "Berkut", rating: "1.14", role: "Support" },
-];
-
-const featuredTournament = {
-  name: "Esports.kz Spring Open 2026",
-  game: "CS2",
-  prize: "1 200 000 ₸",
-  teams: 16,
-  status: "Идёт регистрация",
-  daysLeft: 12,
-};
-
 const sponsorTiers = [
-  {
-    name: "БРОНЗА",
-    kz: "Жез",
-    price: "от 50 000 ₸",
+  { name: "БРОНЗА", kz: "Жез", price: "от 50 000 ₸",
     perks: ["Лого в подвале", "Упоминание в 1 турнире/мес"],
-    accent: "from-amber-700 to-amber-900",
-    border: "border-amber-700/40",
-  },
-  {
-    name: "СЕРЕБРО",
-    kz: "Күміс",
-    price: "от 200 000 ₸",
+    accent: "from-amber-700 to-amber-900", border: "border-amber-700/40" },
+  { name: "СЕРЕБРО", kz: "Күміс", price: "от 200 000 ₸",
     perks: ["Лого на главной", "Бренд в 2 турнирах", "Пост в соцсетях"],
-    accent: "from-zinc-300 to-zinc-500",
-    border: "border-zinc-400/40",
-  },
-  {
-    name: "ЗОЛОТО",
-    kz: "Алтын",
-    price: "от 500 000 ₸",
+    accent: "from-zinc-300 to-zinc-500", border: "border-zinc-400/40" },
+  { name: "ЗОЛОТО", kz: "Алтын", price: "от 500 000 ₸",
     perks: ["Title-спонсор турнира", "Баннер на стримах", "Кубок имени бренда"],
-    accent: "from-yellow-300 to-amber-600",
-    border: "border-amber-400/50",
-    featured: true,
-  },
-  {
-    name: "ПЛАТИНА",
-    kz: "Platinum",
-    price: "по запросу",
+    accent: "from-yellow-300 to-amber-600", border: "border-amber-400/50", featured: true },
+  { name: "ПЛАТИНА", kz: "Platinum", price: "по запросу",
     perks: ["Эксклюзив на сезон", "Ко-брендинг", "Кастомная активация"],
-    accent: "from-violet-300 to-fuchsia-500",
-    border: "border-violet-400/50",
-  },
+    accent: "from-violet-300 to-fuchsia-500", border: "border-violet-400/50" },
 ];
 
-function GameTag({ code }: { code: string }) {
+function GameTag({ code }: { code: Game | string }) {
   const colors: Record<string, string> = {
     CS2: "bg-orange-500/15 text-orange-300 border-orange-500/40",
     DOTA2: "bg-rose-500/15 text-rose-300 border-rose-500/40",
@@ -231,59 +60,129 @@ function GameTag({ code }: { code: string }) {
   );
 }
 
-export default function Home() {
+function formatRelativeTime(date: Date) {
+  const diff = (Date.now() - date.getTime()) / 1000;
+  if (diff < 60) return "только что";
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}ч назад`;
+  if (diff < 86400 * 2) return "вчера";
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} дн назад`;
+  return date.toLocaleDateString("ru-RU");
+}
+
+function formatMatchTime(date: Date | null) {
+  if (!date) return "—";
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+  const time = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return `Сегодня · ${time}`;
+  if (isTomorrow) return `Завтра · ${time}`;
+  return `${date.toLocaleDateString("ru-RU", { day: "2-digit", month: "short" })} · ${time}`;
+}
+
+export default async function Home() {
+  const [
+    liveMatches,
+    upcomingMatches,
+    recentResults,
+    newsFeed,
+    topTeams,
+    featuredTournament,
+    stats,
+  ] = await Promise.all([
+    prisma.match.findMany({
+      where: { status: "LIVE" },
+      include: {
+        teamA: { select: { name: true, tag: true } },
+        teamB: { select: { name: true, tag: true } },
+        tournament: { select: { name: true } },
+      },
+      orderBy: { startedAt: "desc" },
+      take: 3,
+    }),
+    prisma.match.findMany({
+      where: { status: "SCHEDULED", startsAt: { gte: new Date() } },
+      include: {
+        teamA: { select: { name: true, tag: true } },
+        teamB: { select: { name: true, tag: true } },
+        tournament: { select: { name: true } },
+      },
+      orderBy: { startsAt: "asc" },
+      take: 5,
+    }),
+    prisma.match.findMany({
+      where: { status: "FINISHED" },
+      include: {
+        teamA: { select: { name: true } },
+        teamB: { select: { name: true } },
+      },
+      orderBy: { finishedAt: "desc" },
+      take: 3,
+    }),
+    prisma.news.findMany({
+      where: { publishedAt: { not: null, lte: new Date() } },
+      orderBy: { publishedAt: "desc" },
+      take: 4,
+    }),
+    prisma.team.findMany({
+      orderBy: { rating: "desc" },
+      take: 5,
+      select: { id: true, name: true, tag: true, rating: true, game: true },
+    }),
+    prisma.tournament.findFirst({
+      where: { status: { in: ["REGISTRATION_OPEN", "ONGOING"] } },
+      orderBy: { startsAt: "asc" },
+    }),
+    Promise.all([
+      prisma.team.count(),
+      prisma.user.count(),
+      prisma.tournament.count(),
+      prisma.tournament.aggregate({ _sum: { prize: true } }),
+    ]),
+  ]);
+
+  const [teamsCount, playersCount, tournamentsCount, prizeAgg] = stats;
+  const totalPrizeKzt = Number(prizeAgg._sum.prize ?? 0n) / 100;
+
+  const statsRow = [
+    { value: String(teamsCount), label: "Команды" },
+    { value: String(playersCount), label: "Игроки" },
+    { value: String(tournamentsCount), label: "Турниры" },
+    {
+      value: totalPrizeKzt > 0 ? `₸ ${(totalPrizeKzt / 1000000).toFixed(1)}M` : "₸ 0",
+      label: "Призовые",
+    },
+  ];
+
   return (
     <>
       {/* TICKER */}
-      <div className="bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-rose-600/30 border-b border-violet-500/20">
-        <div className="mx-auto max-w-7xl px-6 py-1.5 flex items-center gap-3 text-xs font-mono">
-          <span className="flex items-center gap-1.5 text-rose-300 font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-            LIVE
-          </span>
-          <span className="text-zinc-300 truncate">
-            Tulpar 12:7 Saryarqa · Mirage · QCL Полуфинал
-          </span>
-          <span className="text-zinc-600">·</span>
-          <span className="text-zinc-400 truncate hidden sm:inline">
-            Aqsunqar 1:0 Berkut · DPC KZ
-          </span>
-          <span className="ml-auto text-violet-300">
-            <Link href="/matches" className="hover:text-violet-200">
-              Все матчи →
-            </Link>
-          </span>
-        </div>
-      </div>
-
-      <header className="border-b border-violet-500/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-20">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 h-16">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center font-black text-sm clip-corner group-hover:scale-110 transition-transform">
-              E
-            </div>
-            <span className="font-black text-lg tracking-tight">
-              <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                ESPORTS
-              </span>
-              <span className="text-zinc-500 font-mono">.kz</span>
+      {liveMatches.length > 0 && (
+        <div className="bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-rose-600/30 border-b border-violet-500/20">
+          <div className="mx-auto max-w-7xl px-6 py-1.5 flex items-center gap-3 text-xs font-mono">
+            <span className="flex items-center gap-1.5 text-rose-300 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+              LIVE
             </span>
-          </Link>
-          <nav className="hidden md:flex gap-6 text-sm font-medium">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-zinc-400 hover:text-violet-300 transition-colors relative group"
-              >
-                {link.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-px bg-violet-400 group-hover:w-full transition-all" />
+            <span className="text-zinc-300 truncate">
+              {liveMatches[0].teamA?.name} {liveMatches[0].scoreA}:
+              {liveMatches[0].scoreB} {liveMatches[0].teamB?.name}
+              {liveMatches[0].tournament && ` · ${liveMatches[0].tournament.name}`}
+            </span>
+            <span className="ml-auto text-violet-300">
+              <Link href="/matches" className="hover:text-violet-200">
+                Все матчи →
               </Link>
-            ))}
-          </nav>
-          <UserMenu />
+            </span>
+          </div>
         </div>
-      </header>
+      )}
+
+      <SiteHeader />
 
       <main className="flex-1">
         {/* COMPACT HERO */}
@@ -317,6 +216,20 @@ export default function Home() {
                 </Link>
               </div>
             </div>
+
+            {/* Stats — реальные числа из БД */}
+            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-px bg-violet-500/10 rounded-lg overflow-hidden border border-violet-500/20">
+              {statsRow.map((s) => (
+                <div key={s.label} className="bg-zinc-950/80 backdrop-blur p-5 text-center">
+                  <div className="text-3xl font-black bg-gradient-to-b from-violet-300 to-violet-500 bg-clip-text text-transparent">
+                    {s.value}
+                  </div>
+                  <div className="text-xs uppercase tracking-wider text-zinc-500 mt-1 font-mono">
+                    {s.label}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -325,132 +238,141 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6">
             {/* LEFT — MATCHES */}
             <aside className="space-y-6 lg:sticky lg:top-20 self-start">
-              {/* Live */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-mono uppercase tracking-widest text-rose-400 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
                     Live · {liveMatches.length}
                   </h3>
-                  <Link
-                    href="/matches"
-                    className="text-xs text-zinc-500 hover:text-violet-300 font-mono"
-                  >
+                  <Link href="/matches" className="text-xs text-zinc-500 hover:text-violet-300 font-mono">
                     ALL →
                   </Link>
                 </div>
-                <div className="space-y-2">
-                  {liveMatches.map((m, i) => (
-                    <div
-                      key={i}
-                      className="rounded border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 transition-colors p-3"
-                    >
-                      <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-2">
-                        <GameTag code={m.game} />
-                        <span className="truncate ml-2">{m.stage}</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-bold truncate">{m.teamA.name}</span>
-                          <span
-                            className={`font-mono font-bold ${m.teamA.score > m.teamB.score ? "text-rose-300" : "text-zinc-400"}`}
-                          >
-                            {m.teamA.score}
+                {liveMatches.length === 0 ? (
+                  <div className="rounded border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-500">
+                    Сейчас нет идущих матчей
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {liveMatches.map((m) => (
+                      <div
+                        key={m.id}
+                        className="rounded border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 transition-colors p-3"
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-2">
+                          <GameTag code={m.tournamentId ? "CS2" : "CS2"} />
+                          <span className="truncate ml-2">
+                            {m.tournament?.name || "Match"}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-bold truncate">{m.teamB.name}</span>
-                          <span
-                            className={`font-mono font-bold ${m.teamB.score > m.teamA.score ? "text-rose-300" : "text-zinc-400"}`}
-                          >
-                            {m.teamB.score}
-                          </span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-bold truncate">
+                              {m.teamA?.name ?? "TBD"}
+                            </span>
+                            <span
+                              className={`font-mono font-bold ${m.scoreA > m.scoreB ? "text-rose-300" : "text-zinc-400"}`}
+                            >
+                              {m.scoreA}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-bold truncate">
+                              {m.teamB?.name ?? "TBD"}
+                            </span>
+                            <span
+                              className={`font-mono font-bold ${m.scoreB > m.scoreA ? "text-rose-300" : "text-zinc-400"}`}
+                            >
+                              {m.scoreB}
+                            </span>
+                          </div>
                         </div>
+                        {m.map && (
+                          <div className="mt-2 text-[10px] font-mono text-zinc-500">
+                            {m.map}
+                          </div>
+                        )}
                       </div>
-                      <div className="mt-2 text-[10px] font-mono text-zinc-500">
-                        {m.map}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Upcoming */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-mono uppercase tracking-widest text-violet-400">
-                    Расписание
-                  </h3>
-                </div>
-                <div className="rounded border border-zinc-800 bg-zinc-900/40 overflow-hidden divide-y divide-zinc-800">
-                  {upcomingMatches.map((m, i) => (
-                    <div
-                      key={i}
-                      className="p-3 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1.5">
-                        <GameTag code={m.game} />
-                        <span>{m.time}</span>
+                <h3 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+                  Расписание
+                </h3>
+                {upcomingMatches.length === 0 ? (
+                  <div className="rounded border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-500">
+                    Расписание пусто
+                  </div>
+                ) : (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/40 overflow-hidden divide-y divide-zinc-800">
+                    {upcomingMatches.map((m) => (
+                      <div key={m.id} className="p-3 hover:bg-zinc-800/50 transition-colors">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1.5">
+                          <GameTag code={"CS2"} />
+                          <span>{formatMatchTime(m.startsAt)}</span>
+                        </div>
+                        <div className="text-sm font-medium leading-tight">
+                          {m.teamA?.name ?? "TBD"}{" "}
+                          <span className="text-zinc-600 font-mono text-xs mx-1">vs</span>{" "}
+                          {m.teamB?.name ?? "TBD"}
+                        </div>
+                        <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                          {m.tournament?.name || m.stage || "—"}
+                        </div>
                       </div>
-                      <div className="text-sm font-medium leading-tight">
-                        {m.teamA}{" "}
-                        <span className="text-zinc-600 font-mono text-xs mx-1">
-                          vs
-                        </span>{" "}
-                        {m.teamB}
-                      </div>
-                      <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
-                        {m.stage}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Results */}
               <div>
                 <h3 className="text-xs font-mono uppercase tracking-widest text-zinc-400 mb-3">
                   Результаты
                 </h3>
-                <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
-                  {recentResults.map((r, i) => (
-                    <div key={i} className="p-3 hover:bg-zinc-800/50 transition-colors">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1.5">
-                        <GameTag code={r.game} />
-                        <span>{r.when}</span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <span
-                            className={`truncate ${r.teamA.won ? "font-bold text-zinc-100" : "text-zinc-500"}`}
-                          >
-                            {r.teamA.name}
-                          </span>
-                          <span
-                            className={`font-mono ${r.teamA.won ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
-                          >
-                            {r.teamA.score}
-                          </span>
+                {recentResults.length === 0 ? (
+                  <div className="rounded border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-500">
+                    Пока нет результатов
+                  </div>
+                ) : (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+                    {recentResults.map((r) => {
+                      const aWon = r.scoreA > r.scoreB;
+                      const bWon = r.scoreB > r.scoreA;
+                      return (
+                        <div key={r.id} className="p-3 hover:bg-zinc-800/50 transition-colors">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1.5">
+                            <GameTag code={"CS2"} />
+                            <span>{r.finishedAt ? formatRelativeTime(r.finishedAt) : "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className={`truncate ${aWon ? "font-bold text-zinc-100" : "text-zinc-500"}`}>
+                                {r.teamA?.name ?? "TBD"}
+                              </span>
+                              <span className={`font-mono ${aWon ? "text-emerald-400 font-bold" : "text-zinc-500"}`}>
+                                {r.scoreA}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className={`truncate ${bWon ? "font-bold text-zinc-100" : "text-zinc-500"}`}>
+                                {r.teamB?.name ?? "TBD"}
+                              </span>
+                              <span className={`font-mono ${bWon ? "text-emerald-400 font-bold" : "text-zinc-500"}`}>
+                                {r.scoreB}
+                              </span>
+                            </div>
+                          </div>
+                          {r.map && (
+                            <div className="text-[10px] font-mono text-zinc-500 mt-1">{r.map}</div>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span
-                            className={`truncate ${r.teamB.won ? "font-bold text-zinc-100" : "text-zinc-500"}`}
-                          >
-                            {r.teamB.name}
-                          </span>
-                          <span
-                            className={`font-mono ${r.teamB.won ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
-                          >
-                            {r.teamB.score}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-[10px] font-mono text-zinc-500 mt-1">
-                        {r.map}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </aside>
 
@@ -458,136 +380,114 @@ export default function Home() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-black tracking-tight">
-                  <span className="text-violet-400 font-mono text-xs uppercase tracking-widest mr-2">
-                    //
-                  </span>
+                  <span className="text-violet-400 font-mono text-xs uppercase tracking-widest mr-2">//</span>
                   Лента новостей
                 </h2>
-                <div className="flex gap-2 text-xs font-mono text-zinc-500">
-                  <button className="px-2 py-1 rounded bg-violet-500/15 text-violet-300 border border-violet-500/30">
-                    ВСЕ
-                  </button>
-                  <button className="px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700">
-                    CS2
-                  </button>
-                  <button className="px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700">
-                    DOTA2
-                  </button>
-                  <button className="px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700">
-                    PUBG
-                  </button>
-                </div>
               </div>
 
-              {/* Featured news (first item, big) */}
-              <article
-                className={`group relative rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/40 hover:border-violet-500/40 transition-colors mb-4 cursor-pointer`}
-              >
-                <div className="aspect-[16/7] bg-gradient-to-br from-violet-600/30 via-fuchsia-600/20 to-zinc-900 relative">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(167,139,250,0.3),transparent_60%)]" />
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <span
-                      className={`text-[10px] font-mono font-bold px-2 py-1 rounded border ${newsFeed[0].badgeColor}`}
-                    >
-                      {newsFeed[0].tag}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-2xl font-black tracking-tight group-hover:text-violet-200 transition-colors">
-                      {newsFeed[0].title}
-                    </h3>
-                    <p className="text-sm text-zinc-300 mt-2 line-clamp-2">
-                      {newsFeed[0].excerpt}
-                    </p>
-                    <div className="text-xs font-mono text-zinc-400 mt-3">
-                      {newsFeed[0].time}
-                    </div>
-                  </div>
+              {newsFeed.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-zinc-800 p-16 text-center text-zinc-500">
+                  <div className="text-4xl mb-3">📰</div>
+                  <p className="font-bold mb-2 text-zinc-300">Скоро здесь появятся новости</p>
+                  <p className="text-sm">
+                    Турниры, MVP-результаты, объявления о партнёрах — всё будет тут.
+                  </p>
                 </div>
-              </article>
-
-              {/* Smaller news cards */}
-              <div className="space-y-3">
-                {newsFeed.slice(1).map((n, i) => (
-                  <article
-                    key={i}
-                    className={`group flex gap-4 rounded-lg border border-zinc-800 ${n.accent} border-l-4 bg-zinc-900/40 hover:bg-zinc-900/70 transition-colors p-4 cursor-pointer`}
-                  >
-                    <div className="w-24 sm:w-32 aspect-square shrink-0 rounded bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center font-black text-2xl text-zinc-700">
-                      {n.tag.slice(0, 2)}
-                    </div>
-                    <div className="min-w-0 flex flex-col">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${n.badgeColor}`}
-                        >
-                          {n.tag}
-                        </span>
-                        <span className="text-[10px] font-mono text-zinc-500">
-                          {n.time}
+              ) : (
+                <>
+                  {/* Featured (first item) */}
+                  <article className="group relative rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/40 hover:border-violet-500/40 transition-colors mb-4 cursor-pointer">
+                    <div className="aspect-[16/7] bg-gradient-to-br from-violet-600/30 via-fuchsia-600/20 to-zinc-900 relative">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(167,139,250,0.3),transparent_60%)]" />
+                      <div className="absolute top-4 left-4 flex gap-2">
+                        <span className="text-[10px] font-mono font-bold px-2 py-1 rounded border bg-violet-500/15 text-violet-300 border-violet-500/30">
+                          {newsFeed[0].category}
                         </span>
                       </div>
-                      <h3 className="font-bold leading-tight group-hover:text-violet-200 transition-colors">
-                        {n.title}
-                      </h3>
-                      <p className="text-sm text-zinc-400 mt-1 line-clamp-2">
-                        {n.excerpt}
-                      </p>
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h3 className="text-2xl font-black tracking-tight group-hover:text-violet-200 transition-colors">
+                          {newsFeed[0].title}
+                        </h3>
+                        {newsFeed[0].excerpt && (
+                          <p className="text-sm text-zinc-300 mt-2 line-clamp-2">
+                            {newsFeed[0].excerpt}
+                          </p>
+                        )}
+                        <div className="text-xs font-mono text-zinc-400 mt-3">
+                          {newsFeed[0].publishedAt
+                            ? formatRelativeTime(newsFeed[0].publishedAt)
+                            : ""}
+                        </div>
+                      </div>
                     </div>
                   </article>
-                ))}
-              </div>
 
-              <div className="mt-6 text-center">
-                <Link
-                  href="/news"
-                  className="inline-flex items-center gap-2 text-sm font-mono text-violet-300 hover:text-violet-200"
-                >
-                  ▼ Загрузить ещё
-                </Link>
-              </div>
+                  <div className="space-y-3">
+                    {newsFeed.slice(1).map((n) => (
+                      <article
+                        key={n.id}
+                        className="group flex gap-4 rounded-lg border border-zinc-800 border-l-violet-500 border-l-4 bg-zinc-900/40 hover:bg-zinc-900/70 transition-colors p-4 cursor-pointer"
+                      >
+                        <div className="w-24 sm:w-32 aspect-square shrink-0 rounded bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center font-black text-2xl text-zinc-700">
+                          {n.category.slice(0, 2)}
+                        </div>
+                        <div className="min-w-0 flex flex-col">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border bg-violet-500/15 text-violet-300 border-violet-500/30">
+                              {n.category}
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-500">
+                              {n.publishedAt ? formatRelativeTime(n.publishedAt) : ""}
+                            </span>
+                          </div>
+                          <h3 className="font-bold leading-tight group-hover:text-violet-200 transition-colors">
+                            {n.title}
+                          </h3>
+                          {n.excerpt && (
+                            <p className="text-sm text-zinc-400 mt-1 line-clamp-2">
+                              {n.excerpt}
+                            </p>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* RIGHT — RANKINGS */}
             <aside className="space-y-6 lg:sticky lg:top-20 self-start">
               {/* Featured tournament */}
-              <div className="relative rounded-lg overflow-hidden border border-violet-500/30 bg-gradient-to-br from-violet-600/20 via-fuchsia-600/10 to-transparent p-5 scan-line">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-violet-300 mb-2">
-                  ★ Featured Tournament
-                </div>
-                <div className="font-black text-lg leading-tight mb-1">
-                  {featuredTournament.name}
-                </div>
-                <GameTag code={featuredTournament.game} />
-                <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <div className="font-mono text-zinc-500 uppercase">Призовой</div>
-                    <div className="font-bold text-amber-300">
-                      {featuredTournament.prize}
+              {featuredTournament && (
+                <div className="relative rounded-lg overflow-hidden border border-violet-500/30 bg-gradient-to-br from-violet-600/20 via-fuchsia-600/10 to-transparent p-5 scan-line">
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-violet-300 mb-2">
+                    ★ Featured Tournament
+                  </div>
+                  <div className="font-black text-lg leading-tight mb-1">
+                    {featuredTournament.name}
+                  </div>
+                  <GameTag code={featuredTournament.game} />
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <div className="font-mono text-zinc-500 uppercase">Призовой</div>
+                      <div className="font-bold text-amber-300">
+                        ₸ {(Number(featuredTournament.prize) / 100).toLocaleString("ru-RU")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-mono text-zinc-500 uppercase">Команды</div>
+                      <div className="font-bold">{featuredTournament.maxTeams}</div>
                     </div>
                   </div>
-                  <div>
-                    <div className="font-mono text-zinc-500 uppercase">Команды</div>
-                    <div className="font-bold">{featuredTournament.teams}</div>
-                  </div>
-                  <div>
-                    <div className="font-mono text-zinc-500 uppercase">Статус</div>
-                    <div className="font-bold text-emerald-300">
-                      {featuredTournament.status}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-mono text-zinc-500 uppercase">До старта</div>
-                    <div className="font-bold">{featuredTournament.daysLeft} дн</div>
-                  </div>
+                  <Link
+                    href={`/tournaments/${featuredTournament.slug}`}
+                    className="mt-4 block w-full text-center h-9 leading-9 rounded font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all"
+                  >
+                    Подробнее
+                  </Link>
                 </div>
-                <Link
-                  href="/tournaments/spring-open-2026"
-                  className="mt-4 block w-full text-center h-9 leading-9 rounded font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all"
-                >
-                  Зарегистрировать команду
-                </Link>
-              </div>
+              )}
 
               {/* Top teams */}
               <div>
@@ -595,77 +495,43 @@ export default function Home() {
                   <h3 className="text-xs font-mono uppercase tracking-widest text-amber-400">
                     🏆 Top Teams
                   </h3>
-                  <Link
-                    href="/teams"
-                    className="text-xs text-zinc-500 hover:text-violet-300 font-mono"
-                  >
+                  <Link href="/teams" className="text-xs text-zinc-500 hover:text-violet-300 font-mono">
                     ALL →
                   </Link>
                 </div>
-                <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
-                  {topTeams.map((t) => (
-                    <div
-                      key={t.rank}
-                      className="flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                    >
-                      <span
-                        className={`font-mono font-black text-sm w-5 ${t.rank === 1 ? "text-amber-300" : t.rank === 2 ? "text-zinc-300" : t.rank === 3 ? "text-amber-700" : "text-zinc-500"}`}
+                {topTeams.length === 0 ? (
+                  <div className="rounded border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-500">
+                    Команд ещё нет.{" "}
+                    <Link href="/teams/new" className="text-violet-300 hover:text-violet-200">
+                      Создать →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+                    {topTeams.map((t, i) => (
+                      <Link
+                        key={t.id}
+                        href={`/teams/${t.tag}`}
+                        className="flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors"
                       >
-                        {t.rank}
-                      </span>
-                      <div className="w-7 h-7 rounded bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center text-xs font-bold">
-                        {t.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold truncate">{t.name}</div>
-                        <div className="text-[10px] font-mono text-zinc-500">
-                          {t.points} pts
+                        <span
+                          className={`font-mono font-black text-sm w-5 ${i === 0 ? "text-amber-300" : i === 1 ? "text-zinc-300" : i === 2 ? "text-amber-700" : "text-zinc-500"}`}
+                        >
+                          {i + 1}
+                        </span>
+                        <div className="w-7 h-7 rounded bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center text-xs font-bold">
+                          {t.name[0]}
                         </div>
-                      </div>
-                      <span
-                        className={`text-xs font-mono font-bold ${t.change.startsWith("+") ? "text-emerald-400" : t.change.startsWith("-") ? "text-rose-400" : "text-zinc-500"}`}
-                      >
-                        {t.change}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Top players */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-mono uppercase tracking-widest text-violet-400">
-                    ⚡ Top Players
-                  </h3>
-                  <Link
-                    href="/players"
-                    className="text-xs text-zinc-500 hover:text-violet-300 font-mono"
-                  >
-                    ALL →
-                  </Link>
-                </div>
-                <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
-                  {topPlayers.map((p) => (
-                    <div
-                      key={p.rank}
-                      className="flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                    >
-                      <span className="font-mono font-black text-sm w-5 text-zinc-500">
-                        {p.rank}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold truncate">{p.nick}</div>
-                        <div className="text-[10px] font-mono text-zinc-500">
-                          {p.team} · {p.role}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold truncate">{t.name}</div>
+                          <div className="text-[10px] font-mono text-zinc-500">
+                            {t.game} · {t.rating} pts
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-xs font-mono font-bold text-violet-300">
-                        {p.rating}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Sponsor slot */}
@@ -710,26 +576,18 @@ export default function Home() {
                 key={game.code}
                 className={`group relative rounded-lg bg-zinc-900/60 border border-zinc-800 ${game.border} ${game.glow} p-6 transition-all hover:-translate-y-1 overflow-hidden`}
               >
-                <div
-                  className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${game.accent}`}
-                />
+                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${game.accent}`} />
                 <div className="font-mono text-xs text-zinc-500 mb-1">
                   /game/{game.code.toLowerCase()}
                 </div>
-                <div
-                  className={`text-2xl font-black bg-gradient-to-r ${game.accent} bg-clip-text text-transparent`}
-                >
+                <div className={`text-2xl font-black bg-gradient-to-r ${game.accent} bg-clip-text text-transparent`}>
                   {game.code}
                 </div>
                 <h3 className="text-xl font-bold mt-1">{game.name}</h3>
-                <p className="text-zinc-500 text-sm mt-3 font-mono">
-                  {game.format}
-                </p>
+                <p className="text-zinc-500 text-sm mt-3 font-mono">{game.format}</p>
                 <div className="mt-6 flex items-center text-sm text-zinc-400 group-hover:text-violet-300 transition-colors">
                   Расписание матчей{" "}
-                  <span className="ml-1 group-hover:translate-x-1 transition-transform">
-                    →
-                  </span>
+                  <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
                 </div>
               </Link>
             ))}
@@ -782,14 +640,10 @@ export default function Home() {
                     Популярный
                   </div>
                 )}
-                <div
-                  className={`text-2xl font-black bg-gradient-to-r ${tier.accent} bg-clip-text text-transparent`}
-                >
+                <div className={`text-2xl font-black bg-gradient-to-r ${tier.accent} bg-clip-text text-transparent`}>
                   {tier.name}
                 </div>
-                <div className="text-zinc-500 text-sm font-mono mt-1">
-                  {tier.kz}
-                </div>
+                <div className="text-zinc-500 text-sm font-mono mt-1">{tier.kz}</div>
                 <div className="mt-4 pb-4 border-b border-zinc-800">
                   <div className="text-xl font-bold">{tier.price}</div>
                   <div className="text-xs text-zinc-500 font-mono">в месяц</div>
@@ -829,19 +683,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-violet-500/10 mt-auto bg-zinc-950/80">
-        <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-500 flex flex-col sm:flex-row justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center font-black text-xs">
-              E
-            </div>
-            <span className="font-mono">© 2026 ESPORTS.KZ</span>
-          </div>
-          <span className="font-mono text-xs uppercase tracking-wider">
-            Built for the Kazakh esports community
-          </span>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }
