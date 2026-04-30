@@ -16,6 +16,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/?auth_error=profile", url.origin));
   }
 
+  const adminSteamIds = (process.env.ADMIN_STEAM_IDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const isAdmin = adminSteamIds.includes(steamId);
+
   // Создаём или обновляем пользователя в БД
   const user = await prisma.user.upsert({
     where: { steamId },
@@ -24,10 +30,12 @@ export async function GET(request: Request) {
       username: profile.personaName.slice(0, 32),
       avatarUrl: profile.avatarUrl,
       lastSeenAt: new Date(),
+      isAdmin,
     },
     update: {
       avatarUrl: profile.avatarUrl,
       lastSeenAt: new Date(),
+      isAdmin,
     },
   });
 
