@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+
 
 export default async function AdminHomePage() {
   await requireAdmin();
@@ -79,7 +79,7 @@ export default async function AdminHomePage() {
 
   return (
     <>
-      <SiteHeader />
+      
       <main className="flex-1 mx-auto max-w-7xl w-full px-6 py-12">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -119,7 +119,7 @@ export default async function AdminHomePage() {
           ))}
         </div>
       </main>
-      <SiteFooter />
+      
     </>
   );
 }

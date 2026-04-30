@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
-import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+
 import { NewsCreateForm } from "./form";
 
 export default async function NewNewsPage() {
   await requireAdmin();
   return (
     <>
-      <SiteHeader />
+      
       <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-12">
         <Link
           href="/admin/news"
@@ -20,7 +20,7 @@ export default async function NewNewsPage() {
         </h1>
         <NewsCreateForm />
       </main>
-      <SiteFooter />
+      
     </>
   );
 }

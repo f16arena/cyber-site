@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: "Черновик",
@@ -35,7 +35,7 @@ export default async function AdminTournamentsPage() {
 
   return (
     <>
-      <SiteHeader />
+      
       <main className="flex-1 mx-auto max-w-7xl w-full px-6 py-12">
         <Link
           href="/admin"
@@ -113,7 +113,7 @@ export default async function AdminTournamentsPage() {
           </div>
         )}
       </main>
-      <SiteFooter />
+      
     </>
   );
 }

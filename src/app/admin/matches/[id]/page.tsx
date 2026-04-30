@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+
 import { setMatchResult, recordPlayerStat, importFaceitMatch } from "../../actions";
 
 export default async function AdminMatchPage({
@@ -54,7 +54,7 @@ export default async function AdminMatchPage({
 
   return (
     <>
-      <SiteHeader />
+      
       <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-12">
         <Link
           href={
@@ -327,7 +327,7 @@ export default async function AdminMatchPage({
           </section>
         )}
       </main>
-      <SiteFooter />
+      
     </>
   );
 }

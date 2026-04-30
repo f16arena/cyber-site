@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
+import { GlobalSearch } from "./GlobalSearch";
 
 const navLinks = [
   { href: "/tournaments", label: "Турниры" },
@@ -25,7 +26,7 @@ export function SiteHeader() {
             <span className="text-zinc-500 font-mono">.kz</span>
           </span>
         </Link>
-        <nav className="hidden md:flex gap-6 text-sm font-medium">
+        <nav className="hidden lg:flex gap-5 text-sm font-medium">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -36,7 +37,10 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <UserMenu />
+        <div className="flex items-center gap-3">
+          <GlobalSearch />
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

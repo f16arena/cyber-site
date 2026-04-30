@@ -20,9 +20,15 @@ export async function GET(request: Request) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const isAdmin = adminSteamIds.includes(steamId);
+  const isAdminFromEnv = adminSteamIds.includes(steamId);
 
-  // Создаём или обновляем пользователя в БД
+  // На create: isAdmin берём из env. На update: не сбрасываем — админство
+  // могло быть выставлено вручную через /admin/users. Лишь повышаем если есть в env.
+  const existing = await prisma.user.findUnique({
+    where: { steamId },
+    select: { isAdmin: true },
+  });
+
   const user = await prisma.user.upsert({
     where: { steamId },
     create: {
@@ -30,12 +36,13 @@ export async function GET(request: Request) {
       username: profile.personaName.slice(0, 32),
       avatarUrl: profile.avatarUrl,
       lastSeenAt: new Date(),
-      isAdmin,
+      isAdmin: isAdminFromEnv,
     },
     update: {
       avatarUrl: profile.avatarUrl,
       lastSeenAt: new Date(),
-      isAdmin,
+      // Если env даёт админство — повысим. Если нет — оставляем как было.
+      ...(isAdminFromEnv && !existing?.isAdmin ? { isAdmin: true } : {}),
     },
   });
 

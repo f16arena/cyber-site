@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+
 import { generateBracket, registerTeam } from "../../actions";
 
 export default async function AdminTournamentManagePage({
@@ -52,7 +52,7 @@ export default async function AdminTournamentManagePage({
 
   return (
     <>
-      <SiteHeader />
+      
       <main className="flex-1 mx-auto max-w-7xl w-full px-6 py-12">
         <Link
           href="/admin/tournaments"
@@ -219,7 +219,7 @@ export default async function AdminTournamentManagePage({
           </section>
         )}
       </main>
-      <SiteFooter />
+      
     </>
   );
 }

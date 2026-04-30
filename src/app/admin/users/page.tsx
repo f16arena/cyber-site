@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+
 import { toggleAdmin } from "../actions";
 
 export default async function AdminUsersPage() {
@@ -19,7 +19,7 @@ export default async function AdminUsersPage() {
 
   return (
     <>
-      <SiteHeader />
+      
       <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-12">
         <Link
           href="/admin"
@@ -86,7 +86,7 @@ export default async function AdminUsersPage() {
           ))}
         </div>
       </main>
-      <SiteFooter />
+      
     </>
   );
 }

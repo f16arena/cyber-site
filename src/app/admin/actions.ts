@@ -294,6 +294,110 @@ export async function recordPlayerStat(formData: FormData) {
   revalidatePath(`/admin/matches/${matchId}`);
 }
 
+// ─── SPONSORS ───────────────────────────────────────────
+
+export async function createSponsor(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = ((formData.get("name") as string) || "").trim();
+  const tier = formData.get("tier") as string | null;
+  const websiteUrl = ((formData.get("websiteUrl") as string) || "").trim();
+  const logoUrl = ((formData.get("logoUrl") as string) || "").trim();
+  const monthlyFee = parseInt((formData.get("monthlyFeeKzt") as string) || "0", 10);
+  const notes = ((formData.get("notes") as string) || "").trim();
+
+  if (name.length < 2) return { error: "Название не короче 2 символов" };
+  const validTiers = ["BRONZE", "SILVER", "GOLD", "PLATINUM"];
+  if (!tier || !validTiers.includes(tier)) return { error: "Выбери тир" };
+
+  await prisma.sponsor.create({
+    data: {
+      name,
+      tier: tier as "BRONZE" | "SILVER" | "GOLD" | "PLATINUM",
+      websiteUrl: websiteUrl || null,
+      logoUrl: logoUrl || null,
+      monthlyFeeKzt: monthlyFee || null,
+      notes: notes || null,
+      contractStart: new Date(),
+    },
+  });
+
+  revalidatePath("/admin/sponsors");
+  redirect("/admin/sponsors");
+}
+
+export async function toggleSponsorActive(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  if (!id) return;
+  const s = await prisma.sponsor.findUnique({ where: { id }, select: { isActive: true } });
+  if (!s) return;
+  await prisma.sponsor.update({
+    where: { id },
+    data: { isActive: !s.isActive },
+  });
+  revalidatePath("/admin/sponsors");
+}
+
+export async function deleteSponsor(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  if (!id) return;
+  await prisma.sponsor.delete({ where: { id } });
+  revalidatePath("/admin/sponsors");
+}
+
+export async function markInquiryHandled(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  if (!id) return;
+  await prisma.sponsorshipInquiry.update({
+    where: { id },
+    data: { isHandled: true },
+  });
+  revalidatePath("/admin/inquiries");
+}
+
+// ─── SEASONS ────────────────────────────────────────────
+
+export async function createSeason(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await requireAdmin();
+  const name = ((formData.get("name") as string) || "").trim();
+  const slug = ((formData.get("slug") as string) || "").trim().toLowerCase();
+  const game = formData.get("game") as string | null;
+  const startsAt = formData.get("startsAt") as string | null;
+  const endsAt = formData.get("endsAt") as string | null;
+
+  if (name.length < 3) return { error: "Название не короче 3 символов" };
+  if (!slug.match(/^[a-z0-9-]{3,40}$/))
+    return { error: "Slug: 3–40 символов, латиница/дефисы" };
+  if (!startsAt || !endsAt) return { error: "Укажи даты начала и конца" };
+
+  const exists = await prisma.season.findUnique({ where: { slug } });
+  if (exists) return { error: "Slug занят" };
+
+  await prisma.season.create({
+    data: {
+      name,
+      slug,
+      game: game && VALID_GAMES.includes(game as Game) ? (game as Game) : null,
+      startsAt: new Date(startsAt),
+      endsAt: new Date(endsAt),
+    },
+  });
+
+  revalidatePath("/admin/seasons");
+  redirect("/admin/seasons");
+}
+
 // ─── USERS ──────────────────────────────────────────────
 
 export async function toggleAdmin(formData: FormData) {
