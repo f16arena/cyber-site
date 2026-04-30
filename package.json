@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "iron-session": "^8.0.4",
     "next": "16.2.4",
     "prisma": "^6.19.3",
     "react": "19.2.4",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UserMenu } from "@/components/UserMenu";
 
 const navLinks = [
   { href: "/tournaments", label: "Турниры" },
@@ -280,14 +281,7 @@ export default function Home() {
               </Link>
             ))}
           </nav>
-          <div className="flex gap-2">
-            <Link
-              href="/login"
-              className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all"
-            >
-              Войти через Steam
-            </Link>
-          </div>
+          <UserMenu />
         </div>
       </header>
 

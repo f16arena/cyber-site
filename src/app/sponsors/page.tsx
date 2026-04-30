@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { UserMenu } from "@/components/UserMenu";
 
 export const metadata: Metadata = {
   title: "Спонсорам — Esports.kz",
@@ -153,12 +154,7 @@ export default function SponsorsPage() {
               </Link>
             ))}
           </nav>
-          <Link
-            href="/login"
-            className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all"
-          >
-            Войти через Steam
-          </Link>
+          <UserMenu />
         </div>
       </header>
 
