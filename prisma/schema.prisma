@@ -245,17 +245,28 @@ model TournamentRegistration {
 
 // ─── MATCHES ─────────────────────────────────────────────
 
+enum BracketSide {
+  UPPER  // UB (winners bracket)
+  LOWER  // LB (losers bracket)
+  GROUP  // group stage
+}
+
 model Match {
   id             String      @id @default(cuid())
   tournamentId   String?
-  teamAId        String
-  teamBId        String
+  teamAId        String?     // nullable, пока не определена в жеребьёвке
+  teamBId        String?
   winnerId       String?
   status         MatchStatus @default(SCHEDULED)
   scoreA         Int         @default(0)
   scoreB         Int         @default(0)
   bestOf         Int         @default(1)
   stage          String?
+  round          Int?        // 1, 2, 3... для round-robin / brackets
+  bracketSide    BracketSide?
+  bracketPosition Int?       // позиция в сетке (порядок отрисовки)
+  parentMatchAId String?     // из какого матча пришла команда A
+  parentMatchBId String?
   map            String?
   twitchChannel  String?
   startsAt       DateTime?
@@ -264,15 +275,69 @@ model Match {
   resultProofUrl String?
   createdAt      DateTime    @default(now())
 
-  tournament     Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
-  teamA          Team        @relation("MatchTeamA", fields: [teamAId], references: [id])
-  teamB          Team        @relation("MatchTeamB", fields: [teamBId], references: [id])
-  winner         Team?       @relation("MatchWinner", fields: [winnerId], references: [id])
+  tournament     Tournament?  @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  teamA          Team?        @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamB          Team?        @relation("MatchTeamB", fields: [teamBId], references: [id])
+  winner         Team?        @relation("MatchWinner", fields: [winnerId], references: [id])
+  parentMatchA   Match?       @relation("ParentMatchA", fields: [parentMatchAId], references: [id], onDelete: SetNull)
+  parentMatchB   Match?       @relation("ParentMatchB", fields: [parentMatchBId], references: [id], onDelete: SetNull)
+  childrenA      Match[]      @relation("ParentMatchA")
+  childrenB      Match[]      @relation("ParentMatchB")
   mvp            MvpAward?
+  playerStats    MatchPlayerStat[]
 
   @@index([status])
   @@index([startsAt])
-  @@index([tournamentId])
+  @@index([tournamentId, round])
+  @@index([tournamentId, bracketSide, bracketPosition])
+}
+
+// Статистика игрока в конкретном матче (HLTV-style)
+model MatchPlayerStat {
+  id              String   @id @default(cuid())
+  matchId         String
+  userId          String
+  teamId          String
+
+  // Базовые показатели (общие для всех игр)
+  kills           Int      @default(0)
+  deaths          Int      @default(0)
+  assists         Int      @default(0)
+  mvpRounds       Int      @default(0)
+  rating          Float?   // HLTV-style Rating 2.0 — рассчитывается из других метрик
+
+  // Специфика игры — JSON, чтобы не плодить колонки
+  // CS2: { adr, hsPct, kast, openingKills, clutches1v1, clutches1v2, utilityDamage, flashAssists }
+  // DOTA2: { gpm, xpm, lastHits, denies, heroDamage, towerDamage, healing, hero }
+  // PUBG: { headshotKills, longestKill, damageDealt, distanceTraveled, placement }
+  extra           Json?
+
+  // Метаданные
+  game            Game
+  isMvp           Boolean  @default(false)
+  recordedById    String?  // админ, который ввёл стату
+  recordedAt      DateTime @default(now())
+
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId])
+  @@index([userId, game])
+  @@index([userId, recordedAt])
+}
+
+// Сезоны — для группировки турниров и долгосрочных лидербордов
+model Season {
+  id          String   @id @default(cuid())
+  name        String   // "Spring 2026", "Summer 2026"
+  slug        String   @unique
+  game        Game?    // null = все игры
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([game, isActive])
 }
 
 // ─── MVP & AWARDS ────────────────────────────────────────

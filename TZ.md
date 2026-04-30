@@ -116,7 +116,94 @@
 - Поиск по тегам и онлайн-статусу.
 - Уведомления: приглашение в команду, начало матча, новое сообщение.
 
-### 4.7. Лидерборды (Hall of Fame)
+### 4.6.1. Статистика игроков (HLTV-style)
+
+**Эталон:** https://www.hltv.org/stats/players/24144/molodoy
+
+**Что отслеживаем:**
+
+*Базовые показатели (общие для всех игр):*
+- Total kills / deaths / assists
+- MVPs (раундов)
+- Rating 2.0 (HLTV-формула, рассчитывается автоматически из других метрик)
+- Maps / matches played
+
+*CS2-специфика:*
+- ADR (Average Damage per Round)
+- Headshot %
+- KAST (% раундов с Kill/Assist/Survival/Trade-kill)
+- Opening kills / opening deaths
+- Clutches 1v1, 1v2, 1v3+
+- Utility damage, flash assists
+- Per-map performance (Mirage, Inferno, Anubis...)
+
+*Dota 2-специфика:*
+- GPM (Gold per minute) / XPM
+- Last hits / denies
+- Hero damage, tower damage
+- Healing
+- Hero pool / win rate per hero
+
+*PUBG-специфика:*
+- Headshot kills, longest kill
+- Damage dealt, distance traveled
+- Average placement
+- Squad kills / solo kills
+
+**Уровни агрегации:**
+- По матчу — `MatchPlayerStat` (1 запись на игрока в матче)
+- По турниру — агрегируется на лету
+- По сезону (Spring 2026, Summer 2026...) — `Season` группирует турниры
+- По всему времени — все матчи игрока
+
+**Кто вводит:**
+- На MVP: админ вручную после матча, через форму "Ввести статистику матча".
+- В v2: попытка автоматической интеграции с FACEIT API для CS2.
+- В v3: парсинг demo-файлов CS2 / replay Dota 2 / replay PUBG (опционально, сложно).
+
+**Страница игрока:**
+`/players/[username]/stats`
+- Сводка: общий рейтинг, K/D, ADR, HS%, маппы
+- Графики: рейтинг по времени, форма за последние 10 матчей
+- Топ-карты, лучшие/худшие оппоненты
+- Список последних матчей со статой
+
+### 4.6.2. Жеребьёвка и сетки турниров
+
+**Форматы:**
+
+*Double Elimination (CS2):*
+- Upper Bracket (UB) → проигравший падает в Lower Bracket (LB)
+- LB → победитель идёт в Grand Final
+- Grand Final: bracket reset (UB-чемпион имеет 1 жизнь дополнительно)
+- Жеребьёвка: random или seeded по rating команд
+
+*Single Elimination (Dota 2):*
+- Один проигрыш = вылет
+- Часто с групповым этапом перед плейофф
+
+*Round Robin (групповой этап):*
+- Каждый играет с каждым в группе
+- По итогам — топ-N выходят в плейофф
+
+*Battle Royale Series (PUBG):*
+- N матчей подряд, очки за позицию + kill points
+- По сумме — топ команд
+
+**Реализация:**
+- Расширили `Match` полями: `round`, `bracketSide` (UB/LB/GROUP), `bracketPosition`, `parentMatchAId/B`.
+- Алгоритм генерации сетки:
+  - Для DE: 1 раз "посеять" команды → создать матчи UB1, UB2 ... → создать LB-матчи с правильными `parentMatch*` ссылками.
+  - Реализовать в админке: кнопка "Сгенерировать сетку" после закрытия регистрации.
+- Визуализация:
+  - Страница `/tournaments/[slug]/bracket` с интерактивной сеткой (слева UB, справа LB, финал по центру).
+  - Используем простую CSS Grid + SVG-линии. Без сторонних bracket-библиотек на MVP.
+
+**Жеребьёвка-лотерея:**
+- Опционально (v2) — анимация "Live Draw" в браузере админа: с эффектом case-opening, лого команд "крутится", выпадает в нужный слот.
+- Можно стримить на Twitch перед турниром.
+
+
 
 - **TOP PLAYERS** — лучшие игроки сезона (по рейтингу).
 - **BEST SNIPERS** — AWP-короли в CS2 (по K/D с AWP, статистика вручную или через API FACEIT в v2).
