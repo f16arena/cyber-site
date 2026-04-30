@@ -1,0 +1,400 @@
+// Esports.kz database schema
+// Подробнее: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum Game {
+  CS2
+  DOTA2
+  PUBG
+}
+
+enum Region {
+  ALMATY
+  ASTANA
+  SHYMKENT
+  KARAGANDA
+  AKTAU
+  AKTOBE
+  PAVLODAR
+  ATYRAU
+  ORAL
+  KOSTANAY
+  TARAZ
+  KZ_OTHER
+}
+
+enum PlayerStatus {
+  ONLINE
+  LOOKING_FOR_TEAM
+  IN_MATCH
+  OFFLINE
+}
+
+enum TeamMemberRole {
+  CAPTAIN
+  PLAYER
+  SUBSTITUTE
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum TournamentFormat {
+  DOUBLE_ELIMINATION
+  SINGLE_ELIMINATION
+  ROUND_ROBIN
+  BATTLE_ROYALE_SERIES
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  CANCELLED
+  WALKOVER
+}
+
+enum SponsorTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum NewsCategory {
+  TOURNAMENT
+  MVP
+  SPONSOR
+  TEAM
+  GENERAL
+}
+
+// ─── USER ────────────────────────────────────────────────
+
+model User {
+  id          String        @id @default(cuid())
+  steamId     String        @unique
+  username    String        @unique
+  avatarUrl   String?
+  email       String?       @unique
+  bio         String?
+  region      Region?
+  twitchUrl   String?
+  discordTag  String?
+  status      PlayerStatus  @default(OFFLINE)
+  isAdmin     Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  lastSeenAt  DateTime?
+
+  profiles        PlayerProfile[]
+  teamMemberships TeamMember[]
+  captainOf       Team[]            @relation("TeamCaptain")
+  lfgPosts        LfgPost[]
+  sentMessages    ChatMessage[]     @relation("MessageSender")
+  friendsSent     Friendship[]      @relation("FriendshipFrom")
+  friendsRecv     Friendship[]      @relation("FriendshipTo")
+  mvpAwards       MvpAward[]
+  authoredNews    News[]            @relation("NewsAuthor")
+
+  @@index([status])
+  @@index([region])
+}
+
+model PlayerProfile {
+  id          String   @id @default(cuid())
+  userId      String
+  game        Game
+  inGameRole  String?
+  rank        String?
+  hoursPlayed Int?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@index([game])
+}
+
+// ─── TEAMS ───────────────────────────────────────────────
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  tag         String   @unique
+  logoUrl     String?
+  game        Game
+  region      Region?
+  captainId   String
+  description String?
+  rating      Int      @default(1000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  captain       User                     @relation("TeamCaptain", fields: [captainId], references: [id])
+  members       TeamMember[]
+  matchesA      Match[]                  @relation("MatchTeamA")
+  matchesB      Match[]                  @relation("MatchTeamB")
+  wonMatches    Match[]                  @relation("MatchWinner")
+  registrations TournamentRegistration[]
+
+  @@unique([name, game])
+  @@index([game])
+  @@index([rating])
+}
+
+model TeamMember {
+  id        String         @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamMemberRole @default(PLAYER)
+  joinedAt  DateTime       @default(now())
+
+  team      Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+// ─── LFG ─────────────────────────────────────────────────
+
+model LfgPost {
+  id          String    @id @default(cuid())
+  authorId    String
+  game        Game
+  description String
+  inGameRole  String?
+  region      Region?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([game, isActive])
+  @@index([region])
+}
+
+// ─── TOURNAMENTS ─────────────────────────────────────────
+
+model Tournament {
+  id            String           @id @default(cuid())
+  name          String
+  slug          String           @unique
+  game          Game
+  format        TournamentFormat
+  status        TournamentStatus @default(DRAFT)
+  prize         BigInt           @default(0)
+  prizeCurrency String           @default("KZT")
+  maxTeams      Int              @default(16)
+  description   String?
+  rules         String?
+  bannerUrl     String?
+  registrationOpensAt  DateTime?
+  registrationClosesAt DateTime?
+  startsAt      DateTime?
+  endsAt        DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  registrations TournamentRegistration[]
+  matches       Match[]
+  mvpAwards     MvpAward[]
+  sponsors      TournamentSponsor[]
+
+  @@index([game, status])
+  @@index([startsAt])
+}
+
+model TournamentRegistration {
+  id           String     @id @default(cuid())
+  tournamentId String
+  teamId       String
+  approvedAt   DateTime?
+  createdAt    DateTime   @default(now())
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamId])
+}
+
+// ─── MATCHES ─────────────────────────────────────────────
+
+model Match {
+  id             String      @id @default(cuid())
+  tournamentId   String?
+  teamAId        String
+  teamBId        String
+  winnerId       String?
+  status         MatchStatus @default(SCHEDULED)
+  scoreA         Int         @default(0)
+  scoreB         Int         @default(0)
+  bestOf         Int         @default(1)
+  stage          String?
+  map            String?
+  twitchChannel  String?
+  startsAt       DateTime?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  resultProofUrl String?
+  createdAt      DateTime    @default(now())
+
+  tournament     Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  teamA          Team        @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamB          Team        @relation("MatchTeamB", fields: [teamBId], references: [id])
+  winner         Team?       @relation("MatchWinner", fields: [winnerId], references: [id])
+  mvp            MvpAward?
+
+  @@index([status])
+  @@index([startsAt])
+  @@index([tournamentId])
+}
+
+// ─── MVP & AWARDS ────────────────────────────────────────
+
+model MvpAward {
+  id           String      @id @default(cuid())
+  userId       String
+  tournamentId String?
+  matchId      String?     @unique
+  comment      String?
+  createdAt    DateTime    @default(now())
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  match        Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
+}
+
+// ─── CHAT & FRIENDSHIPS ──────────────────────────────────
+
+model Conversation {
+  id        String        @id @default(cuid())
+  isGroup   Boolean       @default(false)
+  name      String?
+  createdAt DateTime      @default(now())
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model Friendship {
+  id        String           @id @default(cuid())
+  fromId    String
+  toId      String
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  from      User             @relation("FriendshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User             @relation("FriendshipTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId])
+  @@index([toId, status])
+}
+
+// ─── SPONSORS ────────────────────────────────────────────
+
+model Sponsor {
+  id            String      @id @default(cuid())
+  name          String
+  logoUrl       String?
+  websiteUrl    String?
+  tier          SponsorTier
+  isActive      Boolean     @default(true)
+  contractStart DateTime?
+  contractEnd   DateTime?
+  monthlyFeeKzt Int?
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tournamentLinks TournamentSponsor[]
+
+  @@index([tier, isActive])
+}
+
+model TournamentSponsor {
+  id           String     @id @default(cuid())
+  tournamentId String
+  sponsorId    String
+  isTitle      Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  sponsor      Sponsor    @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, sponsorId])
+}
+
+model SponsorshipInquiry {
+  id          String       @id @default(cuid())
+  companyName String
+  contactName String
+  email       String
+  phone       String?
+  tier        SponsorTier?
+  message     String?
+  createdAt   DateTime     @default(now())
+  isHandled   Boolean      @default(false)
+
+  @@index([isHandled, createdAt])
+}
+
+// ─── NEWS ────────────────────────────────────────────────
+
+model News {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  title       String
+  excerpt     String?
+  body        String
+  category    NewsCategory @default(GENERAL)
+  game        Game?
+  coverUrl    String?
+  authorId    String?
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  author      User?        @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([category, publishedAt])
+  @@index([game, publishedAt])
+}
