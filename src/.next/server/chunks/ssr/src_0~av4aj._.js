@@ -1,3 +1,0 @@
-module.exports=[67230,a=>{"use strict";var b=a.i(66518);async function c(a){await b.prisma.notification.create({data:{userId:a.userId,type:a.type,title:a.title,body:a.body??null,link:a.link??null,imageUrl:a.imageUrl??null}})}a.s(["notify",0,c])},76636,a=>{"use strict";var b=a.i(12406);a.s([],10380),a.i(10380),a.s(["6069eef792137c1f34c4391b90b13b49836c7819ac",()=>b.createNews],76636)}];
-
-//# sourceMappingURL=src_0~av4aj._.js.map

@@ -1,3 +1,0 @@
-module.exports=[67230,a=>{"use strict";var b=a.i(66518);async function c(a){await b.prisma.notification.create({data:{userId:a.userId,type:a.type,title:a.title,body:a.body??null,link:a.link??null,imageUrl:a.imageUrl??null}})}a.s(["notify",0,c])},47023,a=>{"use strict";var b=a.i(12406);a.s([],87706),a.i(87706),a.s(["60c2f7ca98019dc59412028ce14b1e0889e285da8e",()=>b.createSeason],47023)}];
-
-//# sourceMappingURL=src_0e7_b9k._.js.map

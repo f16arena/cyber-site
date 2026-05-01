@@ -1,3 +1,0 @@
-module.exports=[67230,a=>{"use strict";var b=a.i(66518);async function c(a){await b.prisma.notification.create({data:{userId:a.userId,type:a.type,title:a.title,body:a.body??null,link:a.link??null,imageUrl:a.imageUrl??null}})}a.s(["notify",0,c])},84717,a=>{"use strict";var b=a.i(12406);a.s([],20720),a.i(20720),a.s(["6058f5d3f42ed3fdd38299424ca67cd5d0b9df99d7",()=>b.createTournament],84717)}];
-
-//# sourceMappingURL=src_0ss8wfu._.js.map

@@ -1,3 +1,0 @@
-module.exports=[67230,a=>{"use strict";var b=a.i(66518);async function c(a){await b.prisma.notification.create({data:{userId:a.userId,type:a.type,title:a.title,body:a.body??null,link:a.link??null,imageUrl:a.imageUrl??null}})}a.s(["notify",0,c])},47110,a=>{"use strict";var b=a.i(12406);a.s([],39521),a.i(39521),a.s(["607fb0a17620d1657e1bc0222de30e0bb8064885bb",()=>b.createSponsor],47110)}];
-
-//# sourceMappingURL=src_0xestvn._.js.map
