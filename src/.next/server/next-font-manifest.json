@@ -1,0 +1,327 @@
+{
+  "app": {
+    "[project]/src/app/[locale]/friends/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/leaderboard/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/matches/[id]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/matches/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/messages/[userId]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/messages/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/news/[slug]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/news/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/players/[username]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/players/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/profile/edit/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/profile/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/sponsors/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/teams/[tag]/chat/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/teams/[tag]/edit/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/teams/[tag]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/teams/new/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/teams/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/tournaments/[slug]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/[locale]/tournaments/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/_not-found/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/inquiries/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/leaderboards/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/matches/[id]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/matches/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/news/new/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/news/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/seasons/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/settings/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/sponsors/[id]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/sponsors/new/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/sponsors/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/teams/[id]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/teams/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/tournaments/[id]/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/tournaments/new/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/tournaments/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ],
+    "[project]/src/app/admin/users/page": [
+      "static/media/8a480f0b521d4e75-s.p.06d3mdzz5bre_.woff2",
+      "static/media/caa3a2e1cccd8315-s.p.16t1db8_9y2o~.woff2",
+      "static/media/4e1c87b7aa9e2f2f-s.p.12gpghvmuotht.woff2",
+      "static/media/b59689b1142d37ce-s.p.0f8~qglggluhl.woff2",
+      "static/media/cc545e633e20c56d-s.p.0dza.stei.9v7.woff2",
+      "static/media/70bc3e132a0a741e-s.p.1409xf.ylxg8g.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

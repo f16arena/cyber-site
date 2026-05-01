@@ -200,7 +200,7 @@ function FriendRow({
         )}
       </div>
       <Link
-        href={`/players/${friend.username}`}
+        href={`/players/${encodeURIComponent(friend.username)}`}
         className="flex-1 min-w-0 font-bold hover:text-violet-200"
       >
         {friend.username}

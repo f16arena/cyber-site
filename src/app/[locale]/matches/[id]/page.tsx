@@ -203,7 +203,7 @@ export default async function MatchDetailPage({
                   MVP матча
                 </div>
                 <Link
-                  href={`/players/${match.mvp.user.username}`}
+                  href={`/players/${encodeURIComponent(match.mvp.user.username)}`}
                   className="text-xl font-black hover:text-amber-200"
                 >
                   {match.mvp.user.username}
@@ -269,7 +269,7 @@ export default async function MatchDetailPage({
                               <td className="p-2">
                                 {u ? (
                                   <Link
-                                    href={`/players/${u.username}`}
+                                    href={`/players/${encodeURIComponent(u.username)}`}
                                     className="hover:text-violet-300 font-medium"
                                   >
                                     {u.username}

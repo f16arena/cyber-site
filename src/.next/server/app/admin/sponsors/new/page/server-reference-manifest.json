@@ -1,0 +1,17 @@
+{
+  "node": {
+    "607fb0a17620d1657e1bc0222de30e0bb8064885bb": {
+      "workers": {
+        "app/admin/sponsors/new/page": {
+          "moduleId": 47110,
+          "async": false,
+          "exportedName": "createSponsor",
+          "filename": "src/app/admin/actions.ts"
+        }
+      },
+      "exportedName": "createSponsor",
+      "filename": "src/app/admin/actions.ts"
+    }
+  },
+  "edge": {}
+}

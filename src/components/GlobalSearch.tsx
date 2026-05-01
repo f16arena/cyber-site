@@ -97,7 +97,7 @@ export function GlobalSearch() {
               {results.players.map((p) => (
                 <Link
                   key={p.username}
-                  href={`/players/${p.username}`}
+                  href={`/players/${encodeURIComponent(p.username)}`}
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 hover:bg-violet-500/10 text-sm"
                 >

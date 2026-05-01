@@ -129,7 +129,7 @@ export default async function TeamEditPage({
                   )}
                   <div className="flex-1 min-w-0">
                     <Link
-                      href={`/players/${r.user.username}`}
+                      href={`/players/${encodeURIComponent(r.user.username)}`}
                       className="font-bold text-sm hover:text-violet-200"
                     >
                       {r.user.username}

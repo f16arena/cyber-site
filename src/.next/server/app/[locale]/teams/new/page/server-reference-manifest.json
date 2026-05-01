@@ -1,0 +1,17 @@
+{
+  "node": {
+    "607b9f4a4c9af057121e58318568e08508fb87d94d": {
+      "workers": {
+        "app/[locale]/teams/new/page": {
+          "moduleId": 43773,
+          "async": false,
+          "exportedName": "createTeam",
+          "filename": "src/app/[locale]/teams/actions.ts"
+        }
+      },
+      "exportedName": "createTeam",
+      "filename": "src/app/[locale]/teams/actions.ts"
+    }
+  },
+  "edge": {}
+}

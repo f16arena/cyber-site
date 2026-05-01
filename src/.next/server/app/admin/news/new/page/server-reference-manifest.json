@@ -1,0 +1,17 @@
+{
+  "node": {
+    "6069eef792137c1f34c4391b90b13b49836c7819ac": {
+      "workers": {
+        "app/admin/news/new/page": {
+          "moduleId": 76636,
+          "async": false,
+          "exportedName": "createNews",
+          "filename": "src/app/admin/actions.ts"
+        }
+      },
+      "exportedName": "createNews",
+      "filename": "src/app/admin/actions.ts"
+    }
+  },
+  "edge": {}
+}

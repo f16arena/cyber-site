@@ -49,7 +49,7 @@ export default async function AdminUsersPage() {
               )}
               <div className="flex-1 min-w-0">
                 <Link
-                  href={`/players/${u.username}`}
+                  href={`/players/${encodeURIComponent(u.username)}`}
                   className="font-bold hover:text-violet-200"
                 >
                   {u.username}

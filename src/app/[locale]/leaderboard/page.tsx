@@ -138,7 +138,7 @@ export default async function LeaderboardPage({
                   return (
                     <li key={stat.userId}>
                       <Link
-                        href={`/players/${u.username}`}
+                        href={`/players/${encodeURIComponent(u.username)}`}
                         className="flex items-center gap-3 p-2 hover:bg-zinc-800/50 rounded transition-colors"
                       >
                         <span
@@ -231,7 +231,7 @@ export default async function LeaderboardPage({
                   return (
                     <li key={m.userId}>
                       <Link
-                        href={`/players/${u.username}`}
+                        href={`/players/${encodeURIComponent(u.username)}`}
                         className="flex items-center gap-3 p-2 hover:bg-zinc-800/50 rounded transition-colors"
                       >
                         <span

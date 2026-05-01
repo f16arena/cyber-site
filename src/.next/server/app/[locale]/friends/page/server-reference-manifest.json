@@ -1,0 +1,53 @@
+{
+  "node": {
+    "401538c34d3093c5366e0cd64f245bdeb9a35da8ee": {
+      "workers": {
+        "app/[locale]/friends/page": {
+          "moduleId": 53509,
+          "async": false,
+          "exportedName": "declineFriend",
+          "filename": "src/app/[locale]/friends/actions.ts"
+        }
+      },
+      "exportedName": "declineFriend",
+      "filename": "src/app/[locale]/friends/actions.ts"
+    },
+    "402ca9df48ea8f4dc7bcbd851eec75bde99e2044aa": {
+      "workers": {
+        "app/[locale]/friends/page": {
+          "moduleId": 53509,
+          "async": false,
+          "exportedName": "removeFriend",
+          "filename": "src/app/[locale]/friends/actions.ts"
+        }
+      },
+      "exportedName": "removeFriend",
+      "filename": "src/app/[locale]/friends/actions.ts"
+    },
+    "4096183ce9cd3fa96e155195f390a6397de41d82e2": {
+      "workers": {
+        "app/[locale]/friends/page": {
+          "moduleId": 53509,
+          "async": false,
+          "exportedName": "sendFriendRequest",
+          "filename": "src/app/[locale]/friends/actions.ts"
+        }
+      },
+      "exportedName": "sendFriendRequest",
+      "filename": "src/app/[locale]/friends/actions.ts"
+    },
+    "409a917997a58dc095c4c1a5bd4c522c2f5b823b5e": {
+      "workers": {
+        "app/[locale]/friends/page": {
+          "moduleId": 53509,
+          "async": false,
+          "exportedName": "acceptFriend",
+          "filename": "src/app/[locale]/friends/actions.ts"
+        }
+      },
+      "exportedName": "acceptFriend",
+      "filename": "src/app/[locale]/friends/actions.ts"
+    }
+  },
+  "edge": {}
+}

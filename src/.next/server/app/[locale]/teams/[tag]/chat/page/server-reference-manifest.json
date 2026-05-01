@@ -1,0 +1,17 @@
+{
+  "node": {
+    "40418f37496e9c991ba3e97ca14a53e1574f223dc3": {
+      "workers": {
+        "app/[locale]/teams/[tag]/chat/page": {
+          "moduleId": 50622,
+          "async": false,
+          "exportedName": "sendTeamMessage",
+          "filename": "src/app/[locale]/messages/actions.ts"
+        }
+      },
+      "exportedName": "sendTeamMessage",
+      "filename": "src/app/[locale]/messages/actions.ts"
+    }
+  },
+  "edge": {}
+}

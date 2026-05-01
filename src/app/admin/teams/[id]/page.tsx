@@ -92,7 +92,7 @@ export default async function AdminTeamEditPage({
                 <div className="w-8 h-8 rounded bg-violet-500/20" />
               )}
               <Link
-                href={`/players/${m.user.username}`}
+                href={`/players/${encodeURIComponent(m.user.username)}`}
                 className="font-bold text-sm hover:text-violet-200"
               >
                 {m.user.username}

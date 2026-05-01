@@ -20,24 +20,40 @@ export default async function PlayerPublicPage({
   params: Promise<{ username: string }>;
 }) {
   const { username: rawUsername } = await params;
-  const username = decodeURIComponent(rawUsername);
+  let username: string;
+  try {
+    username = decodeURIComponent(rawUsername);
+  } catch {
+    username = rawUsername;
+  }
 
-  const user = await prisma.user.findUnique({
+  // Сначала точный поиск, затем case-insensitive (на случай разных регистров в URL)
+  let user = await prisma.user.findUnique({
     where: { username },
     include: {
       profiles: true,
-      teamMemberships: {
-        include: { team: true },
-      },
+      teamMemberships: { include: { team: true } },
       mvpAwards: {
-        include: {
-          tournament: { select: { name: true, slug: true, game: true } },
-        },
+        include: { tournament: { select: { name: true, slug: true, game: true } } },
         orderBy: { createdAt: "desc" },
         take: 10,
       },
     },
   });
+  if (!user) {
+    user = await prisma.user.findFirst({
+      where: { username: { equals: username, mode: "insensitive" } },
+      include: {
+        profiles: true,
+        teamMemberships: { include: { team: true } },
+        mvpAwards: {
+          include: { tournament: { select: { name: true, slug: true, game: true } } },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+      },
+    });
+  }
 
   if (!user) notFound();
 

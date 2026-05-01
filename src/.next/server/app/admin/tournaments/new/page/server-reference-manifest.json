@@ -1,0 +1,17 @@
+{
+  "node": {
+    "6058f5d3f42ed3fdd38299424ca67cd5d0b9df99d7": {
+      "workers": {
+        "app/admin/tournaments/new/page": {
+          "moduleId": 84717,
+          "async": false,
+          "exportedName": "createTournament",
+          "filename": "src/app/admin/actions.ts"
+        }
+      },
+      "exportedName": "createTournament",
+      "filename": "src/app/admin/actions.ts"
+    }
+  },
+  "edge": {}
+}

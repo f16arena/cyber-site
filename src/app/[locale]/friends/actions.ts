@@ -44,7 +44,7 @@ export async function sendFriendRequest(formData: FormData) {
   });
 
   revalidatePath("/friends");
-  revalidatePath(`/players/${targetUsername}`);
+  revalidatePath(`/players/${encodeURIComponent(targetUsername)}`);
 }
 
 export async function acceptFriend(formData: FormData) {

@@ -92,7 +92,7 @@ export function TeamChatWindow({
                 className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}
               >
                 <Link
-                  href={`/players/${m.sender.username}`}
+                  href={`/players/${encodeURIComponent(m.sender.username)}`}
                   className="shrink-0"
                 >
                   {m.sender.avatarUrl ? (
@@ -110,7 +110,7 @@ export function TeamChatWindow({
                   className={`max-w-[70%] ${mine ? "text-right" : ""}`}
                 >
                   <Link
-                    href={`/players/${m.sender.username}`}
+                    href={`/players/${encodeURIComponent(m.sender.username)}`}
                     className="text-[10px] font-mono text-zinc-400 hover:text-violet-300"
                   >
                     {m.sender.username}

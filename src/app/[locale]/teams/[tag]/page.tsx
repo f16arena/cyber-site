@@ -265,7 +265,7 @@ export default async function TeamPage({
                   className="rounded-lg border border-zinc-800 bg-zinc-900/40 hover:border-violet-500/30 transition-colors overflow-hidden"
                 >
                   <Link
-                    href={`/players/${m.user.username}`}
+                    href={`/players/${encodeURIComponent(m.user.username)}`}
                     className="flex items-center gap-3 p-4 hover:bg-zinc-800/30 transition-colors"
                   >
                     {m.user.avatarUrl ? (
@@ -304,7 +304,7 @@ export default async function TeamPage({
                         💬 Написать
                       </Link>
                       <Link
-                        href={`/players/${m.user.username}`}
+                        href={`/players/${encodeURIComponent(m.user.username)}`}
                         className="flex-1 text-center py-2 text-[10px] font-mono text-zinc-400 hover:bg-violet-500/10 hover:text-violet-300 transition-colors"
                       >
                         👥 Профиль

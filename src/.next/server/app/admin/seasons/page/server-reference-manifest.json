@@ -1,0 +1,17 @@
+{
+  "node": {
+    "60c2f7ca98019dc59412028ce14b1e0889e285da8e": {
+      "workers": {
+        "app/admin/seasons/page": {
+          "moduleId": 47023,
+          "async": false,
+          "exportedName": "createSeason",
+          "filename": "src/app/admin/actions.ts"
+        }
+      },
+      "exportedName": "createSeason",
+      "filename": "src/app/admin/actions.ts"
+    }
+  },
+  "edge": {}
+}

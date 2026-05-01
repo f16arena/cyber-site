@@ -72,7 +72,7 @@ export default async function DirectMessagesPage({
             </div>
             <div className="flex-1 min-w-0">
               <Link
-                href={`/players/${other.username}`}
+                href={`/players/${encodeURIComponent(other.username)}`}
                 className="font-bold hover:text-violet-200"
               >
                 {other.username}
