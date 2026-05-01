@@ -1171,7 +1171,7 @@ export async function createWorldNews(
     }
   }
 
-  await prisma.worldNews.create({
+  const created = await prisma.worldNews.create({
     data: {
       title,
       excerpt: excerpt || null,
@@ -1192,6 +1192,17 @@ export async function createWorldNews(
       isPublished: true,
     },
   });
+
+  const coverFile = formData.get("cover") as File | null;
+  if (coverFile && coverFile.size > 0) {
+    const result = await uploadImage("team-logos", `world-news-${created.id}`, coverFile);
+    if (result.ok) {
+      await prisma.worldNews.update({
+        where: { id: created.id },
+        data: { imageUrl: result.publicUrl },
+      });
+    }
+  }
 
   revalidatePath("/world-news");
   revalidatePath("/admin/world-news");
@@ -1302,7 +1313,7 @@ export async function createNews(
   const exists = await prisma.news.findUnique({ where: { slug } });
   if (exists) return { error: "Slug уже занят" };
 
-  await prisma.news.create({
+  const created = await prisma.news.create({
     data: {
       title,
       slug,
@@ -1314,6 +1325,17 @@ export async function createNews(
       publishedAt: publishNow ? new Date() : null,
     },
   });
+
+  const coverFile = formData.get("cover") as File | null;
+  if (coverFile && coverFile.size > 0) {
+    const result = await uploadImage("team-logos", `news-${created.id}`, coverFile);
+    if (result.ok) {
+      await prisma.news.update({
+        where: { id: created.id },
+        data: { coverUrl: result.publicUrl },
+      });
+    }
+  }
 
   revalidatePath("/");
   revalidatePath("/admin/news");

@@ -8,7 +8,7 @@ const initialState: ActionState = {};
 export function NewsCreateForm() {
   const [state, action, pending] = useActionState(createNews, initialState);
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} encType="multipart/form-data" className="space-y-5">
       {state.error && (
         <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 p-4 text-sm">
           {state.error}
@@ -75,6 +75,18 @@ export function NewsCreateForm() {
           className={`${inputCls} resize-none h-auto font-mono`}
           placeholder="Полный текст..."
         />
+      </Field>
+
+      <Field label="Обложка (необязательно)">
+        <input
+          type="file"
+          name="cover"
+          accept="image/png,image/jpeg,image/webp"
+          className="text-sm text-zinc-300 file:mr-3 file:rounded file:border-0 file:bg-violet-500/15 file:text-violet-200 file:px-3 file:py-2 file:font-mono file:text-xs file:uppercase file:tracking-wider hover:file:bg-violet-500/25 file:cursor-pointer"
+        />
+        <span className="text-[11px] text-zinc-500 font-mono">
+          PNG/JPG/WebP до 1 МБ. Лучше 16:9 (1280×720).
+        </span>
       </Field>
 
       <label className="flex items-center gap-2 text-sm">
