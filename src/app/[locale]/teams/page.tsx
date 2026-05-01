@@ -34,10 +34,12 @@ const GAME_ACCENT: Record<Game, string> = {
   PUBG: "border-yellow-500/40 bg-yellow-500/5",
 };
 
+const VALID_REGIONS = Object.keys(REGION_LABEL) as Region[];
+
 export default async function TeamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ game?: string }>;
+  searchParams: Promise<{ game?: string; region?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const gameFilter = params.game?.toUpperCase();
@@ -45,9 +47,27 @@ export default async function TeamsPage({
     ? (gameFilter as Game)
     : null;
 
+  const regionFilter = params.region?.toUpperCase();
+  const validRegion = VALID_REGIONS.includes(regionFilter as Region)
+    ? (regionFilter as Region)
+    : null;
+
+  const q = (params.q || "").trim().slice(0, 64);
+
   const [teams, user] = await Promise.all([
     prisma.team.findMany({
-      where: validGame ? { game: validGame } : {},
+      where: {
+        ...(validGame ? { game: validGame } : {}),
+        ...(validRegion ? { region: validRegion } : {}),
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { tag: { contains: q.toUpperCase() } },
+              ],
+            }
+          : {}),
+      },
       include: {
         captain: { select: { username: true, avatarUrl: true } },
         _count: { select: { members: true } },
@@ -82,12 +102,42 @@ export default async function TeamsPage({
           )}
         </div>
 
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <form className="mb-4 flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Поиск по названию или тегу"
+            className="flex-1 min-w-[220px] bg-zinc-900/60 border border-zinc-700 rounded h-10 px-4 text-sm focus:outline-none focus:border-violet-400"
+          />
+          {validGame && <input type="hidden" name="game" value={validGame.toLowerCase()} />}
+          {validRegion && <input type="hidden" name="region" value={validRegion.toLowerCase()} />}
+          <button
+            type="submit"
+            className="h-10 px-5 rounded font-mono text-xs uppercase tracking-wider border border-violet-500/40 text-violet-200 hover:bg-violet-500/15"
+          >
+            Искать
+          </button>
+          {(q || validGame || validRegion) && (
+            <Link
+              href="/teams"
+              className="h-10 inline-flex items-center px-3 text-xs font-mono text-zinc-500 hover:text-rose-300"
+            >
+              ✕ сбросить
+            </Link>
+          )}
+        </form>
+
+        <div className="flex gap-2 mb-3 flex-wrap">
           {GAME_FILTERS.map((f) => {
             const active =
               (f.value === "ALL" && !validGame) ||
               (validGame && f.value === validGame);
-            const href = f.value === "ALL" ? "/teams" : `/teams?game=${f.value.toLowerCase()}`;
+            const linkParams = new URLSearchParams();
+            if (f.value !== "ALL") linkParams.set("game", f.value.toLowerCase());
+            if (validRegion) linkParams.set("region", validRegion.toLowerCase());
+            if (q) linkParams.set("q", q);
+            const href = "/teams" + (linkParams.toString() ? `?${linkParams}` : "");
             return (
               <Link
                 key={f.value}
@@ -99,6 +149,30 @@ export default async function TeamsPage({
                 }`}
               >
                 {f.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-1.5 mb-6 flex-wrap">
+          {([null, ...VALID_REGIONS] as Array<Region | null>).map((r) => {
+            const active = (r === null && !validRegion) || r === validRegion;
+            const linkParams = new URLSearchParams();
+            if (r) linkParams.set("region", r.toLowerCase());
+            if (validGame) linkParams.set("game", validGame.toLowerCase());
+            if (q) linkParams.set("q", q);
+            const href = "/teams" + (linkParams.toString() ? `?${linkParams}` : "");
+            return (
+              <Link
+                key={r ?? "ALL"}
+                href={href}
+                className={`px-3 h-7 inline-flex items-center text-[11px] font-mono rounded border transition-all ${
+                  active
+                    ? "bg-fuchsia-500/15 text-fuchsia-200 border-fuchsia-500/50"
+                    : "border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                }`}
+              >
+                {r === null ? "Все регионы" : REGION_LABEL[r]}
               </Link>
             );
           })}

@@ -296,6 +296,149 @@ async function main() {
   }
   console.log(`  ✓ ${worldNews.length} world news`);
 
+  // 6. LFG posts (чтобы /players не пустовала)
+  const lfgSeed = [
+    {
+      authorId: users[3].id,
+      game: "CS2" as const,
+      description:
+        "Ищу команду для regulars. Premier 18k, играю с 19:00 каждый день. Микро есть, общение спокойное.",
+      inGameRole: "Rifler",
+      region: "SHYMKENT" as const,
+    },
+    {
+      authorId: users[4].id,
+      game: "CS2" as const,
+      description:
+        "Support player из Караганды, ищу состав для FACEIT и местных турниров. 3 года в CS.",
+      inGameRole: "Support",
+      region: "KARAGANDA" as const,
+    },
+    {
+      authorId: users[5].id,
+      game: "DOTA2" as const,
+      description: "Carry, MMR 4500. Ищу stack для каждодневных каток вечером.",
+      inGameRole: "Carry",
+      region: "ASTANA" as const,
+    },
+  ];
+  for (const post of lfgSeed) {
+    const existing = await prisma.lfgPost.findFirst({
+      where: { authorId: post.authorId, game: post.game, isActive: true },
+    });
+    if (!existing) await prisma.lfgPost.create({ data: post });
+  }
+  console.log(`  ✓ ${lfgSeed.length} LFG posts`);
+
+  // 7. Demo match (Tulpar vs Aqsunqar, FINISHED)
+  const tlp = teams.find((t) => t.tag === "TLP")!;
+  const aqs = teams.find((t) => t.tag === "AQS")!;
+
+  let demoMatch = await prisma.match.findFirst({
+    where: {
+      tournamentId: tournament.id,
+      teamAId: tlp.id,
+      teamBId: aqs.id,
+    },
+  });
+  if (!demoMatch) {
+    demoMatch = await prisma.match.create({
+      data: {
+        tournamentId: tournament.id,
+        teamAId: tlp.id,
+        teamBId: aqs.id,
+        scoreA: 16,
+        scoreB: 12,
+        winnerId: tlp.id,
+        bracketSide: "UPPER",
+        round: 1,
+        bracketPosition: 1,
+        bestOf: 1,
+        stage: "UB Round 1",
+        status: "FINISHED",
+        map: "de_mirage",
+        finishedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  // Stats для команды Tulpar (5 игроков, чтобы лидерборд получил данные)
+  const cs2Members = await prisma.teamMember.findMany({
+    where: { teamId: tlp.id },
+    select: { userId: true },
+    take: 5,
+  });
+  const playerStats = [
+    { kills: 24, deaths: 14, assists: 5, adr: 92, hsPct: 47, kast: 76, isMvp: true },
+    { kills: 19, deaths: 16, assists: 7, adr: 78, hsPct: 38, kast: 71, isMvp: false },
+    { kills: 17, deaths: 15, assists: 9, adr: 71, hsPct: 41, kast: 73, isMvp: false },
+    { kills: 14, deaths: 17, assists: 11, adr: 64, hsPct: 36, kast: 70, isMvp: false },
+    { kills: 12, deaths: 15, assists: 13, adr: 58, hsPct: 33, kast: 74, isMvp: false },
+  ];
+  for (let i = 0; i < cs2Members.length && i < playerStats.length; i++) {
+    const s = playerStats[i];
+    const rating =
+      (s.kills / Math.max(s.deaths, 1)) * 0.5 +
+      (s.adr / 100) * 0.3 +
+      (s.kast / 100) * 0.2;
+    await prisma.matchPlayerStat.upsert({
+      where: { matchId_userId: { matchId: demoMatch.id, userId: cs2Members[i].userId } },
+      create: {
+        matchId: demoMatch.id,
+        userId: cs2Members[i].userId,
+        teamId: tlp.id,
+        game: "CS2",
+        kills: s.kills,
+        deaths: s.deaths,
+        assists: s.assists,
+        rating,
+        isMvp: s.isMvp,
+        extra: { adr: s.adr, hsPct: s.hsPct, kast: s.kast },
+      },
+      update: {},
+    });
+  }
+  console.log("  ✓ demo match + player stats");
+
+  // MVP для матча
+  const mvpMember = cs2Members[0];
+  if (mvpMember) {
+    await prisma.mvpAward.upsert({
+      where: { matchId: demoMatch.id },
+      create: {
+        userId: mvpMember.userId,
+        matchId: demoMatch.id,
+        tournamentId: tournament.id,
+      },
+      update: {},
+    });
+  }
+
+  // 8. Sponsorship inquiries (чтобы у админа в /admin/inquiries было что-то)
+  const inquirySeed = [
+    {
+      companyName: "Beeline Kazakhstan",
+      contactName: "Айгуль Серикова",
+      email: "marketing@beeline.kz",
+      tier: "GOLD" as const,
+      message: "Интересно обсудить title-спонсорство весеннего сезона CS2.",
+    },
+    {
+      companyName: "Razer KZ Distributor",
+      contactName: "Manager",
+      email: "demo@razer-kz.example",
+      tier: "SILVER" as const,
+      message: "Готовы поставить мерч и периферию для турниров. Когда удобно созвониться?",
+    },
+  ];
+  for (const inq of inquirySeed) {
+    const exists = await prisma.sponsorshipInquiry.findFirst({
+      where: { email: inq.email, companyName: inq.companyName },
+    });
+    if (!exists) await prisma.sponsorshipInquiry.create({ data: inq });
+  }
+  console.log(`  ✓ ${inquirySeed.length} sponsor inquiries`);
+
   console.log("✓ Seed complete");
 }
 
