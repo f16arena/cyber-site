@@ -42,7 +42,7 @@ export function TeamChatWindow({
         }
       } catch {}
     };
-    const interval = setInterval(tick, 4000);
+    const interval = setInterval(tick, 6000);
     return () => clearInterval(interval);
   }, [teamId]);
 

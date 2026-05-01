@@ -70,101 +70,77 @@ export default async function PlayerPublicPage({
       })
     : null;
 
-  // Агрегированная статистика по матчам
-  const [aggStats, recentStats, allStats, mapStats, wonMatchesCount] =
-    await Promise.all([
-      prisma.matchPlayerStat.groupBy({
-        by: ["game"],
-        where: { userId: user.id },
-        _sum: { kills: true, deaths: true, assists: true },
-        _avg: { rating: true },
-        _count: { _all: true },
-      }),
-      prisma.matchPlayerStat.findMany({
-        where: { userId: user.id },
-        orderBy: { recordedAt: "desc" },
-        take: 10,
-        select: {
-          id: true,
-          kills: true,
-          deaths: true,
-          assists: true,
-          rating: true,
-          isMvp: true,
-          game: true,
-          extra: true,
-          matchId: true,
-          recordedAt: true,
-        },
-      }),
-      // ВСЕ матчи игрока — для перекрёстного агрегирования с матчами и картами
-      prisma.matchPlayerStat.findMany({
-        where: { userId: user.id },
-        select: {
-          kills: true,
-          deaths: true,
-          assists: true,
-          mvpRounds: true,
-          rating: true,
-          extra: true,
-          teamId: true,
-          match: { select: { map: true, winnerId: true, status: true } },
-        },
-      }),
-      // Карты + win count для них (через MatchPlayerStat и связанный Match)
-      prisma.match.findMany({
-        where: {
-          status: "FINISHED",
-          map: { not: null },
-          OR: [
-            { teamA: { members: { some: { userId: user.id } } } },
-            { teamB: { members: { some: { userId: user.id } } } },
-          ],
-        },
-        select: {
-          id: true,
-          map: true,
-          winnerId: true,
-          teamAId: true,
-          teamBId: true,
-        },
-      }),
-      prisma.match.count({
-        where: {
-          status: "FINISHED",
-          OR: [
-            {
-              teamAId: {
-                in: (
-                  await prisma.teamMember.findMany({
-                    where: { userId: user.id },
-                    select: { teamId: true },
-                  })
-                ).map((m) => m.teamId),
-              },
-            },
-            {
-              teamBId: {
-                in: (
-                  await prisma.teamMember.findMany({
-                    where: { userId: user.id },
-                    select: { teamId: true },
-                  })
-                ).map((m) => m.teamId),
-              },
-            },
-          ],
-          winnerId: {
-            in: (
-              await prisma.teamMember.findMany({
-                where: { userId: user.id },
-                select: { teamId: true },
-              })
-            ).map((m) => m.teamId),
+  // Сначала получаем командный список (один запрос)
+  const myTeams = await prisma.teamMember.findMany({
+    where: { userId: user.id },
+    select: { teamId: true },
+  });
+  const myTeamIds = myTeams.map((m) => m.teamId);
+
+  // Параллельно — статистика и матчи
+  const [aggStats, recentStats, allStats, allMatches] = await Promise.all([
+    prisma.matchPlayerStat.groupBy({
+      by: ["game"],
+      where: { userId: user.id },
+      _sum: { kills: true, deaths: true, assists: true },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+    prisma.matchPlayerStat.findMany({
+      where: { userId: user.id },
+      orderBy: { recordedAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        kills: true,
+        deaths: true,
+        assists: true,
+        rating: true,
+        isMvp: true,
+        game: true,
+        extra: true,
+        matchId: true,
+        recordedAt: true,
+      },
+    }),
+    prisma.matchPlayerStat.findMany({
+      where: { userId: user.id },
+      select: {
+        kills: true,
+        deaths: true,
+        assists: true,
+        mvpRounds: true,
+        rating: true,
+        extra: true,
+        teamId: true,
+      },
+    }),
+    myTeamIds.length > 0
+      ? prisma.match.findMany({
+          where: {
+            status: "FINISHED",
+            OR: [
+              { teamAId: { in: myTeamIds } },
+              { teamBId: { in: myTeamIds } },
+            ],
           },
-        },
-      }),
-    ]);
+          select: {
+            id: true,
+            map: true,
+            winnerId: true,
+            teamAId: true,
+            teamBId: true,
+          },
+          take: 100,
+        })
+      : Promise.resolve([]),
+  ]);
+
+  // Считаем wins и mapStats из allMatches в JS (без доп. запросов к БД)
+  const wonMatchesCount = allMatches.filter(
+    (m) => m.winnerId && myTeamIds.includes(m.winnerId)
+  ).length;
+  const mapStats = allMatches.filter((m) => m.map);
 
   // Базовые агрегаты
   const matchesPlayed = allStats.length;
@@ -244,13 +220,10 @@ export default async function PlayerPublicPage({
     string,
     { played: number; wins: number }
   >();
-  const myTeamIdsSet = new Set(allStats.map((s) => s.teamId));
+  const myTeamIdsSet = new Set(myTeamIds);
   for (const m of mapStats) {
     if (!m.map) continue;
-    const mine =
-      myTeamIdsSet.has(m.teamAId ?? "") || myTeamIdsSet.has(m.teamBId ?? "");
-    if (!mine) continue;
-    const won = m.winnerId !== null && myTeamIdsSet.has(m.winnerId);
+    const won = m.winnerId !== null && myTeamIdsSet.has(m.winnerId ?? "");
     const cur = mapBreakdown.get(m.map) || { played: 0, wins: 0 };
     cur.played++;
     if (won) cur.wins++;

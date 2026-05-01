@@ -1,6 +1,24 @@
-import { getMarketTicker } from "@/lib/market";
+"use client";
 
-function fmtMoney(n: number | null, decimals = 1): string {
+import { useEffect, useState } from "react";
+
+type SkinPrice = {
+  name: string;
+  shortName: string;
+  priceUsd: number | null;
+};
+
+type MarketData = {
+  currencies: {
+    usdToKzt: number | null;
+    usdToRub: number | null;
+    usdToEur: number | null;
+  };
+  skins: SkinPrice[];
+  updatedAt: string;
+};
+
+function fmt(n: number | null, decimals = 1): string {
   if (n === null || isNaN(n)) return "—";
   return n.toLocaleString("ru-RU", {
     minimumFractionDigits: decimals,
@@ -8,33 +26,48 @@ function fmtMoney(n: number | null, decimals = 1): string {
   });
 }
 
-function fmtUsd(n: number | null): string {
-  if (n === null || isNaN(n)) return "—";
-  return `$${n.toFixed(2)}`;
-}
+export function MarketTicker() {
+  const [data, setData] = useState<MarketData | null>(null);
 
-export async function MarketTicker() {
-  const data = await getMarketTicker();
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/market", { cache: "force-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: MarketData | null) => {
+        if (!cancelled && d) setData(d);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!data) {
+    // Skeleton — место зарезервировано, не дёргается layout
+    return (
+      <div className="overflow-hidden border-b border-zinc-800/60 bg-zinc-950/95 backdrop-blur h-7" />
+    );
+  }
 
   const items: Array<{ label: string; value: string; cls?: string }> = [];
 
   if (data.currencies.usdToKzt) {
     items.push({
       label: "USD",
-      value: `${fmtMoney(data.currencies.usdToKzt, 0)} ₸`,
+      value: `${fmt(data.currencies.usdToKzt, 0)} ₸`,
       cls: "text-emerald-300",
     });
   }
   if (data.currencies.usdToRub) {
     items.push({
       label: "USD/RUB",
-      value: `${fmtMoney(data.currencies.usdToRub, 2)} ₽`,
+      value: `${fmt(data.currencies.usdToRub, 2)} ₽`,
     });
   }
   if (data.currencies.usdToEur) {
     items.push({
       label: "EUR/USD",
-      value: `${fmtMoney(1 / data.currencies.usdToEur, 2)}`,
+      value: `${fmt(1 / data.currencies.usdToEur, 2)}`,
     });
   }
 
@@ -42,17 +75,14 @@ export async function MarketTicker() {
     if (s.priceUsd) {
       items.push({
         label: s.shortName,
-        value: fmtUsd(s.priceUsd),
+        value: `$${s.priceUsd.toFixed(2)}`,
         cls: "text-amber-200",
       });
     }
   }
 
-  if (items.length === 0) {
-    return null;
-  }
+  if (items.length === 0) return null;
 
-  // Дублируем для бесконечной прокрутки
   const doubled = [...items, ...items];
 
   return (

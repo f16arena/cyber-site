@@ -40,7 +40,7 @@ export function ChatWindow({
         // ignore network blips
       }
     };
-    const interval = setInterval(tick, 4000);
+    const interval = setInterval(tick, 6000);
     return () => clearInterval(interval);
   }, [otherId]);
 
