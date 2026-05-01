@@ -196,7 +196,7 @@ export default async function TournamentDetailPage({
               {tournament.format}
             </span>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
+          <h1 className="text-2xl sm:text-4xl font-display font-bold tracking-tight">
             {tournament.name}
           </h1>
           <div className="grid sm:grid-cols-4 gap-4 mt-6">

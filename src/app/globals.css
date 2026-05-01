@@ -27,6 +27,8 @@ body {
 
 body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
   background-image:
     radial-gradient(ellipse 80% 60% at 50% -20%, rgba(167, 139, 250, 0.15), transparent 60%),
     radial-gradient(ellipse 60% 50% at 90% 10%, rgba(244, 63, 94, 0.10), transparent 60%),
@@ -36,6 +38,7 @@ body {
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* Display-шрифт для больших заголовков и брендовых элементов */
@@ -43,7 +46,19 @@ h1,
 h2,
 .font-display {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+/* H3+ нормальной плотности */
+h3, h4, h5 {
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+
+/* Параграфы и обычный текст — комфортный leading */
+p {
+  line-height: 1.6;
 }
 
 .font-mono,

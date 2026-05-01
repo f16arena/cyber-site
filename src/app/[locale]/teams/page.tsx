@@ -87,7 +87,7 @@ export default async function TeamsPage({
             <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
               // Teams
             </p>
-            <h1 className="text-4xl font-black tracking-tight">Команды</h1>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Команды</h1>
             <p className="text-zinc-400 mt-2">
               {teams.length} {pluralRu(teams.length, "команда", "команды", "команд")} в базе
             </p>
@@ -213,7 +213,7 @@ export default async function TeamsPage({
                     [{team.tag}]
                   </span>
                 </div>
-                <h3 className="text-xl font-black tracking-tight group-hover:text-violet-200 transition-colors">
+                <h3 className="text-lg font-bold tracking-tight group-hover:text-violet-200 transition-colors">
                   {team.name}
                 </h3>
                 {team.region && (

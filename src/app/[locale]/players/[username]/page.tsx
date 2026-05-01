@@ -331,7 +331,7 @@ export default async function PlayerPublicPage({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-black tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">
                   {user.username}
                 </h1>
                 {user.isAdmin && (
@@ -879,13 +879,13 @@ function BigStat({
   hint?: string;
 }) {
   const padding = tiny ? "p-2.5" : small ? "p-3" : "p-4 sm:p-5";
-  const fontSize = tiny ? "text-base" : small ? "text-xl" : "text-2xl sm:text-3xl";
+  const fontSize = tiny ? "text-base" : small ? "text-lg" : "text-xl sm:text-2xl";
   return (
     <div
       className={`bg-zinc-950/60 backdrop-blur ${padding} text-center`}
       title={hint}
     >
-      <div className={`${fontSize} font-display font-black ${accent ?? "text-zinc-100"}`}>
+      <div className={`${fontSize} font-display font-extrabold ${accent ?? "text-zinc-100"}`}>
         {value}
       </div>
       <div className="text-[9px] uppercase tracking-wider text-zinc-500 mt-1 font-mono">
@@ -906,7 +906,7 @@ function Multikill({
 }) {
   return (
     <div className="text-center rounded-lg bg-zinc-950/40 border border-zinc-800 p-3">
-      <div className={`text-2xl font-display font-black ${color}`}>
+      <div className={`text-xl font-display font-extrabold ${color}`}>
         {value}
       </div>
       <div className="text-[9px] uppercase tracking-widest text-zinc-500 mt-1 font-mono">

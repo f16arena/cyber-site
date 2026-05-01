@@ -230,8 +230,8 @@ export default async function Home({
                   <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
                   {t("season")}
                 </div>
-                <h1 className="text-4xl sm:text-6xl font-black tracking-tighter leading-[0.95]">
-                  <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent text-glow">
+                <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.05]">
+                  <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent">
                     {t("heroTitle")}
                   </span>
                   <span className="block text-zinc-300">{t("heroSubtitle")}</span>
@@ -254,13 +254,13 @@ export default async function Home({
             </div>
 
             {/* Stats — реальные числа из БД */}
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-px bg-violet-500/10 rounded-lg overflow-hidden border border-violet-500/20">
+            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-px bg-violet-500/10 rounded-lg overflow-hidden border border-violet-500/20">
               {statsRow.map((s) => (
                 <div key={s.label} className="bg-zinc-950/80 backdrop-blur p-5 text-center">
-                  <div className="text-3xl font-black bg-gradient-to-b from-violet-300 to-violet-500 bg-clip-text text-transparent">
+                  <div className="text-2xl font-extrabold bg-gradient-to-b from-violet-300 to-violet-500 bg-clip-text text-transparent">
                     {s.value}
                   </div>
-                  <div className="text-xs uppercase tracking-wider text-zinc-500 mt-1 font-mono">
+                  <div className="text-[11px] uppercase tracking-wider text-zinc-500 mt-1 font-mono">
                     {s.label}
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export default async function Home({
 
         {/* HLTV-STYLE 3-COLUMN GRID */}
         <section className="mx-auto max-w-7xl px-6 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_260px] gap-6">
             {/* LEFT — MATCHES */}
             <aside className="space-y-6 lg:sticky lg:top-20 self-start">
               <div>
@@ -461,7 +461,7 @@ export default async function Home({
             {/* CENTER — NEWS FEED */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-black tracking-tight">
+                <h2 className="text-base font-bold tracking-tight">
                   <span className="text-violet-400 font-mono text-xs uppercase tracking-widest mr-2">//</span>
                   Лента новостей
                 </h2>
@@ -487,7 +487,7 @@ export default async function Home({
                         </span>
                       </div>
                       <div className="absolute bottom-4 left-4 right-4">
-                        <h3 className="text-2xl font-black tracking-tight group-hover:text-violet-200 transition-colors">
+                        <h3 className="text-xl sm:text-2xl font-bold tracking-tight group-hover:text-violet-200 transition-colors">
                           {newsFeed[0].title}
                         </h3>
                         {newsFeed[0].excerpt && (
@@ -749,7 +749,7 @@ export default async function Home({
               <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
                 // 01 · Disciplines
               </p>
-              <h2 className="text-3xl font-black tracking-tight">Дисциплины</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Дисциплины</h2>
             </div>
             <Link
               href="/tournaments"
@@ -791,7 +791,7 @@ export default async function Home({
                 <p className="text-fuchsia-400 font-mono text-xs uppercase tracking-widest mb-2">
                   // 03 · Regions
                 </p>
-                <h2 className="text-3xl font-black tracking-tight">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                   Команды по регионам
                 </h2>
                 <p className="text-zinc-500 mt-2 text-sm">
@@ -878,17 +878,17 @@ export default async function Home({
             <p className="text-violet-300 font-mono text-xs uppercase tracking-widest mb-3">
               // Для брендов
             </p>
-            <h2 className="text-3xl sm:text-5xl font-display font-black tracking-tighter leading-[1.05] max-w-3xl">
+            <h2 className="text-2xl sm:text-4xl font-display font-bold tracking-tight leading-[1.1] max-w-2xl">
               <span className="block text-zinc-300">Хочешь быть в&nbsp;ногу</span>
               <span className="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent">
                 с&nbsp;молодёжью Казахстана?
               </span>
             </h2>
-            <p className="text-zinc-400 mt-6 text-lg max-w-2xl leading-relaxed">
+            <p className="text-zinc-400 mt-5 text-base max-w-xl leading-relaxed">
               Прорекламировать свой продукт там, где её внимание не делится между
               десятком вкладок? Получить лояльных клиентов, а не разовые показы?
             </p>
-            <p className="text-zinc-300 mt-4 text-lg max-w-2xl">
+            <p className="text-zinc-300 mt-3 text-base max-w-xl">
               Свяжись с нами — обсудим программу спонсорства.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">

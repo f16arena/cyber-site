@@ -106,7 +106,7 @@ function PlayerCard({ s, side }: { s: Stats; side: "a" | "b" }) {
       )}
       <Link
         href={`/players/${encodeURIComponent(s.user.username)}`}
-        className="block text-2xl font-black tracking-tight mt-3 hover:text-violet-200"
+        className="block text-lg sm:text-xl font-bold tracking-tight mt-3 hover:text-violet-200"
       >
         {s.user.username}
       </Link>
@@ -136,10 +136,10 @@ export default async function ComparePage({
         <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
           // VS
         </p>
-        <h1 className="text-4xl font-display font-black tracking-tighter mb-2">
+        <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight mb-2">
           Сравнить игроков
         </h1>
-        <p className="text-zinc-400 mb-8">
+        <p className="text-sm text-zinc-400 mb-6">
           Введи два ника и сравни статистику side-by-side.
         </p>
 

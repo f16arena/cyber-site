@@ -112,10 +112,10 @@ export default async function StatsPage() {
         <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
           // Open data
         </p>
-        <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tighter">
+        <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">
           Статистика платформы
         </h1>
-        <p className="text-zinc-400 mt-3 max-w-2xl">
+        <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
           Прозрачные числа Esports.kz. Для прессы, партнёров и спонсоров. Данные
           обновляются в реальном времени.
         </p>
@@ -132,7 +132,7 @@ export default async function StatsPage() {
               <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 {c.label}
               </div>
-              <div className="text-3xl font-black tracking-tight">
+              <div className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 {typeof c.value === "number"
                   ? c.value.toLocaleString("ru-RU")
                   : c.value}
@@ -145,7 +145,7 @@ export default async function StatsPage() {
         </div>
 
         <section className="mt-12 rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 to-transparent p-8">
-          <h2 className="text-2xl font-display font-black tracking-tight mb-3">
+          <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-3">
             Хочешь стать частью этих чисел?
           </h2>
           <p className="text-zinc-400 mb-6 max-w-2xl">

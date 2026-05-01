@@ -191,7 +191,7 @@ export default async function TeamPage({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-black tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">
                   {team.name}
                 </h1>
                 <span className="text-sm font-mono text-zinc-500">

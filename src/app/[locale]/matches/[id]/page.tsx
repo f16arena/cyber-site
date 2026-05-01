@@ -131,7 +131,7 @@ export default async function MatchDetailPage({
 
           <div className="grid grid-cols-3 items-center gap-4">
             <div className="text-right">
-              <div className="text-xl sm:text-3xl font-black tracking-tight">
+              <div className="text-lg sm:text-2xl font-bold tracking-tight">
                 {match.teamA?.name ?? "TBD"}
               </div>
               <div className="text-xs font-mono text-zinc-500">
@@ -139,7 +139,7 @@ export default async function MatchDetailPage({
               </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl sm:text-5xl font-black font-mono">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono">
                 <span
                   className={
                     match.scoreA > match.scoreB
@@ -167,7 +167,7 @@ export default async function MatchDetailPage({
               )}
             </div>
             <div>
-              <div className="text-xl sm:text-3xl font-black tracking-tight">
+              <div className="text-lg sm:text-2xl font-bold tracking-tight">
                 {match.teamB?.name ?? "TBD"}
               </div>
               <div className="text-xs font-mono text-zinc-500">
@@ -256,7 +256,7 @@ export default async function MatchDetailPage({
                 </div>
                 <Link
                   href={`/players/${encodeURIComponent(match.mvp.user.username)}`}
-                  className="text-xl font-black hover:text-amber-200"
+                  className="text-lg font-bold hover:text-amber-200"
                 >
                   {match.mvp.user.username}
                 </Link>

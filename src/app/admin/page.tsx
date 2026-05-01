@@ -134,7 +134,7 @@ export default async function AdminHomePage() {
           // Control Panel
         </p>
       </div>
-      <h1 className="text-4xl font-black tracking-tight mb-8">Админка</h1>
+      <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight mb-6">Админка</h1>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map((c) => (
@@ -149,9 +149,9 @@ export default async function AdminHomePage() {
               <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             )}
             <div className="flex items-start justify-between mb-3">
-              <h2 className="text-xl font-black tracking-tight">{c.title}</h2>
+              <h2 className="text-lg font-bold tracking-tight">{c.title}</h2>
               <div className="text-right">
-                <div className="text-2xl font-black bg-gradient-to-b from-violet-300 to-violet-500 bg-clip-text text-transparent">
+                <div className="text-xl font-extrabold bg-gradient-to-b from-violet-300 to-violet-500 bg-clip-text text-transparent">
                   {c.stat}
                 </div>
                 <div className="text-[9px] font-mono uppercase tracking-wider text-zinc-500">

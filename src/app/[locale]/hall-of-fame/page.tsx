@@ -80,12 +80,12 @@ export default async function HallOfFamePage({
         <p className="text-amber-400 font-mono text-xs uppercase tracking-widest mb-2">
           // Hall of Fame
         </p>
-        <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tighter">
-          <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500 bg-clip-text text-transparent text-glow">
+        <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">
+          <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500 bg-clip-text text-transparent">
             Зал славы
           </span>
         </h1>
-        <p className="text-zinc-400 mt-3 max-w-2xl">
+        <p className="text-sm text-zinc-400 mt-2 max-w-2xl">
           Лучшие казахстанские игроки, получившие MVP-награды на матчах и
           турнирах Esports.kz.
         </p>

@@ -10,12 +10,12 @@ export default function NotFound() {
           <p className="font-mono text-xs uppercase tracking-widest text-violet-400 mb-3">
             // 404
           </p>
-          <h1 className="text-7xl sm:text-8xl font-display font-black tracking-tighter mb-3">
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent text-glow">
+          <h1 className="text-6xl sm:text-7xl font-display font-extrabold tracking-tight mb-3">
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent">
               GG WP
             </span>
           </h1>
-          <p className="text-2xl font-display font-bold text-zinc-300 mb-3">
+          <p className="text-xl font-display font-bold text-zinc-300 mb-3">
             Страница не найдена
           </p>
           <p className="text-zinc-500 mb-8 text-sm">

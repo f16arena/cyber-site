@@ -98,7 +98,7 @@ export default async function PlayersPage({
             <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
               // LFG · Looking For Game
             </p>
-            <h1 className="text-4xl font-black tracking-tight">Поиск тиммейтов</h1>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">Поиск тиммейтов</h1>
             <p className="text-zinc-400 mt-2">
               Опубликуй заявку — найдут команды и игроки твоего региона.
             </p>
