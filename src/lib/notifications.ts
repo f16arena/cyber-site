@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { sendPushToUser } from "./push";
 import type { NotificationType } from "@prisma/client";
 
 export async function notify(params: {
@@ -19,6 +20,14 @@ export async function notify(params: {
       imageUrl: params.imageUrl ?? null,
     },
   });
+
+  // Параллельно — push (если у юзера есть подписки и VAPID настроен)
+  sendPushToUser(params.userId, {
+    title: params.title,
+    body: params.body,
+    url: params.link,
+    tag: params.type,
+  }).catch(() => {});
 }
 
 export async function getUnreadCount(userId: string) {

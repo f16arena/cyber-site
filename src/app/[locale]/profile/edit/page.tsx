@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { UserMenu } from "@/components/UserMenu";
 import { ImageUploader } from "@/components/ImageUploader";
+import { PushManager } from "@/components/PushManager";
 import { ProfileEditForm } from "./form";
 import { uploadAvatar, resetAvatarToSteam } from "./actions";
 
@@ -75,6 +76,17 @@ export default async function ProfileEditPage() {
         <p className="text-zinc-400 mb-8">
           Заполни данные, чтобы команды могли тебя найти.
         </p>
+
+        <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+            Push-уведомления
+          </h2>
+          <PushManager />
+          <p className="text-xs text-zinc-500 mt-2">
+            Получай уведомления о входящих сообщениях, заявках в команду
+            и MVP-наградах прямо в браузере или на смартфоне.
+          </p>
+        </section>
 
         <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
           <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
