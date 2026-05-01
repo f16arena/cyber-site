@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { UserMenu } from "@/components/UserMenu";
+import { ImageUploader } from "@/components/ImageUploader";
 import { ProfileEditForm } from "./form";
+import { uploadAvatar, resetAvatarToSteam } from "./actions";
 
 const navLinks = [
   { href: "/tournaments", label: "Турниры" },
@@ -73,6 +75,21 @@ export default async function ProfileEditPage() {
         <p className="text-zinc-400 mb-8">
           Заполни данные, чтобы команды могли тебя найти.
         </p>
+
+        <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+            Аватар
+          </h2>
+          <ImageUploader
+            currentUrl={user.avatarUrl}
+            action={uploadAvatar}
+            resetAction={resetAvatarToSteam}
+            resetLabel="🔄 Вернуть аватар Steam"
+            shape="square"
+            label="Фото профиля"
+            hint="PNG / JPG / WebP. До 1 МБ. Если не загружать, будет использоваться аватар из Steam."
+          />
+        </section>
 
         <ProfileEditForm
           user={{

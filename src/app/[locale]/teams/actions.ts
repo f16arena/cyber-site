@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { uploadImage, deleteImage } from "@/lib/storage";
 import type { Game, Region } from "@prisma/client";
 
 export type TeamFormState = {
@@ -147,6 +148,38 @@ export async function updateTeam(
 
   revalidatePath(`/teams/${team.tag}`);
   redirect(`/teams/${team.tag}`);
+}
+
+export async function uploadTeamLogo(formData: FormData): Promise<TeamFormState> {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user) return { error: "Не авторизован" };
+
+  const teamId = formData.get("teamId") as string | null;
+  const file = formData.get("file") as File | null;
+  if (!teamId || !file || file.size === 0) return { error: "Файл не выбран" };
+
+  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  if (!team) return { error: "Команда не найдена" };
+  if (team.captainId !== user.id) {
+    return { error: "Только капитан может менять лого" };
+  }
+
+  const result = await uploadImage("team-logos", team.id, file);
+  if (!result.ok) return { error: result.error };
+
+  // Удаляем старое лого
+  if (team.logoUrl) {
+    await deleteImage("team-logos", team.logoUrl).catch(() => {});
+  }
+
+  await prisma.team.update({
+    where: { id: teamId },
+    data: { logoUrl: result.publicUrl },
+  });
+
+  revalidatePath(`/teams/${team.tag}`);
+  return { ok: true };
 }
 
 export async function kickMember(formData: FormData) {

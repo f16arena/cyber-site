@@ -61,12 +61,81 @@ export default async function TeamPage({
     ? team.members.some((m) => m.userId === user.id)
     : false;
   const isCaptain = user?.id === team.captainId;
-
-  // Игрок может присоединиться, если: залогинен, не уже в этой команде, и
-  // не состоит в другой команде по этой же игре
   const canJoin = user && !isMember;
 
   const totalMatches = team._count.matchesA + team._count.matchesB;
+  const wins = team._count.wonMatches;
+  const winRate = totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0;
+
+  // Статистика по картам и последние матчи
+  const memberIds = team.members.map((m) => m.userId);
+
+  const [recentMatches, mapStats, tournamentHistory] = await Promise.all([
+    prisma.match.findMany({
+      where: {
+        OR: [{ teamAId: team.id }, { teamBId: team.id }],
+        status: "FINISHED",
+      },
+      include: {
+        teamA: { select: { name: true, tag: true, logoUrl: true } },
+        teamB: { select: { name: true, tag: true, logoUrl: true } },
+        tournament: { select: { name: true, slug: true } },
+      },
+      orderBy: { finishedAt: "desc" },
+      take: 10,
+    }),
+    prisma.match.groupBy({
+      by: ["map"],
+      where: {
+        OR: [{ teamAId: team.id }, { teamBId: team.id }],
+        status: "FINISHED",
+        map: { not: null },
+      },
+      _count: { _all: true },
+    }),
+    prisma.tournamentRegistration.findMany({
+      where: { teamId: team.id },
+      include: {
+        tournament: {
+          select: { id: true, name: true, slug: true, status: true, prize: true, endsAt: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+  ]);
+
+  // Win rate по картам — нужна доп. агрегация
+  const mapWinStats = await Promise.all(
+    mapStats.map(async (m) => {
+      if (!m.map) return null;
+      const wins = await prisma.match.count({
+        where: {
+          OR: [{ teamAId: team.id }, { teamBId: team.id }],
+          status: "FINISHED",
+          map: m.map,
+          winnerId: team.id,
+        },
+      });
+      return {
+        map: m.map,
+        played: m._count._all,
+        wins,
+        winRate: Math.round((wins / m._count._all) * 100),
+      };
+    })
+  );
+  const mapsWithStats = mapWinStats.filter((m): m is NonNullable<typeof m> => m !== null);
+
+  // Агрегированная стата команды через MatchPlayerStat
+  const teamPlayerStats = memberIds.length
+    ? await prisma.matchPlayerStat.aggregate({
+        where: { userId: { in: memberIds }, teamId: team.id },
+        _sum: { kills: true, deaths: true, assists: true },
+        _avg: { rating: true },
+        _count: { _all: true },
+      })
+    : null;
 
   return (
     <>
@@ -197,8 +266,172 @@ export default async function TeamPage({
             </div>
           )}
         </section>
+
+        {/* Statistics */}
+        <section className="mb-8">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+            Статистика
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-violet-500/10 rounded-lg overflow-hidden border border-violet-500/20">
+            <StatCell label="Матчей" value={String(totalMatches)} />
+            <StatCell label="Побед" value={String(wins)} accent="text-emerald-300" />
+            <StatCell label="Win Rate" value={`${winRate}%`} accent={winRate >= 50 ? "text-emerald-300" : "text-rose-300"} />
+            <StatCell label="Рейтинг" value={String(team.rating)} accent="text-violet-300" />
+          </div>
+          {teamPlayerStats && teamPlayerStats._count._all > 0 && (
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-800/50 rounded-lg overflow-hidden border border-zinc-800">
+              <StatCell
+                label="Командные K"
+                value={String(teamPlayerStats._sum.kills ?? 0)}
+              />
+              <StatCell
+                label="Командные D"
+                value={String(teamPlayerStats._sum.deaths ?? 0)}
+              />
+              <StatCell
+                label="Avg Rating"
+                value={(teamPlayerStats._avg.rating ?? 0).toFixed(2)}
+                accent="text-violet-300"
+              />
+              <StatCell
+                label="Player Stats"
+                value={String(teamPlayerStats._count._all)}
+              />
+            </div>
+          )}
+        </section>
+
+        {/* Per-map stats */}
+        {mapsWithStats.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-amber-400 mb-3">
+              По картам
+            </h2>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+              {mapsWithStats
+                .sort((a, b) => b.played - a.played)
+                .map((m) => (
+                  <div
+                    key={m.map}
+                    className="flex items-center gap-3 p-3 text-sm"
+                  >
+                    <span className="font-bold w-32 truncate">{m.map}</span>
+                    <div className="flex-1 h-2 bg-zinc-800 rounded overflow-hidden">
+                      <div
+                        className={`h-full ${m.winRate >= 50 ? "bg-emerald-500" : "bg-rose-500"}`}
+                        style={{ width: `${m.winRate}%` }}
+                      />
+                    </div>
+                    <span className="font-mono text-xs w-16 text-right">
+                      {m.wins} / {m.played}
+                    </span>
+                    <span
+                      className={`font-mono text-xs font-bold w-12 text-right ${
+                        m.winRate >= 50 ? "text-emerald-300" : "text-rose-300"
+                      }`}
+                    >
+                      {m.winRate}%
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
+
+        {/* Recent matches */}
+        {recentMatches.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-rose-400 mb-3">
+              Последние матчи
+            </h2>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+              {recentMatches.map((m) => {
+                const opponent = m.teamAId === team.id ? m.teamB : m.teamA;
+                const ourScore = m.teamAId === team.id ? m.scoreA : m.scoreB;
+                const theirScore = m.teamAId === team.id ? m.scoreB : m.scoreA;
+                const won = m.winnerId === team.id;
+                return (
+                  <Link
+                    key={m.id}
+                    href={`/matches/${m.id}`}
+                    className="flex items-center gap-3 p-3 hover:bg-zinc-800/30 transition-colors text-sm"
+                  >
+                    <span
+                      className={`text-[10px] font-mono font-bold w-6 text-center rounded ${
+                        won
+                          ? "text-emerald-300 bg-emerald-500/10"
+                          : "text-rose-300 bg-rose-500/10"
+                      }`}
+                    >
+                      {won ? "W" : "L"}
+                    </span>
+                    <span className="flex-1 min-w-0 truncate">
+                      vs <span className="font-bold">{opponent?.name ?? "TBD"}</span>
+                    </span>
+                    <span className="font-mono text-zinc-400">
+                      {ourScore} : {theirScore}
+                    </span>
+                    {m.tournament && (
+                      <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline truncate max-w-[160px]">
+                        {m.tournament.name}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Tournament history */}
+        {tournamentHistory.length > 0 && (
+          <section>
+            <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+              История турниров ({tournamentHistory.length})
+            </h2>
+            <div className="space-y-2">
+              {tournamentHistory.map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/tournaments/${r.tournament.slug}`}
+                  className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 hover:border-violet-500/40 p-3 text-sm transition-colors"
+                >
+                  <span className="font-bold truncate">{r.tournament.name}</span>
+                  <span className="text-xs font-mono text-zinc-500">
+                    {r.tournament.status === "COMPLETED"
+                      ? "Завершён"
+                      : r.tournament.status === "ONGOING"
+                        ? "Идёт"
+                        : "Регистрация"}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <SiteFooter />
     </>
+  );
+}
+
+function StatCell({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+}) {
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur p-4 text-center">
+      <div className={`text-2xl font-black ${accent ?? "text-zinc-100"}`}>
+        {value}
+      </div>
+      <div className="text-[9px] uppercase tracking-wider text-zinc-500 mt-1 font-mono">
+        {label}
+      </div>
+    </div>
   );
 }

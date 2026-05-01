@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { TeamEditForm } from "./form";
-import { kickMember } from "../../actions";
+import { kickMember, uploadTeamLogo } from "../../actions";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export default async function TeamEditPage({
   params,
@@ -53,6 +54,19 @@ export default async function TeamEditPage({
         <p className="text-zinc-400 mb-8 text-sm">
           {team.name} <span className="font-mono text-zinc-500">[{team.tag}]</span> · {team.game}
         </p>
+
+        <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+            Логотип команды
+          </h2>
+          <ImageUploader
+            currentUrl={team.logoUrl}
+            action={uploadTeamLogo}
+            extraFields={{ teamId: team.id }}
+            label="Лого"
+            hint="PNG / JPG / WebP. До 1 МБ. Лучше 256×256 с прозрачным фоном."
+          />
+        </section>
 
         <section className="mb-8">
           <TeamEditForm team={team} />

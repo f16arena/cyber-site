@@ -55,13 +55,65 @@ export default async function PlayerPublicPage({
     : null;
 
   // Агрегированная статистика по матчам
-  const aggStats = await prisma.matchPlayerStat.groupBy({
-    by: ["game"],
-    where: { userId: user.id },
-    _sum: { kills: true, deaths: true, assists: true },
-    _avg: { rating: true },
-    _count: { _all: true },
-  });
+  const [aggStats, recentStats, allStatsAgg] = await Promise.all([
+    prisma.matchPlayerStat.groupBy({
+      by: ["game"],
+      where: { userId: user.id },
+      _sum: { kills: true, deaths: true, assists: true },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+    prisma.matchPlayerStat.findMany({
+      where: { userId: user.id },
+      orderBy: { recordedAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        kills: true,
+        deaths: true,
+        assists: true,
+        rating: true,
+        isMvp: true,
+        game: true,
+        extra: true,
+        matchId: true,
+        recordedAt: true,
+      },
+    }),
+    prisma.matchPlayerStat.aggregate({
+      where: { userId: user.id },
+      _sum: { kills: true, deaths: true, assists: true, mvpRounds: true },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const totalKills = allStatsAgg._sum.kills ?? 0;
+  const totalDeaths = allStatsAgg._sum.deaths ?? 0;
+  const kdRatio = totalDeaths > 0 ? totalKills / totalDeaths : totalKills;
+  const avgRating = allStatsAgg._avg.rating ?? 0;
+  const matchesPlayed = allStatsAgg._count._all;
+  const totalMvps = user.mvpAwards.length;
+
+  // Извлекаем средние ADR/HS%/KAST из extra полей
+  let totalAdr = 0,
+    totalHsPct = 0,
+    totalKast = 0,
+    statsWithExtra = 0;
+  for (const s of recentStats) {
+    if (s.extra && typeof s.extra === "object") {
+      const e = s.extra as { adr?: number; hsPct?: number; kast?: number };
+      if (e.adr || e.hsPct || e.kast) {
+        statsWithExtra++;
+        totalAdr += e.adr || 0;
+        totalHsPct += e.hsPct || 0;
+        totalKast += e.kast || 0;
+      }
+    }
+  }
+  const avgAdr = statsWithExtra > 0 ? totalAdr / statsWithExtra : 0;
+  const avgHsPct = statsWithExtra > 0 ? totalHsPct / statsWithExtra : 0;
+  const avgKast = statsWithExtra > 0 ? totalKast / statsWithExtra : 0;
 
   const lastSeen = user.lastSeenAt;
   const isOnline = lastSeen && Date.now() - lastSeen.getTime() < 5 * 60 * 1000;
@@ -174,6 +226,112 @@ export default async function PlayerPublicPage({
             </div>
           </div>
         </div>
+
+        {/* Profilerr-style stat cards */}
+        {matchesPlayed > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+              Общая статистика
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-violet-500/10 rounded-lg overflow-hidden border border-violet-500/20">
+              <BigStat
+                label="Rating 2.0"
+                value={avgRating.toFixed(2)}
+                accent={
+                  avgRating >= 1.1
+                    ? "text-emerald-300"
+                    : avgRating >= 0.9
+                      ? "text-violet-300"
+                      : "text-rose-300"
+                }
+              />
+              <BigStat label="K/D" value={kdRatio.toFixed(2)} accent={kdRatio >= 1 ? "text-emerald-300" : "text-rose-300"} />
+              <BigStat label="ADR" value={avgAdr.toFixed(1)} />
+              <BigStat label="HS %" value={`${avgHsPct.toFixed(0)}%`} />
+              <BigStat label="KAST" value={`${avgKast.toFixed(0)}%`} />
+              <BigStat
+                label="MVP"
+                value={String(totalMvps)}
+                accent="text-amber-300"
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-800/50 rounded-lg overflow-hidden border border-zinc-800">
+              <BigStat label="Матчей" value={String(matchesPlayed)} small />
+              <BigStat label="Убийств" value={String(totalKills)} small />
+              <BigStat label="Смертей" value={String(totalDeaths)} small />
+              <BigStat
+                label="MVP-раундов"
+                value={String(allStatsAgg._sum.mvpRounds ?? 0)}
+                small
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Recent matches form */}
+        {recentStats.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-rose-400 mb-3">
+              Форма (последние {recentStats.length} матчей)
+            </h2>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+              <table className="w-full text-xs font-mono">
+                <thead className="bg-zinc-900/60">
+                  <tr className="text-zinc-500 text-left">
+                    <th className="p-2 font-normal">Игра</th>
+                    <th className="text-right p-2 font-normal">K</th>
+                    <th className="text-right p-2 font-normal">D</th>
+                    <th className="text-right p-2 font-normal">A</th>
+                    <th className="text-right p-2 font-normal">Rating</th>
+                    <th className="text-right p-2 font-normal hidden sm:table-cell">
+                      Дата
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentStats.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="border-t border-zinc-800/50 hover:bg-zinc-800/30"
+                    >
+                      <td className="p-2">
+                        <Link
+                          href={`/matches/${s.matchId}`}
+                          className="hover:text-violet-300"
+                        >
+                          {s.game}
+                        </Link>
+                        {s.isMvp && (
+                          <span className="ml-2 text-amber-300">⭐</span>
+                        )}
+                      </td>
+                      <td className="text-right p-2 text-zinc-300">{s.kills}</td>
+                      <td className="text-right p-2 text-zinc-500">{s.deaths}</td>
+                      <td className="text-right p-2 text-zinc-300">{s.assists}</td>
+                      <td
+                        className={`text-right p-2 font-bold ${
+                          (s.rating ?? 0) >= 1.1
+                            ? "text-emerald-300"
+                            : (s.rating ?? 0) >= 0.9
+                              ? "text-zinc-300"
+                              : "text-rose-400"
+                        }`}
+                      >
+                        {(s.rating ?? 0).toFixed(2)}
+                      </td>
+                      <td className="text-right p-2 text-zinc-500 hidden sm:table-cell">
+                        {new Date(s.recordedAt).toLocaleDateString("ru-RU", {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* Game profiles */}
         <section className="mb-8">
@@ -318,6 +476,29 @@ function Stat({
     <div>
       <div className="text-zinc-500 uppercase text-[9px]">{label}</div>
       <div className={`font-bold ${accent ?? "text-zinc-200"}`}>{value}</div>
+    </div>
+  );
+}
+
+function BigStat({
+  label,
+  value,
+  accent,
+  small = false,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+  small?: boolean;
+}) {
+  return (
+    <div className={`bg-zinc-950/60 backdrop-blur ${small ? "p-3" : "p-4 sm:p-5"} text-center`}>
+      <div className={`${small ? "text-xl" : "text-2xl sm:text-3xl"} font-black ${accent ?? "text-zinc-100"}`}>
+        {value}
+      </div>
+      <div className="text-[9px] uppercase tracking-wider text-zinc-500 mt-1 font-mono">
+        {label}
+      </div>
     </div>
   );
 }
