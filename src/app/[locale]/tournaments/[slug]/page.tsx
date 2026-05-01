@@ -81,6 +81,85 @@ export default async function TournamentDetailPage({
 
   if (!tournament || tournament.status === "DRAFT") notFound();
 
+  // Для COMPLETED — собираем итоговую таблицу
+  let results: {
+    winner: { name: string; tag: string } | null;
+    runnerUp: { name: string; tag: string } | null;
+    mvp: { username: string; avatarUrl: string | null; mvpCount: number } | null;
+    topFragger: { username: string; kills: number } | null;
+  } | null = null;
+
+  if (tournament.status === "COMPLETED") {
+    // Grand final = последний матч с максимальным round среди UB
+    const grandFinal = [...tournament.matches]
+      .filter((m) => m.status === "FINISHED" && m.winnerId)
+      .sort((a, b) => (b.round ?? 0) - (a.round ?? 0))[0];
+
+    let winner: { name: string; tag: string } | null = null;
+    let runnerUp: { name: string; tag: string } | null = null;
+    if (grandFinal) {
+      const wId = grandFinal.winnerId;
+      const winnerTeam =
+        wId === grandFinal.teamA?.tag
+          ? grandFinal.teamA
+          : grandFinal.teamA && wId
+            ? grandFinal.teamA
+            : grandFinal.teamB;
+      const a = grandFinal.teamA;
+      const b = grandFinal.teamB;
+      // Простой winner pick
+      const aWon = grandFinal.scoreA > grandFinal.scoreB;
+      winner = aWon ? a : b;
+      runnerUp = aWon ? b : a;
+    }
+
+    const tournamentMvps = await prisma.mvpAward.findMany({
+      where: { tournamentId: tournament.id },
+      include: { user: { select: { username: true, avatarUrl: true } } },
+    });
+    const mvpCount = new Map<string, { username: string; avatarUrl: string | null; count: number }>();
+    for (const a of tournamentMvps) {
+      const cur = mvpCount.get(a.userId);
+      if (cur) cur.count++;
+      else
+        mvpCount.set(a.userId, {
+          username: a.user.username,
+          avatarUrl: a.user.avatarUrl,
+          count: 1,
+        });
+    }
+    const topMvp = Array.from(mvpCount.values()).sort((a, b) => b.count - a.count)[0];
+
+    const matchIds = tournament.matches.map((m) => m.id);
+    const fragStats = matchIds.length
+      ? await prisma.matchPlayerStat.groupBy({
+          by: ["userId"],
+          where: { matchId: { in: matchIds } },
+          _sum: { kills: true },
+          orderBy: { _sum: { kills: "desc" } },
+          take: 1,
+        })
+      : [];
+    const topFragUser = fragStats[0]
+      ? await prisma.user.findUnique({
+          where: { id: fragStats[0].userId },
+          select: { username: true },
+        })
+      : null;
+
+    results = {
+      winner,
+      runnerUp,
+      mvp: topMvp
+        ? { username: topMvp.username, avatarUrl: topMvp.avatarUrl, mvpCount: topMvp.count }
+        : null,
+      topFragger:
+        topFragUser && fragStats[0]
+          ? { username: topFragUser.username, kills: fragStats[0]._sum.kills ?? 0 }
+          : null,
+    };
+  }
+
   const matches = tournament.matches.map((m) => ({
     id: m.id,
     side: (m.bracketSide ?? "UPPER") as BracketSide,
@@ -147,6 +226,75 @@ export default async function TournamentDetailPage({
             />
           </div>
         </div>
+
+        {/* Results — только для завершённых турниров */}
+        {results && (results.winner || results.mvp) && (
+          <section className="mb-8 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-transparent p-6">
+            <p className="text-amber-400 font-mono text-xs uppercase tracking-widest mb-3">
+              🏆 Итоги турнира
+            </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {results.winner && (
+                <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-amber-300 mb-1">
+                    🥇 1 место
+                  </div>
+                  <div className="text-xl font-black tracking-tight">
+                    {results.winner.name}
+                  </div>
+                  <div className="text-xs font-mono text-zinc-500 mt-1">
+                    [{results.winner.tag}]
+                  </div>
+                </div>
+              )}
+              {results.runnerUp && (
+                <div className="rounded-lg border border-zinc-300/30 bg-zinc-500/10 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-300 mb-1">
+                    🥈 2 место
+                  </div>
+                  <div className="text-xl font-black tracking-tight">
+                    {results.runnerUp.name}
+                  </div>
+                  <div className="text-xs font-mono text-zinc-500 mt-1">
+                    [{results.runnerUp.tag}]
+                  </div>
+                </div>
+              )}
+              {results.mvp && (
+                <Link
+                  href={`/players/${encodeURIComponent(results.mvp.username)}`}
+                  className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors"
+                >
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-amber-300 mb-1">
+                    ⭐ MVP турнира
+                  </div>
+                  <div className="text-xl font-black tracking-tight truncate">
+                    {results.mvp.username}
+                  </div>
+                  <div className="text-xs font-mono text-zinc-500 mt-1">
+                    {results.mvp.mvpCount} MVP-наград
+                  </div>
+                </Link>
+              )}
+              {results.topFragger && (
+                <Link
+                  href={`/players/${encodeURIComponent(results.topFragger.username)}`}
+                  className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-4 hover:bg-rose-500/15 transition-colors"
+                >
+                  <div className="text-[10px] font-mono uppercase tracking-widest text-rose-300 mb-1">
+                    🎯 Top fragger
+                  </div>
+                  <div className="text-xl font-black tracking-tight truncate">
+                    {results.topFragger.username}
+                  </div>
+                  <div className="text-xs font-mono text-zinc-500 mt-1">
+                    {results.topFragger.kills} убийств
+                  </div>
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Bracket */}
         {tournament.matches.length > 0 ? (

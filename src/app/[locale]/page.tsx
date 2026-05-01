@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { Countdown } from "@/components/Countdown";
+import { getRecentActivity, activityIcon } from "@/lib/activity-feed";
 import type { Game } from "@prisma/client";
 
 const games = [
@@ -94,6 +95,7 @@ export default async function Home({
     onlineUsers,
     streamers,
     featuredTournament,
+    activityFeed,
     stats,
   ] = await Promise.all([
     prisma.match.findMany({
@@ -170,6 +172,7 @@ export default async function Home({
       where: { status: { in: ["REGISTRATION_OPEN", "ONGOING"] } },
       orderBy: { startsAt: "asc" },
     }),
+    getRecentActivity(10),
     Promise.all([
       prisma.team.count(),
       prisma.user.count(),
@@ -407,6 +410,52 @@ export default async function Home({
                   </div>
                 )}
               </div>
+
+              {/* Activity feed */}
+              {activityFeed.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-3">
+                    📡 Активность
+                  </h3>
+                  <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800/60">
+                    {activityFeed.map((a) => {
+                      const Inner = (
+                        <>
+                          <div
+                            className={`text-base shrink-0 px-2 py-1 rounded border font-mono ${a.iconColor}`}
+                          >
+                            {activityIcon(a.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-zinc-300 truncate">
+                              {a.text}
+                            </div>
+                            <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                              {formatRelativeTime(a.at)}
+                            </div>
+                          </div>
+                        </>
+                      );
+                      return a.link ? (
+                        <Link
+                          key={a.id}
+                          href={a.link}
+                          className="flex items-center gap-2.5 p-2.5 hover:bg-zinc-800/50 transition-colors"
+                        >
+                          {Inner}
+                        </Link>
+                      ) : (
+                        <div
+                          key={a.id}
+                          className="flex items-center gap-2.5 p-2.5"
+                        >
+                          {Inner}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </aside>
 
             {/* CENTER — NEWS FEED */}
