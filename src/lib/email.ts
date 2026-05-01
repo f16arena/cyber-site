@@ -173,6 +173,38 @@ export async function emailNewMessage(
   });
 }
 
+export async function emailSponsorInquiry(
+  toEmail: string,
+  inquiry: {
+    companyName: string;
+    contactName: string;
+    email: string;
+    phone?: string | null;
+    tier?: string | null;
+    message?: string | null;
+  }
+) {
+  const tierLine = inquiry.tier ? `<strong>Тир:</strong> ${inquiry.tier}<br>` : "";
+  const phoneLine = inquiry.phone ? `<strong>Телефон:</strong> ${inquiry.phone}<br>` : "";
+  const msgBlock = inquiry.message
+    ? `<p style="background: #27272a; padding: 12px; border-radius: 8px; font-style: italic;">${inquiry.message.replace(/\n/g, "<br>")}</p>`
+    : "";
+  return sendEmail({
+    to: toEmail,
+    subject: `💰 Новая заявка от спонсора: ${inquiry.companyName}`,
+    type: "SPONSOR_INQUIRY",
+    html: wrapTemplate(`
+      <h1>💰 Новая заявка от спонсора</h1>
+      <p><strong>Компания:</strong> ${inquiry.companyName}<br>
+      <strong>Контакт:</strong> ${inquiry.contactName} &lt;${inquiry.email}&gt;<br>
+      ${phoneLine}${tierLine}</p>
+      ${msgBlock}
+      <a class="btn" href="${SITE_URL}/admin/inquiries">Открыть в админке</a>
+    `),
+    text: `Новая заявка от ${inquiry.companyName} (${inquiry.contactName}, ${inquiry.email}). ${SITE_URL}/admin/inquiries`,
+  });
+}
+
 export async function emailMatchResultDispute(
   toEmail: string,
   matchUrl: string,

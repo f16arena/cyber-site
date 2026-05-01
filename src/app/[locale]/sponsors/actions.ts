@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientKey } from "@/lib/rate-limit";
 import { headers } from "next/headers";
+import { emailSponsorInquiry } from "@/lib/email";
 
 export type InquiryState = { ok?: boolean; error?: string };
 
@@ -50,6 +51,24 @@ export async function submitSponsorshipInquiry(
       message: message || null,
     },
   });
+
+  // Уведомляем админов по email (не блокируем ответ пользователю)
+  const admins = await prisma.user.findMany({
+    where: { isAdmin: true, email: { not: null }, emailNotifications: true },
+    select: { email: true },
+  });
+  for (const a of admins) {
+    if (a.email) {
+      emailSponsorInquiry(a.email, {
+        companyName,
+        contactName,
+        email,
+        phone,
+        tier: cleanTier,
+        message,
+      }).catch(() => {});
+    }
+  }
 
   revalidatePath("/admin/inquiries");
   return { ok: true };

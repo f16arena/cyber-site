@@ -52,7 +52,7 @@ export async function createTournament(
   const exists = await prisma.tournament.findUnique({ where: { slug } });
   if (exists) return { error: "Slug уже занят" };
 
-  await prisma.tournament.create({
+  const created = await prisma.tournament.create({
     data: {
       name,
       slug,
@@ -67,6 +67,17 @@ export async function createTournament(
       registrationClosesAt: regCloseRaw ? new Date(regCloseRaw) : null,
     },
   });
+
+  const bannerFile = formData.get("banner") as File | null;
+  if (bannerFile && bannerFile.size > 0) {
+    const result = await uploadImage("team-logos", `tournament-${created.id}`, bannerFile);
+    if (result.ok) {
+      await prisma.tournament.update({
+        where: { id: created.id },
+        data: { bannerUrl: result.publicUrl },
+      });
+    }
+  }
 
   revalidatePath("/admin/tournaments");
   revalidatePath("/tournaments");

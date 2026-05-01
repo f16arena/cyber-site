@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/purge-messages",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/match-reminders",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
