@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { joinTeam, leaveTeam } from "../actions";
+import { ROSTER_SIZE, MAX_SUBS, maxRoster } from "@/lib/games";
 import type { Region } from "@prisma/client";
 
 const REGION_LABEL: Partial<Record<Region, string>> = {
@@ -315,12 +316,36 @@ export default async function TeamPage({
               );
             })}
           </div>
-          {team.members.length < 5 && (
-            <div className="mt-3 text-xs font-mono text-zinc-500">
-              До полного состава: {5 - team.members.length}{" "}
-              {team.members.length === 4 ? "игрок" : "игроков"}
-            </div>
-          )}
+          {(() => {
+            const active = team.members.filter((m) => m.role !== "SUBSTITUTE").length;
+            const subs = team.members.filter((m) => m.role === "SUBSTITUTE").length;
+            const target = ROSTER_SIZE[team.game];
+            const total = team.members.length;
+            return (
+              <div className="mt-3 text-xs font-mono text-zinc-500 flex flex-wrap gap-x-4 gap-y-1">
+                <span>
+                  Основной состав:{" "}
+                  <span className={active >= target ? "text-emerald-400" : "text-amber-400"}>
+                    {active}/{target}
+                  </span>
+                </span>
+                <span>
+                  Запасные:{" "}
+                  <span className="text-zinc-300">
+                    {subs}/{MAX_SUBS}
+                  </span>
+                </span>
+                {total < maxRoster(team.game) && (
+                  <span>
+                    Свободно слотов: {maxRoster(team.game) - total}
+                  </span>
+                )}
+                {total >= maxRoster(team.game) && (
+                  <span className="text-emerald-400">✓ Состав укомплектован</span>
+                )}
+              </div>
+            );
+          })()}
         </section>
 
         {/* Statistics */}

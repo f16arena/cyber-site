@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { uploadImage, deleteImage } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
+import { maxRoster, nextMemberRole, ROSTER_SIZE } from "@/lib/games";
 import type { Game, Region } from "@prisma/client";
 
 export type TeamFormState = {
@@ -222,6 +223,15 @@ export async function joinTeam(formData: FormData) {
   });
   if (exists) return;
 
+  // Проверка размера состава (основной + запасные)
+  const currentMembers = await prisma.teamMember.findMany({
+    where: { teamId },
+    select: { role: true },
+  });
+  if (currentMembers.length >= maxRoster(team.game)) {
+    return; // состав полный, включая запасных
+  }
+
   // Закрытая команда — создаём запрос на вступление
   if (team.privacy === "PRIVATE") {
     const message = ((formData.get("message") as string) || "").trim().slice(0, 300);
@@ -246,9 +256,10 @@ export async function joinTeam(formData: FormData) {
     return;
   }
 
-  // Открытая — сразу зачисляем
+  // Открытая — сразу зачисляем (роль зависит от текущего размера состава)
+  const role = nextMemberRole(currentMembers, team.game) ?? "SUBSTITUTE";
   await prisma.teamMember.create({
-    data: { teamId, userId: user.id, role: "PLAYER" },
+    data: { teamId, userId: user.id, role },
   });
   revalidatePath(`/teams/${team.tag}`);
   revalidatePath("/profile");
@@ -280,9 +291,28 @@ export async function approveJoinRequest(formData: FormData) {
     return;
   }
 
+  // Проверка размера состава
+  const currentMembers = await prisma.teamMember.findMany({
+    where: { teamId: req.teamId },
+    select: { role: true },
+  });
+  if (currentMembers.length >= maxRoster(req.team.game)) {
+    await prisma.teamJoinRequest.update({
+      where: { id: requestId },
+      data: { status: "DECLINED", decidedAt: new Date() },
+    });
+    await notify({
+      userId: req.userId,
+      type: "TEAM_REQUEST_DECLINED",
+      title: `Команда ${req.team.name} уже укомплектована`,
+    });
+    return;
+  }
+  const role = nextMemberRole(currentMembers, req.team.game) ?? "SUBSTITUTE";
+
   await prisma.$transaction([
     prisma.teamMember.create({
-      data: { teamId: req.teamId, userId: req.userId, role: "PLAYER" },
+      data: { teamId: req.teamId, userId: req.userId, role },
     }),
     prisma.teamJoinRequest.update({
       where: { id: requestId },
