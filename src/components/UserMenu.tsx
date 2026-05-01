@@ -1,17 +1,19 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { getCurrentUser, getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
 export async function UserMenu() {
   const user = await getCurrentUser();
+  const t = await getTranslations("Nav");
 
   if (!user) {
     return (
       <Link
         href="/api/auth/steam"
-        className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all"
+        className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all whitespace-nowrap"
       >
-        Войти через Steam
+        {t("loginSteam")}
       </Link>
     );
   }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type SearchResults = {
   players: Array<{ username: string; avatarUrl: string | null }>;
@@ -12,6 +13,7 @@ type SearchResults = {
 const empty: SearchResults = { players: [], teams: [], tournaments: [] };
 
 export function GlobalSearch() {
+  const t = useTranslations("Nav");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<SearchResults>(empty);
@@ -73,7 +75,7 @@ export function GlobalSearch() {
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Поиск... (Ctrl+K)"
+        placeholder={t("search")}
         className="w-full bg-zinc-900/60 border border-zinc-800 rounded h-9 pl-9 pr-3 text-sm font-mono focus:outline-none focus:border-violet-400/60 transition-colors"
       />
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm pointer-events-none">
@@ -87,11 +89,11 @@ export function GlobalSearch() {
           )}
           {!loading && total === 0 && (
             <div className="p-4 text-xs font-mono text-zinc-500">
-              Ничего не найдено
+              {t("searchNoResults")}
             </div>
           )}
           {!loading && results.players.length > 0 && (
-            <Section title="Игроки">
+            <Section title={t("searchSectionPlayers")}>
               {results.players.map((p) => (
                 <Link
                   key={p.username}
@@ -115,7 +117,7 @@ export function GlobalSearch() {
             </Section>
           )}
           {!loading && results.teams.length > 0 && (
-            <Section title="Команды">
+            <Section title={t("searchSectionTeams")}>
               {results.teams.map((t) => (
                 <Link
                   key={t.tag}
@@ -133,7 +135,7 @@ export function GlobalSearch() {
             </Section>
           )}
           {!loading && results.tournaments.length > 0 && (
-            <Section title="Турниры">
+            <Section title={t("searchSectionTournaments")}>
               {results.tournaments.map((t) => (
                 <Link
                   key={t.slug}

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import type { Game } from "@prisma/client";
@@ -86,7 +87,15 @@ function formatMatchTime(date: Date | null) {
   return `${date.toLocaleDateString("ru-RU", { day: "2-digit", month: "short" })} · ${time}`;
 }
 
-export default async function Home() {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("Home");
+
   const [
     liveMatches,
     upcomingMatches,
@@ -151,12 +160,12 @@ export default async function Home() {
   const totalPrizeKzt = Number(prizeAgg._sum.prize ?? 0n) / 100;
 
   const statsRow = [
-    { value: String(teamsCount), label: "Команды" },
-    { value: String(playersCount), label: "Игроки" },
-    { value: String(tournamentsCount), label: "Турниры" },
+    { value: String(teamsCount), label: t("statsTeams") },
+    { value: String(playersCount), label: t("statsPlayers") },
+    { value: String(tournamentsCount), label: t("statsTournaments") },
     {
       value: totalPrizeKzt > 0 ? `₸ ${(totalPrizeKzt / 1000000).toFixed(1)}M` : "₸ 0",
-      label: "Призовые",
+      label: t("statsPrize"),
     },
   ];
 
@@ -194,13 +203,13 @@ export default async function Home() {
               <div className="max-w-2xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-xs font-mono uppercase tracking-wider mb-4">
                   <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-                  Сезон Spring 2026
+                  {t("season")}
                 </div>
                 <h1 className="text-4xl sm:text-6xl font-black tracking-tighter leading-[0.95]">
                   <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent text-glow">
-                    Киберспорт Казахстана
+                    {t("heroTitle")}
                   </span>
-                  <span className="block text-zinc-300">в одном месте.</span>
+                  <span className="block text-zinc-300">{t("heroSubtitle")}</span>
                 </h1>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -208,13 +217,13 @@ export default async function Home() {
                   href="/tournaments"
                   className="inline-flex items-center justify-center h-11 px-6 rounded font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all glow-violet clip-corner"
                 >
-                  Турниры
+                  {t("ctaTournaments")}
                 </Link>
                 <Link
                   href="/players"
                   className="inline-flex items-center justify-center h-11 px-6 rounded font-bold text-sm uppercase tracking-wider border border-zinc-700 hover:border-violet-400 hover:bg-violet-500/5 transition-all clip-corner"
                 >
-                  Найти тиммейта
+                  {t("ctaFindTeammate")}
                 </Link>
               </div>
             </div>
@@ -244,7 +253,7 @@ export default async function Home() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-mono uppercase tracking-widest text-rose-400 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-                    Live · {liveMatches.length}
+                    {t("live")} · {liveMatches.length}
                   </h3>
                   <Link href="/matches" className="text-xs text-zinc-500 hover:text-violet-300 font-mono">
                     ALL →

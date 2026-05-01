@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
-import { sendFriendRequest } from "@/app/friends/actions";
+import { sendFriendRequest } from "../../friends/actions";
 import type { Region } from "@prisma/client";
 
 const REGION_LABEL: Partial<Record<Region, string>> = {

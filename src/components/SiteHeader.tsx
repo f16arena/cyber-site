@@ -1,17 +1,21 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { UserMenu } from "./UserMenu";
 import { GlobalSearch } from "./GlobalSearch";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
-const navLinks = [
-  { href: "/tournaments", label: "Турниры" },
-  { href: "/matches", label: "Матчи" },
-  { href: "/teams", label: "Команды" },
-  { href: "/players", label: "Игроки" },
-  { href: "/leaderboard", label: "Рейтинг" },
-  { href: "/news", label: "Новости" },
-];
+export async function SiteHeader() {
+  const t = await getTranslations("Nav");
 
-export function SiteHeader() {
+  const navLinks = [
+    { href: "/tournaments", label: t("tournaments") },
+    { href: "/matches", label: t("matches") },
+    { href: "/teams", label: t("teams") },
+    { href: "/players", label: t("players") },
+    { href: "/leaderboard", label: t("leaderboard") },
+    { href: "/news", label: t("news") },
+  ];
+
   return (
     <header className="border-b border-violet-500/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-20">
       <div className="mx-auto max-w-7xl flex items-center justify-between px-6 h-16">
@@ -39,6 +43,7 @@ export function SiteHeader() {
         </nav>
         <div className="flex items-center gap-3">
           <GlobalSearch />
+          <LanguageSwitcher />
           <UserMenu />
         </div>
       </div>
@@ -46,7 +51,8 @@ export function SiteHeader() {
   );
 }
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const t = await getTranslations("Footer");
   return (
     <footer className="border-t border-violet-500/10 mt-auto bg-zinc-950/80">
       <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-500 flex flex-col sm:flex-row justify-between gap-3">
@@ -57,7 +63,7 @@ export function SiteFooter() {
           <span className="font-mono">© 2026 ESPORTS.KZ</span>
         </div>
         <span className="font-mono text-xs uppercase tracking-wider">
-          Built for the Kazakh esports community
+          {t("tagline")}
         </span>
       </div>
     </footer>

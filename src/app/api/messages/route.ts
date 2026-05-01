@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateDirectConversation } from "@/app/messages/actions";
+import { getOrCreateDirectConversation } from "@/lib/conversations";
 
 export async function GET(request: Request) {
   const me = await getCurrentUser();
