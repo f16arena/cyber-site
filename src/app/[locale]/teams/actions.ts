@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { uploadImage, deleteImage } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
+import { emailTeamJoinRequest } from "@/lib/email";
 import { maxRoster, nextMemberRole, ROSTER_SIZE } from "@/lib/games";
 import type { Game, Region } from "@prisma/client";
 
@@ -252,6 +253,18 @@ export async function joinTeam(formData: FormData) {
       body: message || undefined,
       link: `/teams/${team.tag}/edit`,
     });
+    const captain = await prisma.user.findUnique({
+      where: { id: team.captainId },
+      select: { email: true, emailNotifications: true },
+    });
+    if (captain?.email && captain.emailNotifications) {
+      emailTeamJoinRequest(
+        captain.email,
+        user.username ?? "Игрок",
+        team.name,
+        team.tag
+      ).catch(() => {});
+    }
     revalidatePath(`/teams/${team.tag}`);
     return;
   }

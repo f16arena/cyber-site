@@ -133,6 +133,12 @@ enum MessagePrivacy {
   FRIENDS_ONLY
 }
 
+enum ResultClaimStatus {
+  PENDING
+  CONFIRMED
+  DISPUTED
+}
+
 // ─── USER ────────────────────────────────────────────────
 
 model User {
@@ -148,6 +154,7 @@ model User {
   status         PlayerStatus    @default(OFFLINE)
   isAdmin        Boolean         @default(false)
   messagePrivacy MessagePrivacy  @default(EVERYONE)
+  emailNotifications Boolean     @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   lastSeenAt     DateTime?
@@ -352,6 +359,23 @@ model Match {
   @@index([startsAt])
   @@index([tournamentId, round])
   @@index([tournamentId, bracketSide, bracketPosition])
+}
+
+// Заявка на результат матча от капитана команды
+model MatchResultClaim {
+  id        String            @id @default(cuid())
+  matchId   String
+  teamId    String              // команда того, кто заявляет
+  claimedById String            // userId капитана
+  scoreA    Int
+  scoreB    Int
+  map       String?
+  resultProofUrl String?         // ссылка на скриншот результата
+  status    ResultClaimStatus  @default(PENDING)
+  createdAt DateTime           @default(now())
+
+  @@unique([matchId, teamId])
+  @@index([matchId, status])
 }
 
 // Статистика игрока в конкретном матче (HLTV-style)
@@ -567,4 +591,16 @@ model News {
 
   @@index([category, publishedAt])
   @@index([game, publishedAt])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  type      String   // "FRIEND_REQUEST", "TEAM_JOIN_REQUEST", etc.
+  status    String   // "SENT", "FAILED"
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([to, createdAt])
 }

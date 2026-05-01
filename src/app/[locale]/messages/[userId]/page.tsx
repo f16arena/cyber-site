@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { getOrCreateDirectConversation } from "../actions";
+import { purgeOldMessages } from "@/lib/conversations";
 import { ChatWindow } from "./chat";
 
 export default async function DirectMessagesPage({
@@ -26,6 +27,7 @@ export default async function DirectMessagesPage({
   if (!other) notFound();
 
   const conversationId = await getOrCreateDirectConversation(me.id, other.id);
+  await purgeOldMessages(conversationId);
 
   const messages = await prisma.chatMessage.findMany({
     where: { conversationId },

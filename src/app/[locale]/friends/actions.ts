@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notifications";
+import { emailFriendRequest } from "@/lib/email";
 
 export async function sendFriendRequest(formData: FormData) {
   const me = await getCurrentUser();
@@ -42,6 +43,15 @@ export async function sendFriendRequest(formData: FormData) {
     title: `${me.username ?? "Игрок"} хочет добавить тебя в друзья`,
     link: "/friends",
   });
+
+  // Email — если у получателя настроен и включены уведомления
+  const targetFull = await prisma.user.findUnique({
+    where: { id: target.id },
+    select: { email: true, emailNotifications: true },
+  });
+  if (targetFull?.email && targetFull.emailNotifications) {
+    emailFriendRequest(targetFull.email, me.username ?? "Игрок").catch(() => {});
+  }
 
   revalidatePath("/friends");
   revalidatePath(`/players/${encodeURIComponent(targetUsername)}`);

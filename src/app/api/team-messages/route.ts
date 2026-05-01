@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateTeamConversation } from "@/lib/conversations";
+import { getOrCreateTeamConversation, purgeOldMessages } from "@/lib/conversations";
 
 export async function GET(request: Request) {
   const me = await getCurrentUser();
@@ -19,6 +19,8 @@ export async function GET(request: Request) {
   if (!member) return NextResponse.json({ messages: [] }, { status: 403 });
 
   const conversationId = await getOrCreateTeamConversation(teamId);
+  await purgeOldMessages(conversationId);
+
   const messages = await prisma.chatMessage.findMany({
     where: { conversationId },
     orderBy: { createdAt: "asc" },

@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
-import { getOrCreateTeamConversation } from "@/lib/conversations";
+import { getOrCreateTeamConversation, purgeOldMessages } from "@/lib/conversations";
 import { TeamChatWindow } from "./chat";
 
 export default async function TeamChatPage({
@@ -37,6 +37,8 @@ export default async function TeamChatPage({
   if (!isMember) redirect(`/teams/${team.tag}`);
 
   const conversationId = await getOrCreateTeamConversation(team.id);
+  await purgeOldMessages(conversationId);
+
   const messages = await prisma.chatMessage.findMany({
     where: { conversationId },
     orderBy: { createdAt: "asc" },

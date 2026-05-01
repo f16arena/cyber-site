@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+import { ClaimResultForm } from "./claim-form";
 
 const STATUS_LABEL: Record<string, string> = {
   SCHEDULED: "Запланирован",
@@ -40,12 +42,13 @@ export default async function MatchDetailPage({
 }) {
   const { id } = await params;
 
+  const me = await getCurrentUser();
   const match = await prisma.match.findUnique({
     where: { id },
     include: {
       tournament: { select: { name: true, slug: true, game: true } },
-      teamA: { select: { name: true, tag: true } },
-      teamB: { select: { name: true, tag: true } },
+      teamA: { select: { id: true, name: true, tag: true, captainId: true } },
+      teamB: { select: { id: true, name: true, tag: true, captainId: true } },
       mvp: {
         include: {
           user: { select: { username: true, avatarUrl: true } },
@@ -61,6 +64,14 @@ export default async function MatchDetailPage({
   });
 
   if (!match) notFound();
+
+  const isCaptainHere =
+    me?.id === match.teamA?.captainId || me?.id === match.teamB?.captainId;
+  const claims = isCaptainHere
+    ? await prisma.matchResultClaim.findMany({
+        where: { matchId: match.id },
+      })
+    : [];
 
   // Подгружаем имена игроков для статистики
   const userIds = match.playerStats.map((s) => s.userId);
@@ -175,6 +186,45 @@ export default async function MatchDetailPage({
             </div>
           )}
         </div>
+
+        {/* Captain claim form (only for SCHEDULED/LIVE) */}
+        {isCaptainHere && match.status !== "FINISHED" && match.status !== "CANCELLED" && (
+          <section className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-6">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-amber-400 mb-2">
+              Заявить результат матча
+            </h2>
+            <p className="text-sm text-zinc-400 mb-4">
+              Введи итоговый счёт. Если оба капитана введут одинаковый счёт —
+              результат зафиксируется автоматически. Иначе — админ разберёт.
+            </p>
+            <ClaimResultForm
+              matchId={match.id}
+              tagA={match.teamA?.tag ?? "A"}
+              tagB={match.teamB?.tag ?? "B"}
+              currentClaim={
+                me &&
+                claims.find(
+                  (c) =>
+                    c.teamId ===
+                    (me.id === match.teamA?.captainId
+                      ? match.teamAId
+                      : match.teamBId)
+                )
+              }
+              opponentClaimed={
+                me &&
+                claims.some(
+                  (c) =>
+                    c.teamId !==
+                    (me.id === match.teamA?.captainId
+                      ? match.teamAId
+                      : match.teamBId)
+                )
+              }
+              hasDispute={claims.some((c) => c.status === "DISPUTED")}
+            />
+          </section>
+        )}
 
         {/* Twitch player */}
         {twitchChannel && (

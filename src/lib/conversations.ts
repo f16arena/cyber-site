@@ -1,5 +1,28 @@
 import { prisma } from "./prisma";
 
+/** Сообщения старше 24 часов удаляются автоматически (lazy). */
+const MESSAGE_TTL_MS = 24 * 60 * 60 * 1000;
+
+export async function purgeOldMessages(conversationId: string) {
+  const cutoff = new Date(Date.now() - MESSAGE_TTL_MS);
+  await prisma.chatMessage
+    .deleteMany({
+      where: {
+        conversationId,
+        createdAt: { lt: cutoff },
+      },
+    })
+    .catch(() => {});
+}
+
+/** Глобальная очистка — для cron-job или manual cleanup. */
+export async function purgeAllOldMessages() {
+  const cutoff = new Date(Date.now() - MESSAGE_TTL_MS);
+  return prisma.chatMessage.deleteMany({
+    where: { createdAt: { lt: cutoff } },
+  });
+}
+
 /**
  * Возвращает (или создаёт) приватный диалог между двумя пользователями.
  * Имя у диалога формата "DM:<userIdA>:<userIdB>" где A < B.

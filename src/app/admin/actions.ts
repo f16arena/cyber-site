@@ -768,6 +768,68 @@ export async function deleteWorldNews(formData: FormData) {
   revalidatePath("/world-news");
 }
 
+export async function uploadNewsCover(formData: FormData): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const newsId = formData.get("newsId") as string | null;
+  const file = formData.get("file") as File | null;
+  if (!newsId || !file || file.size === 0) return { error: "Файл не выбран" };
+
+  const news = await prisma.news.findUnique({
+    where: { id: newsId },
+    select: { coverUrl: true },
+  });
+  if (!news) return { error: "Новость не найдена" };
+
+  const result = await uploadImage("team-logos", `news-${newsId}`, file);
+  if (!result.ok) return { error: result.error };
+
+  if (news.coverUrl) {
+    await deleteImage("team-logos", news.coverUrl).catch(() => {});
+  }
+
+  await prisma.news.update({
+    where: { id: newsId },
+    data: { coverUrl: result.publicUrl },
+  });
+
+  revalidatePath("/admin/news");
+  revalidatePath("/news");
+  return { ok: true };
+}
+
+export async function uploadWorldNewsCover(
+  formData: FormData
+): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  const file = formData.get("file") as File | null;
+  if (!id || !file || file.size === 0) return { error: "Файл не выбран" };
+
+  const item = await prisma.worldNews.findUnique({
+    where: { id },
+    select: { imageUrl: true },
+  });
+  if (!item) return { error: "Не найдено" };
+
+  const result = await uploadImage("team-logos", `world-news-${id}`, file);
+  if (!result.ok) return { error: result.error };
+
+  if (item.imageUrl) {
+    await deleteImage("team-logos", item.imageUrl).catch(() => {});
+  }
+
+  await prisma.worldNews.update({
+    where: { id },
+    data: { imageUrl: result.publicUrl },
+  });
+
+  revalidatePath("/admin/world-news");
+  revalidatePath("/world-news");
+  return { ok: true };
+}
+
 // ─── NEWS ───────────────────────────────────────────────
 
 export async function createNews(
