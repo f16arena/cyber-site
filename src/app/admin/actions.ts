@@ -387,37 +387,194 @@ export async function uploadTournamentBanner(
  * Маппинг steamId → openDota account_id:
  *   account_id = steamId - 76561197960265728
  */
+type OpenDotaMatch = {
+  match_id: number;
+  radiant_win: boolean;
+  duration: number;
+  radiant_score: number;
+  dire_score: number;
+  players: Array<{
+    account_id?: number;
+    hero_id: number;
+    player_slot: number; // 0-127 = Radiant, 128-255 = Dire
+    kills: number;
+    deaths: number;
+    assists: number;
+    gold_per_min?: number;
+    xp_per_min?: number;
+    last_hits?: number;
+    denies?: number;
+    hero_damage?: number;
+    tower_damage?: number;
+    hero_healing?: number;
+    personaname?: string;
+  }>;
+};
+
+/** account_id (Dota 32-bit) → SteamID64 */
+function accountIdToSteamId(accountId: number): string {
+  const STEAM_ID_64_BASE = BigInt("76561197960265728");
+  return (BigInt(accountId) + STEAM_ID_64_BASE).toString();
+}
+
+/**
+ * Импорт Dota 2 матча через OpenDota API.
+ * Маппинг: account_id → SteamID64 → User.steamId.
+ */
 export async function importOpenDotaMatch(formData: FormData): Promise<void> {
   "use server";
   await requireAdmin();
 
+  const ourMatchId = formData.get("matchId") as string | null;
   const matchUrlOrId = ((formData.get("opendotaMatch") as string) || "").trim();
-  if (!matchUrlOrId) return;
+  if (!matchUrlOrId || !ourMatchId) return;
 
-  // Парсим match ID из URL вида https://www.opendota.com/matches/8234567890
   const idMatch = matchUrlOrId.match(/(?:matches\/)?(\d{8,12})/);
-  const matchId = idMatch?.[1] ?? matchUrlOrId;
-  if (!/^\d{8,12}$/.test(matchId)) {
-    console.warn(`OpenDota: не похоже на match ID: ${matchUrlOrId}`);
+  const dotaId = idMatch?.[1] ?? matchUrlOrId;
+  if (!/^\d{8,12}$/.test(dotaId)) {
+    console.warn(`[opendota] not a match id: ${matchUrlOrId}`);
     return;
   }
 
   try {
     const apiKey = process.env.OPENDOTA_API_KEY;
     const url = apiKey
-      ? `https://api.opendota.com/api/matches/${matchId}?api_key=${apiKey}`
-      : `https://api.opendota.com/api/matches/${matchId}`;
-
+      ? `https://api.opendota.com/api/matches/${dotaId}?api_key=${apiKey}`
+      : `https://api.opendota.com/api/matches/${dotaId}`;
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) {
-      console.warn(`OpenDota API: ${response.status} ${response.statusText}`);
+      console.warn(`[opendota] ${response.status}: ${response.statusText}`);
       return;
     }
-    // const data = await response.json();
-    // TODO: парсер data.players → MatchPlayerStat
-    // Маппинг: account_id ↔ User.steamId через формулу
+    const data = (await response.json()) as OpenDotaMatch;
+    if (!data.players?.length) return;
+
+    const ourMatch = await prisma.match.findUnique({
+      where: { id: ourMatchId },
+      select: { teamAId: true, teamBId: true },
+    });
+    if (!ourMatch) return;
+
+    // Radiant = teamA, Dire = teamB по конвенции
+    const teamAId = ourMatch.teamAId;
+    const teamBId = ourMatch.teamBId;
+
+    let bestRating = 0;
+    let mvpUserId: string | null = null;
+
+    for (const p of data.players) {
+      if (!p.account_id) continue; // anonymous player
+
+      const steamId = accountIdToSteamId(p.account_id);
+      const user = await prisma.user.findUnique({
+        where: { steamId },
+        select: { id: true },
+      });
+      if (!user) continue;
+
+      const isRadiant = (p.player_slot & 128) === 0;
+      const teamId = isRadiant ? teamAId : teamBId;
+      if (!teamId) continue;
+
+      // Простая Rating-формула для Dota: KDA * impact via gpm
+      const rating =
+        ((p.kills + p.assists * 0.5) / Math.max(p.deaths, 1)) * 0.6 +
+        ((p.gold_per_min ?? 0) / 600) * 0.4;
+
+      await prisma.matchPlayerStat.upsert({
+        where: { matchId_userId: { matchId: ourMatchId, userId: user.id } },
+        create: {
+          matchId: ourMatchId,
+          userId: user.id,
+          teamId,
+          game: "DOTA2",
+          kills: p.kills,
+          deaths: p.deaths,
+          assists: p.assists,
+          rating,
+          extra: {
+            heroId: p.hero_id,
+            gpm: p.gold_per_min,
+            xpm: p.xp_per_min,
+            lastHits: p.last_hits,
+            denies: p.denies,
+            heroDamage: p.hero_damage,
+            towerDamage: p.tower_damage,
+            heroHealing: p.hero_healing,
+            isRadiant,
+            source: "opendota",
+            dotaMatchId: dotaId,
+          },
+        },
+        update: {
+          kills: p.kills,
+          deaths: p.deaths,
+          assists: p.assists,
+          rating,
+          extra: {
+            heroId: p.hero_id,
+            gpm: p.gold_per_min,
+            xpm: p.xp_per_min,
+            source: "opendota",
+            dotaMatchId: dotaId,
+          },
+        },
+      });
+
+      // MVP — лучший по rating среди победившей стороны
+      const isWinner = isRadiant === data.radiant_win;
+      if (isWinner && rating > bestRating) {
+        bestRating = rating;
+        mvpUserId = user.id;
+      }
+    }
+
+    // Обновляем счёт матча
+    const winnerId = data.radiant_win ? teamAId : teamBId;
+    await prisma.match.update({
+      where: { id: ourMatchId },
+      data: {
+        scoreA: data.radiant_score,
+        scoreB: data.dire_score,
+        winnerId,
+        status: "FINISHED",
+        finishedAt: new Date(),
+        resultProofUrl: `https://www.opendota.com/matches/${dotaId}`,
+      },
+    });
+
+    // MVP для матча
+    if (mvpUserId) {
+      await prisma.matchPlayerStat.update({
+        where: { matchId_userId: { matchId: ourMatchId, userId: mvpUserId } },
+        data: { isMvp: true },
+      });
+      await prisma.mvpAward.upsert({
+        where: { matchId: ourMatchId },
+        create: {
+          userId: mvpUserId,
+          matchId: ourMatchId,
+        },
+        update: { userId: mvpUserId },
+      });
+    }
+
+    // Авто-продвижение по сетке
+    if (winnerId) {
+      await prisma.match.updateMany({
+        where: { parentMatchAId: ourMatchId },
+        data: { teamAId: winnerId },
+      });
+      await prisma.match.updateMany({
+        where: { parentMatchBId: ourMatchId },
+        data: { teamBId: winnerId },
+      });
+    }
+
+    revalidatePath(`/admin/matches/${ourMatchId}`);
+    revalidatePath(`/matches/${ourMatchId}`);
   } catch (e) {
-    console.error(`OpenDota import error: ${(e as Error).message}`);
+    console.error("[opendota] import error:", (e as Error).message);
   }
 }
 
@@ -750,40 +907,188 @@ export async function toggleAdmin(formData: FormData) {
  *   4. upsert MatchPlayerStat с рассчитанным rating
  *   5. Сохраняем счёт по картам
  */
+type FaceitStats = {
+  rounds: Array<{
+    teams: Array<{
+      team_id: string;
+      team_stats: { Score?: string; "Final Score"?: string };
+      players: Array<{
+        player_id: string;
+        nickname: string;
+        player_stats: Record<string, string>;
+      }>;
+    }>;
+  }>;
+};
+
+/**
+ * Импорт CS2-матча с FACEIT.
+ * URL формата https://www.faceit.com/en/cs2/room/1-abc-123 или просто "1-abc-123".
+ *
+ * Маппинг игроков: ищем User по username == FACEIT nickname (case-insensitive).
+ * Если не найдено — игрок пропускается (можно потом сматчить вручную).
+ */
 export async function importFaceitMatch(formData: FormData): Promise<void> {
   "use server";
   await requireAdmin();
 
   const apiKey = process.env.FACEIT_API_KEY;
   if (!apiKey) {
-    console.warn("FACEIT_API_KEY не настроен. developers.faceit.com");
+    console.warn("[faceit] API key not set");
     return;
   }
 
+  const ourMatchId = formData.get("matchId") as string | null;
   const matchUrlOrId = ((formData.get("faceitMatch") as string) || "").trim();
-  if (!matchUrlOrId) return;
+  if (!matchUrlOrId || !ourMatchId) return;
 
   const matchIdMatch = matchUrlOrId.match(/(?:room\/)?(1-[a-z0-9-]+)/i);
-  const matchId = matchIdMatch?.[1] ?? matchUrlOrId;
+  const faceitId = matchIdMatch?.[1] ?? matchUrlOrId;
 
   try {
     const response = await fetch(
-      `https://open.faceit.com/data/v4/matches/${matchId}/stats`,
+      `https://open.faceit.com/data/v4/matches/${faceitId}/stats`,
       {
         headers: { Authorization: `Bearer ${apiKey}` },
         cache: "no-store",
       }
     );
-
     if (!response.ok) {
-      console.warn(`FACEIT API: ${response.status} ${response.statusText}`);
+      console.warn(`[faceit] ${response.status}: ${response.statusText}`);
       return;
     }
+    const data = (await response.json()) as FaceitStats;
+    if (!data.rounds?.length) return;
 
-    // TODO: распарсить data.rounds[0].teams[*].players[*] и заполнить MatchPlayerStat
-    // const data = await response.json();
+    const ourMatch = await prisma.match.findUnique({
+      where: { id: ourMatchId },
+      select: { teamAId: true, teamBId: true, tournamentId: true },
+    });
+    if (!ourMatch) return;
+
+    let totalScoreA = 0;
+    let totalScoreB = 0;
+
+    for (const round of data.rounds) {
+      // Каждой FACEIT-команде проставляем score нашей команде по индексу
+      const [teamA, teamB] = round.teams;
+      const scoreA = parseInt(
+        teamA.team_stats?.["Final Score"] ?? teamA.team_stats?.Score ?? "0",
+        10
+      );
+      const scoreB = parseInt(
+        teamB.team_stats?.["Final Score"] ?? teamB.team_stats?.Score ?? "0",
+        10
+      );
+      totalScoreA += isNaN(scoreA) ? 0 : scoreA;
+      totalScoreB += isNaN(scoreB) ? 0 : scoreB;
+
+      // Players
+      for (const [teamIdx, faceitTeam] of [teamA, teamB].entries()) {
+        const ourTeamId = teamIdx === 0 ? ourMatch.teamAId : ourMatch.teamBId;
+        if (!ourTeamId) continue;
+
+        for (const p of faceitTeam.players) {
+          // Маппинг по nickname (case-insensitive)
+          const user = await prisma.user.findFirst({
+            where: { username: { equals: p.nickname, mode: "insensitive" } },
+            select: { id: true },
+          });
+          if (!user) continue;
+
+          const stats = p.player_stats || {};
+          const kills = parseInt(stats.Kills || "0", 10);
+          const deaths = parseInt(stats.Deaths || "0", 10);
+          const assists = parseInt(stats.Assists || "0", 10);
+          const mvps = parseInt(stats.MVPs || "0", 10);
+          const hsPct = parseFloat(stats["Headshots %"] || "0");
+          const adr = parseFloat(stats.ADR || stats["Average Damage per Round"] || "0");
+
+          // HLTV-style rating (упрощённо)
+          const rating =
+            (kills / Math.max(deaths, 1)) * 0.5 +
+            (adr / 100) * 0.3 +
+            (hsPct / 100) * 0.2;
+
+          await prisma.matchPlayerStat.upsert({
+            where: { matchId_userId: { matchId: ourMatchId, userId: user.id } },
+            create: {
+              matchId: ourMatchId,
+              userId: user.id,
+              teamId: ourTeamId,
+              game: "CS2",
+              kills,
+              deaths,
+              assists,
+              mvpRounds: mvps,
+              rating,
+              extra: {
+                hsPct,
+                adr,
+                kdRatio: parseFloat(stats["K/D Ratio"] || "0"),
+                krRatio: parseFloat(stats["K/R Ratio"] || "0"),
+                triplekills: parseInt(stats["Triple Kills"] || "0", 10),
+                quadrokills: parseInt(stats.Quadro || "0", 10),
+                pentakills: parseInt(stats.Penta || "0", 10),
+                source: "faceit",
+                faceitId,
+              },
+            },
+            update: {
+              kills,
+              deaths,
+              assists,
+              mvpRounds: mvps,
+              rating,
+              extra: {
+                hsPct,
+                adr,
+                source: "faceit",
+                faceitId,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Обновляем счёт матча
+    if (totalScoreA + totalScoreB > 0) {
+      const winnerId =
+        totalScoreA > totalScoreB
+          ? ourMatch.teamAId
+          : totalScoreB > totalScoreA
+            ? ourMatch.teamBId
+            : null;
+      await prisma.match.update({
+        where: { id: ourMatchId },
+        data: {
+          scoreA: totalScoreA,
+          scoreB: totalScoreB,
+          winnerId,
+          status: "FINISHED",
+          finishedAt: new Date(),
+          resultProofUrl: `https://www.faceit.com/en/cs2/room/${faceitId}`,
+        },
+      });
+
+      // Авто-продвижение по сетке
+      if (winnerId) {
+        await prisma.match.updateMany({
+          where: { parentMatchAId: ourMatchId },
+          data: { teamAId: winnerId },
+        });
+        await prisma.match.updateMany({
+          where: { parentMatchBId: ourMatchId },
+          data: { teamBId: winnerId },
+        });
+      }
+    }
+
+    revalidatePath(`/admin/matches/${ourMatchId}`);
+    revalidatePath(`/matches/${ourMatchId}`);
   } catch (e) {
-    console.error(`FACEIT import error: ${(e as Error).message}`);
+    console.error("[faceit] import error:", (e as Error).message);
   }
 }
 

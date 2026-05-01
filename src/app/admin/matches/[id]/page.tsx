@@ -129,6 +129,7 @@ export default async function AdminMatchPage({
               action={importOpenDotaMatch}
               className="flex flex-col sm:flex-row gap-3 items-start"
             >
+              <input type="hidden" name="matchId" value={match.id} />
               <input
                 name="opendotaMatch"
                 placeholder="https://www.opendota.com/matches/8234567890 или 8234567890"
@@ -162,6 +163,7 @@ export default async function AdminMatchPage({
               action={importFaceitMatch}
               className="flex flex-col sm:flex-row gap-3 items-start"
             >
+              <input type="hidden" name="matchId" value={match.id} />
               <input
                 name="faceitMatch"
                 placeholder="https://www.faceit.com/en/cs2/room/1-abc-123 или 1-abc-123"
