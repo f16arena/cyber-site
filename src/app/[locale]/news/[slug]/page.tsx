@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,38 @@ const CATEGORY_LABEL: Record<string, string> = {
   TEAM: "Команды",
   GENERAL: "Общее",
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await prisma.news.findUnique({
+    where: { slug },
+    select: { title: true, excerpt: true, coverUrl: true },
+  });
+  if (!article) return { title: "Новость не найдена" };
+  const description =
+    article.excerpt ||
+    "Новости киберспорта Казахстана: CS2, Dota 2, PUBG.";
+  return {
+    title: article.title,
+    description,
+    openGraph: {
+      title: article.title,
+      description,
+      type: "article",
+      images: article.coverUrl ? [{ url: article.coverUrl }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+      images: article.coverUrl ? [article.coverUrl] : undefined,
+    },
+  };
+}
 
 export default async function NewsDetailPage({
   params,

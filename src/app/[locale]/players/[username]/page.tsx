@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +8,43 @@ import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { sendFriendRequest } from "../../friends/actions";
 import type { Region } from "@prisma/client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  const { username: rawUsername } = await params;
+  let username: string;
+  try {
+    username = decodeURIComponent(rawUsername);
+  } catch {
+    username = rawUsername;
+  }
+  const user = await prisma.user.findFirst({
+    where: { username: { equals: username, mode: "insensitive" } },
+    select: { username: true, bio: true, avatarUrl: true, profiles: { select: { game: true } } },
+  });
+  if (!user) return { title: "Игрок не найден" };
+  const games = user.profiles.map((p) => p.game).join(", ") || "CS2 / Dota 2 / PUBG";
+  const description = user.bio || `${user.username} — игрок ${games} на Esports.kz`;
+  return {
+    title: user.username,
+    description,
+    openGraph: {
+      title: user.username,
+      description,
+      type: "profile",
+      images: user.avatarUrl ? [{ url: user.avatarUrl }] : undefined,
+    },
+    twitter: {
+      card: "summary",
+      title: user.username,
+      description,
+      images: user.avatarUrl ? [user.avatarUrl] : undefined,
+    },
+  };
+}
 
 const REGION_LABEL: Partial<Record<Region, string>> = {
   ALMATY: "Алматы", ASTANA: "Астана", SHYMKENT: "Шымкент", KARAGANDA: "Караганда",

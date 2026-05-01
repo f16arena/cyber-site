@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +9,39 @@ import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { joinTeam, leaveTeam } from "../actions";
 import { ROSTER_SIZE, MAX_SUBS, maxRoster } from "@/lib/games";
 import type { Region } from "@prisma/client";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tag: string }>;
+}): Promise<Metadata> {
+  const { tag: rawTag } = await params;
+  const tag = decodeURIComponent(rawTag).toUpperCase();
+  const team = await prisma.team.findUnique({
+    where: { tag },
+    select: { name: true, description: true, logoUrl: true, game: true },
+  });
+  if (!team) return { title: "Команда не найдена" };
+  const description =
+    team.description ||
+    `${team.game} команда [${tag}] на Esports.kz — состав, статистика, история матчей.`;
+  return {
+    title: `[${tag}] ${team.name}`,
+    description,
+    openGraph: {
+      title: `[${tag}] ${team.name}`,
+      description,
+      type: "profile",
+      images: team.logoUrl ? [{ url: team.logoUrl }] : undefined,
+    },
+    twitter: {
+      card: "summary",
+      title: `[${tag}] ${team.name}`,
+      description,
+      images: team.logoUrl ? [team.logoUrl] : undefined,
+    },
+  };
+}
 
 const REGION_LABEL: Partial<Record<Region, string>> = {
   ALMATY: "Алматы",

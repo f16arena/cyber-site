@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,39 @@ const STATUS_LABEL: Record<string, string> = {
   ONGOING: "Идёт",
   COMPLETED: "Завершён",
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const t = await prisma.tournament.findUnique({
+    where: { slug },
+    select: { name: true, description: true, bannerUrl: true, game: true, prize: true },
+  });
+  if (!t) return { title: "Турнир не найден" };
+  const prizeKzt = Number(t.prize) / 100;
+  const description =
+    t.description ||
+    `${t.game} турнир в Казахстане. Призовой фонд: ${prizeKzt.toLocaleString("ru-RU")} ₸.`;
+  return {
+    title: t.name,
+    description,
+    openGraph: {
+      title: t.name,
+      description,
+      type: "website",
+      images: t.bannerUrl ? [{ url: t.bannerUrl }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t.name,
+      description,
+      images: t.bannerUrl ? [t.bannerUrl] : undefined,
+    },
+  };
+}
 
 export default async function TournamentDetailPage({
   params,
