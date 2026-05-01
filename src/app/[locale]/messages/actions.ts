@@ -9,6 +9,7 @@ import {
 } from "@/lib/conversations";
 import { notify } from "@/lib/notifications";
 import { emailNewMessage } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 export { getOrCreateDirectConversation };
 
@@ -16,6 +17,9 @@ export async function sendTeamMessage(formData: FormData) {
   "use server";
   const me = await getCurrentUser();
   if (!me) return;
+
+  // Анти-спам: 20 сообщений в минуту с одного юзера
+  if (!rateLimit(`msg:${me.id}`, 20, 60_000).allowed) return;
 
   const teamId = formData.get("teamId") as string | null;
   const body = ((formData.get("body") as string) || "").trim();
@@ -45,6 +49,9 @@ export async function sendTeamMessage(formData: FormData) {
 export async function sendMessage(formData: FormData) {
   const me = await getCurrentUser();
   if (!me) return;
+
+  // Анти-спам: 20 сообщений в минуту от одного юзера
+  if (!rateLimit(`msg:${me.id}`, 20, 60_000).allowed) return;
 
   const toUserId = formData.get("toUserId") as string | null;
   const body = ((formData.get("body") as string) || "").trim();

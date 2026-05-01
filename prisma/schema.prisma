@@ -622,6 +622,20 @@ model PushSubscription {
   @@index([userId])
 }
 
+model AdminActionLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String   // "DELETE_TEAM", "EDIT_SPONSOR", "GRANT_ADMIN", etc.
+  entity    String?  // "team", "sponsor", "user", "tournament"
+  entityId  String?
+  metadata  Json?    // дополнительная инфа (имя, и т.п.)
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([action, createdAt])
+}
+
 model EmailLog {
   id        String   @id @default(cuid())
   to        String

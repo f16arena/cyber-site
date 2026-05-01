@@ -85,6 +85,7 @@ export function AdminSidebar({
       title: "Настройки",
       items: [
         { href: "/admin/settings", label: "Настройки", icon: "⚙" },
+        { href: "/admin/audit", label: "Журнал действий", icon: "📋" },
       ],
     },
   ];

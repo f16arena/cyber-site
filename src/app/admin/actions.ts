@@ -9,6 +9,7 @@ import { uploadImage, deleteImage } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
 import { translateAll } from "@/lib/translate";
 import { emailMvpAwarded } from "@/lib/email";
+import { logAdminAction } from "@/lib/audit";
 import type { Game, NewsCategory, TournamentFormat } from "@prisma/client";
 
 export type ActionState = { ok?: boolean; error?: string };
@@ -684,10 +685,21 @@ export async function adminUploadTeamLogo(
 
 export async function adminDeleteTeam(formData: FormData) {
   "use server";
-  await requireAdmin();
+  const admin = await requireAdmin();
   const teamId = formData.get("teamId") as string | null;
   if (!teamId) return;
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { name: true, tag: true, game: true },
+  });
   await prisma.team.delete({ where: { id: teamId } });
+  await logAdminAction({
+    adminId: admin.id,
+    action: "DELETE_TEAM",
+    entity: "team",
+    entityId: teamId,
+    metadata: team ? { name: team.name, tag: team.tag, game: team.game } : undefined,
+  });
   revalidatePath("/admin/teams");
   redirect("/admin/teams");
 }
@@ -867,19 +879,27 @@ export async function createSeason(
 
 export async function toggleAdmin(formData: FormData) {
   "use server";
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = formData.get("userId") as string | null;
   if (!userId) return;
 
   const target = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isAdmin: true },
+    select: { isAdmin: true, username: true },
   });
   if (!target) return;
 
   await prisma.user.update({
     where: { id: userId },
     data: { isAdmin: !target.isAdmin },
+  });
+
+  await logAdminAction({
+    adminId: admin.id,
+    action: target.isAdmin ? "REVOKE_ADMIN" : "GRANT_ADMIN",
+    entity: "user",
+    entityId: userId,
+    metadata: { username: target.username },
   });
 
   revalidatePath("/admin/users");
