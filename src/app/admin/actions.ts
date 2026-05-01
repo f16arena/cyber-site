@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { generateDoubleElimination, shuffle } from "@/lib/bracket";
+import { uploadImage, deleteImage } from "@/lib/storage";
+import { notify } from "@/lib/notifications";
 import type { Game, NewsCategory, TournamentFormat } from "@prisma/client";
 
 export type ActionState = { ok?: boolean; error?: string };
@@ -80,6 +82,25 @@ export async function registerTeam(formData: FormData) {
     create: { tournamentId, teamId, approvedAt: new Date() },
     update: { approvedAt: new Date() },
   });
+
+  // Уведомляем капитана команды
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { captainId: true, name: true },
+  });
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { name: true, slug: true },
+  });
+  if (team && tournament) {
+    await notify({
+      userId: team.captainId,
+      type: "TOURNAMENT_REGISTERED",
+      title: `${team.name} зарегистрирована в турнире`,
+      body: tournament.name,
+      link: `/tournaments/${tournament.slug}`,
+    });
+  }
 
   revalidatePath(`/admin/tournaments/${tournamentId}`);
   revalidatePath("/tournaments");
@@ -278,7 +299,7 @@ export async function recordPlayerStat(formData: FormData) {
   if (isMvp) {
     const match = await prisma.match.findUnique({
       where: { id: matchId },
-      select: { tournamentId: true },
+      select: { tournamentId: true, tournament: { select: { name: true } } },
     });
     await prisma.mvpAward.upsert({
       where: { matchId },
@@ -289,9 +310,50 @@ export async function recordPlayerStat(formData: FormData) {
       },
       update: { userId },
     });
+    await notify({
+      userId,
+      type: "MVP_AWARDED",
+      title: "⭐ Ты получил MVP матча!",
+      body: match?.tournament?.name
+        ? `Турнир: ${match.tournament.name}`
+        : undefined,
+      link: `/matches/${matchId}`,
+    });
   }
 
   revalidatePath(`/admin/matches/${matchId}`);
+}
+
+export async function uploadTournamentBanner(
+  formData: FormData
+): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const tournamentId = formData.get("tournamentId") as string | null;
+  const file = formData.get("file") as File | null;
+  if (!tournamentId || !file || file.size === 0) return { error: "Файл не выбран" };
+
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { bannerUrl: true },
+  });
+  if (!tournament) return { error: "Турнир не найден" };
+
+  // banners в bucket team-logos (unified bucket для всех картинок турниров/команд)
+  const result = await uploadImage("team-logos", `tournament-${tournamentId}`, file);
+  if (!result.ok) return { error: result.error };
+
+  if (tournament.bannerUrl) {
+    await deleteImage("team-logos", tournament.bannerUrl).catch(() => {});
+  }
+
+  await prisma.tournament.update({
+    where: { id: tournamentId },
+    data: { bannerUrl: result.publicUrl },
+  });
+
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  return { ok: true };
 }
 
 // ─── SPONSORS ───────────────────────────────────────────

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notifications";
 
 export async function sendFriendRequest(formData: FormData) {
   const me = await getCurrentUser();
@@ -35,6 +36,13 @@ export async function sendFriendRequest(formData: FormData) {
     },
   });
 
+  await notify({
+    userId: target.id,
+    type: "FRIEND_REQUEST",
+    title: `${me.username ?? "Игрок"} хочет добавить тебя в друзья`,
+    link: "/friends",
+  });
+
   revalidatePath("/friends");
   revalidatePath(`/players/${targetUsername}`);
 }
@@ -51,6 +59,13 @@ export async function acceptFriend(formData: FormData) {
   await prisma.friendship.update({
     where: { id },
     data: { status: "ACCEPTED" },
+  });
+
+  await notify({
+    userId: f.fromId,
+    type: "FRIEND_ACCEPTED",
+    title: `${me.username ?? "Игрок"} принял твой запрос в друзья`,
+    link: "/friends",
   });
 
   revalidatePath("/friends");

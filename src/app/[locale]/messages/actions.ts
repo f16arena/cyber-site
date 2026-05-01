@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateDirectConversation } from "@/lib/conversations";
+import { notify } from "@/lib/notifications";
 
 export { getOrCreateDirectConversation };
 
@@ -32,6 +33,26 @@ export async function sendMessage(formData: FormData) {
       body,
     },
   });
+
+  // Уведомляем получателя — но дедуплицируем: за последние 5 минут не плодим
+  const recent = await prisma.notification.findFirst({
+    where: {
+      userId: toUserId,
+      type: "NEW_MESSAGE",
+      link: `/messages/${me.id}`,
+      createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+    },
+    select: { id: true },
+  });
+  if (!recent) {
+    await notify({
+      userId: toUserId,
+      type: "NEW_MESSAGE",
+      title: `Новое сообщение от ${me.username ?? "игрока"}`,
+      body: body.slice(0, 100),
+      link: `/messages/${me.id}`,
+    });
+  }
 
   revalidatePath(`/messages/${toUserId}`);
   revalidatePath("/messages");

@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-import { generateBracket, registerTeam } from "../../actions";
+import { generateBracket, registerTeam, uploadTournamentBanner } from "../../actions";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export default async function AdminTournamentManagePage({
   params,
@@ -207,6 +208,19 @@ export default async function AdminTournamentManagePage({
             </div>
           </section>
         )}
+
+        <section className="mt-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+            Баннер турнира
+          </h2>
+          <ImageUploader
+            currentUrl={tournament.bannerUrl}
+            action={uploadTournamentBanner}
+            extraFields={{ tournamentId: tournament.id }}
+            label="Баннер"
+            hint="PNG / JPG / WebP. До 1 МБ. Лучше широкая картинка 1920×640 или похожая (соотношение 3:1)."
+          />
+        </section>
 
         {tournament.description && (
           <section className="mt-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { UserMenu } from "./UserMenu";
 import { GlobalSearch } from "./GlobalSearch";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { MobileMenu } from "./MobileMenu";
 
 export async function SiteHeader() {
   const t = await getTranslations("Nav");
@@ -41,10 +42,11 @@ export async function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <GlobalSearch />
           <LanguageSwitcher />
           <UserMenu />
+          <MobileMenu links={navLinks} />
         </div>
       </div>
     </header>

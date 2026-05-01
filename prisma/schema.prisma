@@ -92,6 +92,20 @@ enum NewsCategory {
   GENERAL
 }
 
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  TEAM_INVITE
+  TEAM_KICKED
+  MATCH_REMINDER
+  MATCH_RESULT
+  MVP_AWARDED
+  TOURNAMENT_REGISTERED
+  NEW_MESSAGE
+  SPONSOR_INQUIRY
+  SYSTEM
+}
+
 // ─── USER ────────────────────────────────────────────────
 
 model User {
@@ -119,6 +133,7 @@ model User {
   friendsRecv     Friendship[]      @relation("FriendshipTo")
   mvpAwards       MvpAward[]
   authoredNews    News[]            @relation("NewsAuthor")
+  notifications   Notification[]    @relation("NotificationRecipient")
 
   @@index([status])
   @@index([region])
@@ -440,6 +455,25 @@ model SponsorshipInquiry {
   isHandled   Boolean      @default(false)
 
   @@index([isHandled, createdAt])
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String           // получатель
+  type       NotificationType
+  title      String
+  body       String?
+  link       String?          // куда вести при клике (например /matches/abc)
+  imageUrl   String?
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  user       User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
 }
 
 // ─── NEWS ────────────────────────────────────────────────

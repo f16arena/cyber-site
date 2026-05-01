@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getCurrentUser, getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { NotificationsBell } from "./NotificationsBell";
 
 export async function UserMenu() {
   const user = await getCurrentUser();
@@ -37,7 +38,8 @@ export async function UserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 sm:gap-2">
+      <NotificationsBell />
       <Link
         href="/friends"
         className="relative text-sm font-mono text-zinc-400 hover:text-violet-300 transition-colors px-2"
