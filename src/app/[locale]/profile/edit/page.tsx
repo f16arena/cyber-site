@@ -98,6 +98,7 @@ export default async function ProfileEditPage() {
             region: user.region,
             twitchUrl: user.twitchUrl,
             discordTag: user.discordTag,
+            messagePrivacy: user.messagePrivacy,
           }}
           profiles={user.profiles.map((p) => ({
             game: p.game,

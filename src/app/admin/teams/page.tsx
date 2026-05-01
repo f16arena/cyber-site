@@ -29,7 +29,7 @@ export default async function AdminTeamsPage() {
           {teams.map((t) => (
             <Link
               key={t.id}
-              href={`/teams/${t.tag}`}
+              href={`/admin/teams/${t.id}`}
               className="flex items-center gap-4 p-4 hover:bg-zinc-800/30 transition-colors"
             >
               <div className="w-10 h-10 rounded bg-gradient-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center font-black">

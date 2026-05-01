@@ -3,10 +3,43 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateDirectConversation } from "@/lib/conversations";
+import {
+  getOrCreateDirectConversation,
+  getOrCreateTeamConversation,
+} from "@/lib/conversations";
 import { notify } from "@/lib/notifications";
 
 export { getOrCreateDirectConversation };
+
+export async function sendTeamMessage(formData: FormData) {
+  "use server";
+  const me = await getCurrentUser();
+  if (!me) return;
+
+  const teamId = formData.get("teamId") as string | null;
+  const body = ((formData.get("body") as string) || "").trim();
+  if (!teamId || !body || body.length > 2000) return;
+
+  // Проверяем что я в команде
+  const member = await prisma.teamMember.findFirst({
+    where: { teamId, userId: me.id },
+    select: { id: true },
+  });
+  if (!member) return;
+
+  const conversationId = await getOrCreateTeamConversation(teamId);
+  await prisma.chatMessage.create({
+    data: { conversationId, senderId: me.id, body },
+  });
+
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { tag: true },
+  });
+  if (team) {
+    revalidatePath(`/teams/${team.tag}/chat`);
+  }
+}
 
 export async function sendMessage(formData: FormData) {
   const me = await getCurrentUser();
@@ -18,11 +51,26 @@ export async function sendMessage(formData: FormData) {
   if (!toUserId || !body || body.length > 2000) return;
   if (toUserId === me.id) return;
 
-  const otherExists = await prisma.user.findUnique({
+  const recipient = await prisma.user.findUnique({
     where: { id: toUserId },
-    select: { id: true },
+    select: { id: true, messagePrivacy: true },
   });
-  if (!otherExists) return;
+  if (!recipient) return;
+
+  // Проверка privacy: если получатель принимает только от друзей, проверим дружбу
+  if (recipient.messagePrivacy === "FRIENDS_ONLY") {
+    const areFriends = await prisma.friendship.findFirst({
+      where: {
+        status: "ACCEPTED",
+        OR: [
+          { fromId: me.id, toId: toUserId },
+          { fromId: toUserId, toId: me.id },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!areFriends) return; // тихо отбрасываем — UI потом покажет «недоступно»
+  }
 
   const conversationId = await getOrCreateDirectConversation(me.id, toUserId);
 

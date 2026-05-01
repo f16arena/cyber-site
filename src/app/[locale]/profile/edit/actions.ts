@@ -36,6 +36,8 @@ export async function updateProfile(
   const region = typeof regionRaw === "string" ? regionRaw : "";
   const twitchUrl = typeof twitchRaw === "string" ? twitchRaw.trim() : "";
   const discordTag = typeof discordRaw === "string" ? discordRaw.trim() : "";
+  const messagePrivacy =
+    formData.get("messagePrivacy") === "FRIENDS_ONLY" ? "FRIENDS_ONLY" : "EVERYONE";
 
   if (username.length < 2 || username.length > 32) {
     return { error: "Ник должен быть от 2 до 32 символов" };
@@ -65,6 +67,7 @@ export async function updateProfile(
       region: (region as Region) || null,
       twitchUrl: twitchUrl || null,
       discordTag: discordTag || null,
+      messagePrivacy,
     },
   });
 

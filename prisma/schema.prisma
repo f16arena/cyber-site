@@ -96,6 +96,9 @@ enum NotificationType {
   FRIEND_REQUEST
   FRIEND_ACCEPTED
   TEAM_INVITE
+  TEAM_JOIN_REQUEST
+  TEAM_REQUEST_ACCEPTED
+  TEAM_REQUEST_DECLINED
   TEAM_KICKED
   MATCH_REMINDER
   MATCH_RESULT
@@ -104,6 +107,22 @@ enum NotificationType {
   NEW_MESSAGE
   SPONSOR_INQUIRY
   SYSTEM
+}
+
+enum TeamPrivacy {
+  PUBLIC
+  PRIVATE
+}
+
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum MessagePrivacy {
+  EVERYONE
+  FRIENDS_ONLY
 }
 
 // ─── USER ────────────────────────────────────────────────
@@ -118,11 +137,12 @@ model User {
   region      Region?
   twitchUrl   String?
   discordTag  String?
-  status      PlayerStatus  @default(OFFLINE)
-  isAdmin     Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  lastSeenAt  DateTime?
+  status         PlayerStatus    @default(OFFLINE)
+  isAdmin        Boolean         @default(false)
+  messagePrivacy MessagePrivacy  @default(EVERYONE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  lastSeenAt     DateTime?
 
   profiles        PlayerProfile[]
   teamMemberships TeamMember[]
@@ -134,6 +154,7 @@ model User {
   mvpAwards       MvpAward[]
   authoredNews    News[]            @relation("NewsAuthor")
   notifications   Notification[]    @relation("NotificationRecipient")
+  joinRequests    TeamJoinRequest[]
 
   @@index([status])
   @@index([region])
@@ -157,17 +178,18 @@ model PlayerProfile {
 // ─── TEAMS ───────────────────────────────────────────────
 
 model Team {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
-  tag         String   @unique
+  tag         String      @unique
   logoUrl     String?
   game        Game
   region      Region?
   captainId   String
   description String?
-  rating      Int      @default(1000)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  rating      Int         @default(1000)
+  privacy     TeamPrivacy @default(PUBLIC)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   captain       User                     @relation("TeamCaptain", fields: [captainId], references: [id])
   members       TeamMember[]
@@ -175,10 +197,27 @@ model Team {
   matchesB      Match[]                  @relation("MatchTeamB")
   wonMatches    Match[]                  @relation("MatchWinner")
   registrations TournamentRegistration[]
+  joinRequests  TeamJoinRequest[]
 
   @@unique([name, game])
   @@index([game])
   @@index([rating])
+}
+
+model TeamJoinRequest {
+  id        String            @id @default(cuid())
+  teamId    String
+  userId    String
+  status    JoinRequestStatus @default(PENDING)
+  message   String?
+  createdAt DateTime          @default(now())
+  decidedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId, status])
 }
 
 model TeamMember {

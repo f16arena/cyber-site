@@ -29,6 +29,7 @@ export function TeamEditForm({
     name: string;
     description: string | null;
     region: string | null;
+    privacy: string;
   };
 }) {
   const [state, action, pending] = useActionState(updateTeam, initial);
@@ -58,6 +59,12 @@ export function TeamEditForm({
               {r.label}
             </option>
           ))}
+        </select>
+      </Field>
+      <Field label="Приватность">
+        <select name="privacy" defaultValue={team.privacy} className={inputCls}>
+          <option value="PUBLIC">🔓 Открытая — игроки вступают мгновенно</option>
+          <option value="PRIVATE">🔒 Закрытая — капитан одобряет заявки</option>
         </select>
       </Field>
       <Field label="Описание">

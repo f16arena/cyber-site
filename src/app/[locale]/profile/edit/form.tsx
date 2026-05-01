@@ -41,6 +41,7 @@ type Props = {
     region: Region | null;
     twitchUrl: string | null;
     discordTag: string | null;
+    messagePrivacy?: string;
   };
   profiles: Array<{
     game: Game;
@@ -114,6 +115,16 @@ export function ProfileEditForm({ user, profiles }: Props) {
             placeholder="username или username#1234"
             className={inputCls}
           />
+        </Field>
+        <Field label="Кто может писать в личку">
+          <select
+            name="messagePrivacy"
+            defaultValue={user.messagePrivacy ?? "EVERYONE"}
+            className={inputCls}
+          >
+            <option value="EVERYONE">🌍 Все</option>
+            <option value="FRIENDS_ONLY">👥 Только друзья</option>
+          </select>
         </Field>
         <Field label="Био" full>
           <textarea

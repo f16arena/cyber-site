@@ -73,6 +73,12 @@ export function TeamCreateForm() {
             ))}
           </select>
         </Field>
+        <Field label="Приватность">
+          <select name="privacy" defaultValue="PUBLIC" className={inputCls}>
+            <option value="PUBLIC">🔓 Открытая — игроки вступают мгновенно</option>
+            <option value="PRIVATE">🔒 Закрытая — капитан одобряет заявки</option>
+          </select>
+        </Field>
         <Field label="Описание команды" full>
           <textarea
             name="description"

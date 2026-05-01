@@ -356,6 +356,149 @@ export async function uploadTournamentBanner(
   return { ok: true };
 }
 
+// ─── ADMIN: TEAMS ───────────────────────────────────────
+
+export async function adminUpdateTeam(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const teamId = formData.get("teamId") as string | null;
+  if (!teamId) return { error: "teamId отсутствует" };
+
+  const name = ((formData.get("name") as string) || "").trim();
+  const tag = ((formData.get("tag") as string) || "").trim().toUpperCase();
+  const description = ((formData.get("description") as string) || "").trim();
+  const privacy =
+    (formData.get("privacy") as string) === "PRIVATE" ? "PRIVATE" : "PUBLIC";
+
+  if (name.length < 2) return { error: "Название слишком короткое" };
+  if (!tag.match(/^[A-Z0-9]{2,5}$/)) return { error: "Неверный тег" };
+
+  await prisma.team.update({
+    where: { id: teamId },
+    data: {
+      name,
+      tag,
+      description: description || null,
+      privacy,
+    },
+  });
+
+  revalidatePath(`/admin/teams`);
+  revalidatePath(`/teams/${tag}`);
+  return { ok: true };
+}
+
+export async function adminUploadTeamLogo(
+  formData: FormData
+): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const teamId = formData.get("teamId") as string | null;
+  const file = formData.get("file") as File | null;
+  if (!teamId || !file || file.size === 0) return { error: "Файл не выбран" };
+
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { logoUrl: true },
+  });
+  if (!team) return { error: "Команда не найдена" };
+
+  const result = await uploadImage("team-logos", `team-${teamId}`, file);
+  if (!result.ok) return { error: result.error };
+
+  if (team.logoUrl) {
+    await deleteImage("team-logos", team.logoUrl).catch(() => {});
+  }
+
+  await prisma.team.update({
+    where: { id: teamId },
+    data: { logoUrl: result.publicUrl },
+  });
+
+  revalidatePath(`/admin/teams/${teamId}`);
+  return { ok: true };
+}
+
+export async function adminDeleteTeam(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const teamId = formData.get("teamId") as string | null;
+  if (!teamId) return;
+  await prisma.team.delete({ where: { id: teamId } });
+  revalidatePath("/admin/teams");
+  redirect("/admin/teams");
+}
+
+// ─── ADMIN: SPONSORS ────────────────────────────────────
+
+export async function adminUpdateSponsor(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  if (!id) return { error: "id отсутствует" };
+
+  const name = ((formData.get("name") as string) || "").trim();
+  const tier = formData.get("tier") as string | null;
+  const websiteUrl = ((formData.get("websiteUrl") as string) || "").trim();
+  const monthlyFee = parseInt((formData.get("monthlyFeeKzt") as string) || "0", 10);
+  const notes = ((formData.get("notes") as string) || "").trim();
+
+  if (name.length < 2) return { error: "Название слишком короткое" };
+  if (!tier || !["BRONZE", "SILVER", "GOLD", "PLATINUM"].includes(tier))
+    return { error: "Неверный тир" };
+
+  await prisma.sponsor.update({
+    where: { id },
+    data: {
+      name,
+      tier: tier as "BRONZE" | "SILVER" | "GOLD" | "PLATINUM",
+      websiteUrl: websiteUrl || null,
+      monthlyFeeKzt: monthlyFee || null,
+      notes: notes || null,
+    },
+  });
+
+  revalidatePath(`/admin/sponsors`);
+  return { ok: true };
+}
+
+export async function adminUploadSponsorLogo(
+  formData: FormData
+): Promise<ActionState> {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  const file = formData.get("file") as File | null;
+  if (!id || !file || file.size === 0) return { error: "Файл не выбран" };
+
+  const sponsor = await prisma.sponsor.findUnique({
+    where: { id },
+    select: { logoUrl: true },
+  });
+  if (!sponsor) return { error: "Спонсор не найден" };
+
+  const result = await uploadImage("team-logos", `sponsor-${id}`, file);
+  if (!result.ok) return { error: result.error };
+
+  if (sponsor.logoUrl) {
+    await deleteImage("team-logos", sponsor.logoUrl).catch(() => {});
+  }
+
+  await prisma.sponsor.update({
+    where: { id },
+    data: { logoUrl: result.publicUrl },
+  });
+
+  revalidatePath("/admin/sponsors");
+  return { ok: true };
+}
+
 // ─── SPONSORS ───────────────────────────────────────────
 
 export async function createSponsor(

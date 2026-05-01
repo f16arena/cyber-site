@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { toggleSponsorActive, deleteSponsor } from "../actions";
 
 const TIER_COLOR: Record<string, string> = {
   BRONZE: "from-amber-700 to-amber-900",
@@ -50,9 +49,10 @@ export default async function AdminSponsorsPage() {
       ) : (
         <div className="space-y-3">
           {sponsors.map((s) => (
-            <div
+            <Link
               key={s.id}
-              className={`rounded-lg border ${s.isActive ? "border-zinc-800" : "border-zinc-800/50 opacity-60"} bg-zinc-900/40 p-4 flex items-center gap-4 flex-wrap`}
+              href={`/admin/sponsors/${s.id}`}
+              className={`rounded-lg border ${s.isActive ? "border-zinc-800 hover:border-violet-500/40" : "border-zinc-800/50 opacity-60 hover:opacity-80"} bg-zinc-900/40 hover:bg-zinc-900/70 p-4 flex items-center gap-4 flex-wrap transition-colors`}
             >
               <div className="w-12 h-12 rounded bg-zinc-800/50 flex items-center justify-center text-xs font-mono text-zinc-500">
                 {s.logoUrl ? (
@@ -99,27 +99,8 @@ export default async function AdminSponsorsPage() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <form action={toggleSponsorActive}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <button
-                    type="submit"
-                    className="text-xs font-mono px-3 h-8 rounded border border-zinc-700 hover:border-violet-400 transition-all"
-                  >
-                    {s.isActive ? "Архивировать" : "Активировать"}
-                  </button>
-                </form>
-                <form action={deleteSponsor}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <button
-                    type="submit"
-                    className="text-xs font-mono px-3 h-8 rounded border border-rose-500/30 hover:bg-rose-500/10 text-rose-300"
-                  >
-                    Удалить
-                  </button>
-                </form>
-              </div>
-            </div>
+              <span className="text-xs font-mono text-violet-300">→</span>
+            </Link>
           ))}
         </div>
       )}

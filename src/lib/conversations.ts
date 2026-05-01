@@ -24,3 +24,22 @@ export async function getOrCreateDirectConversation(
   }
   return conv.id;
 }
+
+/**
+ * Командный чат — групповой Conversation для каждой команды.
+ * Имя в формате "TEAM:<teamId>".
+ */
+export async function getOrCreateTeamConversation(teamId: string) {
+  const name = `TEAM:${teamId}`;
+  let conv = await prisma.conversation.findFirst({
+    where: { isGroup: true, name },
+    select: { id: true },
+  });
+  if (!conv) {
+    conv = await prisma.conversation.create({
+      data: { isGroup: true, name },
+      select: { id: true },
+    });
+  }
+  return conv.id;
+}

@@ -6,7 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { TeamEditForm } from "./form";
-import { kickMember, uploadTeamLogo } from "../../actions";
+import {
+  kickMember,
+  uploadTeamLogo,
+  approveJoinRequest,
+  declineJoinRequest,
+} from "../../actions";
 import { ImageUploader } from "@/components/ImageUploader";
 
 export default async function TeamEditPage({
@@ -28,6 +33,15 @@ export default async function TeamEditPage({
           user: { select: { id: true, username: true, avatarUrl: true } },
         },
         orderBy: { joinedAt: "asc" },
+      },
+      joinRequests: {
+        where: { status: "PENDING" },
+        include: {
+          user: {
+            select: { id: true, username: true, avatarUrl: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
       },
     },
   });
@@ -90,6 +104,70 @@ export default async function TeamEditPage({
             />
           </div>
         </section>
+
+        {/* Pending join requests (только для PRIVATE команд) */}
+        {team.joinRequests.length > 0 && (
+          <section className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-5 mb-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-amber-400 mb-3">
+              Заявки на вступление ({team.joinRequests.length})
+            </h2>
+            <div className="space-y-2">
+              {team.joinRequests.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-start gap-3 p-3 rounded border border-zinc-800 bg-zinc-950/40"
+                >
+                  {r.user.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={r.user.avatarUrl}
+                      alt={r.user.username}
+                      className="w-10 h-10 rounded border border-zinc-700"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-violet-500/20" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/players/${r.user.username}`}
+                      className="font-bold text-sm hover:text-violet-200"
+                    >
+                      {r.user.username}
+                    </Link>
+                    {r.message && (
+                      <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                        {r.message}
+                      </p>
+                    )}
+                    <div className="text-[10px] font-mono text-zinc-500 mt-1">
+                      {r.createdAt.toLocaleString("ru-RU")}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <form action={approveJoinRequest}>
+                      <input type="hidden" name="requestId" value={r.id} />
+                      <button
+                        type="submit"
+                        className="text-xs font-mono px-3 h-8 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30"
+                      >
+                        ✓ Принять
+                      </button>
+                    </form>
+                    <form action={declineJoinRequest}>
+                      <input type="hidden" name="requestId" value={r.id} />
+                      <button
+                        type="submit"
+                        className="text-xs font-mono px-3 h-8 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                      >
+                        ✗ Отклонить
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Members management */}
         <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">

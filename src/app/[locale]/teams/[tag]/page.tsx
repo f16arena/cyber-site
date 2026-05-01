@@ -189,16 +189,50 @@ export default async function TeamPage({
                   ⚙ Редактировать
                 </Link>
               )}
-              {canJoin && (
+              {isMember && (
+                <Link
+                  href={`/teams/${team.tag}/chat`}
+                  className="text-xs font-mono px-4 h-9 inline-flex items-center justify-center rounded border border-violet-500/30 hover:bg-violet-500/10 text-violet-300"
+                >
+                  💬 Командный чат
+                </Link>
+              )}
+              {canJoin && team.privacy === "PUBLIC" && (
                 <form action={joinTeam}>
                   <input type="hidden" name="teamId" value={team.id} />
                   <button
                     type="submit"
                     className="text-xs font-mono px-4 h-9 inline-flex items-center rounded bg-violet-500 hover:bg-violet-400 transition-all"
                   >
-                    Вступить
+                    🔓 Вступить
                   </button>
                 </form>
+              )}
+              {canJoin && team.privacy === "PRIVATE" && (
+                <details className="group">
+                  <summary className="text-xs font-mono px-4 h-9 inline-flex items-center rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 cursor-pointer list-none">
+                    🔒 Подать заявку
+                  </summary>
+                  <form
+                    action={joinTeam}
+                    className="absolute right-0 mt-2 w-72 rounded-lg border border-zinc-800 bg-zinc-950/95 p-3 shadow-xl z-10"
+                  >
+                    <input type="hidden" name="teamId" value={team.id} />
+                    <textarea
+                      name="message"
+                      placeholder="Расскажи капитану о себе..."
+                      rows={3}
+                      maxLength={300}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs resize-none focus:outline-none focus:border-violet-400"
+                    />
+                    <button
+                      type="submit"
+                      className="mt-2 w-full h-9 rounded bg-violet-500 hover:bg-violet-400 text-xs font-bold uppercase tracking-wider"
+                    >
+                      Отправить заявку
+                    </button>
+                  </form>
+                </details>
               )}
               {isMember && (
                 <form action={leaveTeam}>
@@ -224,37 +258,59 @@ export default async function TeamPage({
               const profileForGame = m.user.profiles.find(
                 (p) => p.game === team.game
               );
+              const isMe = user?.id === m.userId;
               return (
                 <div
                   key={m.id}
-                  className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                  className="rounded-lg border border-zinc-800 bg-zinc-900/40 hover:border-violet-500/30 transition-colors overflow-hidden"
                 >
-                  {m.user.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={m.user.avatarUrl}
-                      alt={m.user.username}
-                      className="w-12 h-12 rounded border border-zinc-700"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded bg-violet-500/20 border border-violet-500/30" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold truncate">
-                        {m.user.username}
-                      </span>
-                      {m.role === "CAPTAIN" && (
-                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                          C
+                  <Link
+                    href={`/players/${m.user.username}`}
+                    className="flex items-center gap-3 p-4 hover:bg-zinc-800/30 transition-colors"
+                  >
+                    {m.user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.user.avatarUrl}
+                        alt={m.user.username}
+                        className="w-12 h-12 rounded border border-zinc-700"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-violet-500/20 border border-violet-500/30" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold truncate hover:text-violet-200 transition-colors">
+                          {m.user.username}
                         </span>
-                      )}
+                        {m.role === "CAPTAIN" && (
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            C
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-zinc-500 font-mono mt-0.5">
+                        {profileForGame?.inGameRole ?? "—"}
+                        {profileForGame?.rank && ` · ${profileForGame.rank}`}
+                      </div>
                     </div>
-                    <div className="text-xs text-zinc-500 font-mono mt-0.5">
-                      {profileForGame?.inGameRole ?? "—"}
-                      {profileForGame?.rank && ` · ${profileForGame.rank}`}
+                  </Link>
+                  {user && !isMe && (
+                    <div className="flex border-t border-zinc-800/60 divide-x divide-zinc-800/60">
+                      <Link
+                        href={`/messages/${m.userId}`}
+                        className="flex-1 text-center py-2 text-[10px] font-mono text-zinc-400 hover:bg-violet-500/10 hover:text-violet-300 transition-colors"
+                      >
+                        💬 Написать
+                      </Link>
+                      <Link
+                        href={`/players/${m.user.username}`}
+                        className="flex-1 text-center py-2 text-[10px] font-mono text-zinc-400 hover:bg-violet-500/10 hover:text-violet-300 transition-colors"
+                      >
+                        👥 Профиль
+                      </Link>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}

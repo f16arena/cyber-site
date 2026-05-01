@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { uploadImage, deleteImage } from "@/lib/storage";
+import { notify } from "@/lib/notifications";
 import type { Game, Region } from "@prisma/client";
 
 export type TeamFormState = {
@@ -30,6 +31,7 @@ export async function createTeam(
   const game = formData.get("game") as string | null;
   const region = formData.get("region") as string | null;
   const description = ((formData.get("description") as string | null) || "").trim();
+  const privacy = (formData.get("privacy") as string | null) === "PRIVATE" ? "PRIVATE" : "PUBLIC";
 
   if (name.length < 2 || name.length > 40) {
     return { error: "Название команды: 2–40 символов" };
@@ -67,6 +69,7 @@ export async function createTeam(
         game: game as Game,
         region: (region as Region) || null,
         description: description || null,
+        privacy,
         captainId: user.id,
         members: {
           create: { userId: user.id, role: "CAPTAIN" },
@@ -126,6 +129,7 @@ export async function updateTeam(
   const name = ((formData.get("name") as string | null) || "").trim();
   const description = ((formData.get("description") as string | null) || "").trim();
   const region = formData.get("region") as string | null;
+  const privacy = (formData.get("privacy") as string | null) === "PRIVATE" ? "PRIVATE" : "PUBLIC";
 
   if (name.length < 2 || name.length > 40) {
     return { error: "Название команды: 2–40 символов" };
@@ -143,6 +147,7 @@ export async function updateTeam(
       name,
       description: description || null,
       region: (region as Region) || null,
+      privacy,
     },
   });
 
@@ -217,9 +222,109 @@ export async function joinTeam(formData: FormData) {
   });
   if (exists) return;
 
+  // Закрытая команда — создаём запрос на вступление
+  if (team.privacy === "PRIVATE") {
+    const message = ((formData.get("message") as string) || "").trim().slice(0, 300);
+    await prisma.teamJoinRequest.upsert({
+      where: { teamId_userId: { teamId, userId: user.id } },
+      create: {
+        teamId,
+        userId: user.id,
+        status: "PENDING",
+        message: message || null,
+      },
+      update: { status: "PENDING", message: message || null, decidedAt: null },
+    });
+    await notify({
+      userId: team.captainId,
+      type: "TEAM_JOIN_REQUEST",
+      title: `${user.username ?? "Игрок"} хочет вступить в ${team.name}`,
+      body: message || undefined,
+      link: `/teams/${team.tag}/edit`,
+    });
+    revalidatePath(`/teams/${team.tag}`);
+    return;
+  }
+
+  // Открытая — сразу зачисляем
   await prisma.teamMember.create({
     data: { teamId, userId: user.id, role: "PLAYER" },
   });
   revalidatePath(`/teams/${team.tag}`);
   revalidatePath("/profile");
+}
+
+export async function approveJoinRequest(formData: FormData) {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user) return;
+  const requestId = formData.get("requestId") as string | null;
+  if (!requestId) return;
+
+  const req = await prisma.teamJoinRequest.findUnique({
+    where: { id: requestId },
+    include: { team: true, user: { select: { username: true } } },
+  });
+  if (!req || req.team.captainId !== user.id) return;
+  if (req.status !== "PENDING") return;
+
+  // Проверка что игрок ещё не в другой команде по этой игре
+  const exists = await prisma.teamMember.findFirst({
+    where: { userId: req.userId, team: { game: req.team.game } },
+  });
+  if (exists) {
+    await prisma.teamJoinRequest.update({
+      where: { id: requestId },
+      data: { status: "DECLINED", decidedAt: new Date() },
+    });
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.teamMember.create({
+      data: { teamId: req.teamId, userId: req.userId, role: "PLAYER" },
+    }),
+    prisma.teamJoinRequest.update({
+      where: { id: requestId },
+      data: { status: "ACCEPTED", decidedAt: new Date() },
+    }),
+  ]);
+
+  await notify({
+    userId: req.userId,
+    type: "TEAM_REQUEST_ACCEPTED",
+    title: `Тебя приняли в команду ${req.team.name}`,
+    link: `/teams/${req.team.tag}`,
+  });
+
+  revalidatePath(`/teams/${req.team.tag}/edit`);
+  revalidatePath(`/teams/${req.team.tag}`);
+}
+
+export async function declineJoinRequest(formData: FormData) {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user) return;
+  const requestId = formData.get("requestId") as string | null;
+  if (!requestId) return;
+
+  const req = await prisma.teamJoinRequest.findUnique({
+    where: { id: requestId },
+    include: { team: true },
+  });
+  if (!req || req.team.captainId !== user.id) return;
+  if (req.status !== "PENDING") return;
+
+  await prisma.teamJoinRequest.update({
+    where: { id: requestId },
+    data: { status: "DECLINED", decidedAt: new Date() },
+  });
+
+  await notify({
+    userId: req.userId,
+    type: "TEAM_REQUEST_DECLINED",
+    title: `Капитан отклонил твою заявку в ${req.team.name}`,
+  });
+
+  revalidatePath(`/teams/${req.team.tag}/edit`);
 }
