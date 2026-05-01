@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+import { Countdown } from "@/components/Countdown";
 import type { Game } from "@prisma/client";
 
 const games = [
@@ -81,6 +82,8 @@ export default async function Home({
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
+  const fiveMinAgo = new Date(Date.now() - 5 * 60_000);
+
   const [
     liveMatches,
     upcomingMatches,
@@ -88,6 +91,7 @@ export default async function Home({
     newsFeed,
     topTeams,
     regionTeams,
+    onlineUsers,
     featuredTournament,
     stats,
   ] = await Promise.all([
@@ -142,6 +146,12 @@ export default async function Home({
         game: true,
         region: true,
       },
+    }),
+    prisma.user.findMany({
+      where: { lastSeenAt: { gte: fiveMinAgo } },
+      orderBy: { lastSeenAt: "desc" },
+      take: 8,
+      select: { id: true, username: true, avatarUrl: true },
     }),
     prisma.tournament.findFirst({
       where: { status: { in: ["REGISTRATION_OPEN", "ONGOING"] } },
@@ -490,6 +500,15 @@ export default async function Home({
                       <div className="font-bold">{featuredTournament.maxTeams}</div>
                     </div>
                   </div>
+                  {featuredTournament.startsAt &&
+                    new Date(featuredTournament.startsAt).getTime() > Date.now() && (
+                      <div className="mt-4">
+                        <div className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 mb-1.5">
+                          До старта
+                        </div>
+                        <Countdown toIso={featuredTournament.startsAt.toISOString()} />
+                      </div>
+                    )}
                   <Link
                     href={`/tournaments/${featuredTournament.slug}`}
                     className="mt-4 block w-full text-center h-9 leading-9 rounded font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all"
@@ -543,6 +562,50 @@ export default async function Home({
                   </div>
                 )}
               </div>
+
+              {/* Online now */}
+              {onlineUsers.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-mono uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Online · {onlineUsers.length}
+                    </h3>
+                    <Link
+                      href="/players"
+                      className="text-xs text-zinc-500 hover:text-violet-300 font-mono"
+                    >
+                      ALL →
+                    </Link>
+                  </div>
+                  <div className="rounded border border-zinc-800 bg-zinc-900/40 p-3">
+                    <div className="flex flex-wrap gap-2">
+                      {onlineUsers.map((u) => (
+                        <Link
+                          key={u.id}
+                          href={`/players/${encodeURIComponent(u.username)}`}
+                          title={u.username}
+                          className="relative group"
+                        >
+                          {u.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={u.avatarUrl}
+                              alt={u.username}
+                              className="w-9 h-9 rounded border border-zinc-700 group-hover:border-emerald-400 transition-colors"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold">
+                              {u.username[0].toUpperCase()}
+                            </div>
+                          )}
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-zinc-950" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Sponsor slot */}
               <div className="rounded border border-dashed border-zinc-700 bg-zinc-900/30 p-6 text-center">

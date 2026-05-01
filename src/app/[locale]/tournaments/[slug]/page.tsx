@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { TournamentBracket } from "./bracket";
+import { ShareButtons } from "@/components/ShareButtons";
 import type { BracketSide } from "@prisma/client";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -133,6 +134,16 @@ export default async function TournamentDetailPage({
               }
             />
             <Stat label="Матчей" value={String(tournament.matches.length)} />
+          </div>
+          <div className="mt-6 pt-6 border-t border-zinc-800/60">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
+              Поделиться
+            </p>
+            <ShareButtons
+              path={`/tournaments/${tournament.slug}`}
+              title={tournament.name}
+              text={`${tournament.name} — киберспорт КЗ. Призовой ₸${(Number(tournament.prize) / 100).toLocaleString("ru-RU")}`}
+            />
           </div>
         </div>
 

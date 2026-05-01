@@ -19,10 +19,20 @@ export async function UserMenu() {
     );
   }
 
-  // Бейджи: входящие friend requests, проверим isAdmin из БД
-  const [pendingFriendRequests, dbUser] = await Promise.all([
+  // Бейджи: входящие friend requests, непрочитанные сообщения, isAdmin из БД
+  const [pendingFriendRequests, unreadMessages, dbUser] = await Promise.all([
     prisma.friendship.count({
       where: { toId: user.id, status: "PENDING" },
+    }),
+    prisma.chatMessage.count({
+      where: {
+        readAt: null,
+        senderId: { not: user.id },
+        conversation: {
+          isGroup: false,
+          name: { contains: `:${user.id}` },
+        },
+      },
     }),
     prisma.user.findUnique({
       where: { id: user.id },
@@ -54,10 +64,15 @@ export async function UserMenu() {
       </Link>
       <Link
         href="/messages"
-        className="text-sm font-mono text-zinc-400 hover:text-violet-300 transition-colors px-2"
+        className="relative text-sm font-mono text-zinc-400 hover:text-violet-300 transition-colors px-2"
         title="Сообщения"
       >
         💬
+        {unreadMessages > 0 && (
+          <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-rose-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+            {unreadMessages > 99 ? "99+" : unreadMessages}
+          </span>
+        )}
       </Link>
       {dbUser?.isAdmin && (
         <Link

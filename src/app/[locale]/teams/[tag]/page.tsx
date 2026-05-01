@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { joinTeam, leaveTeam } from "../actions";
+import { ShareButtons } from "@/components/ShareButtons";
 import { ROSTER_SIZE, MAX_SUBS, maxRoster } from "@/lib/games";
 import type { Region } from "@prisma/client";
 
@@ -281,6 +282,16 @@ export default async function TeamPage({
                 </form>
               )}
             </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-zinc-800/60">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
+              Поделиться
+            </p>
+            <ShareButtons
+              path={`/teams/${team.tag}`}
+              title={`[${team.tag}] ${team.name}`}
+              text={`${team.game} команда [${team.tag}] ${team.name} на Esports.kz`}
+            />
           </div>
         </div>
 

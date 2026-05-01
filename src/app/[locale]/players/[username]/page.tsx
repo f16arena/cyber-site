@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { sendFriendRequest } from "../../friends/actions";
+import { ShareButtons } from "@/components/ShareButtons";
 import type { Region } from "@prisma/client";
 
 export async function generateMetadata({
@@ -410,6 +411,16 @@ export default async function PlayerPublicPage({
                 </div>
               )}
             </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-zinc-800/60">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
+              Поделиться профилем
+            </p>
+            <ShareButtons
+              path={`/players/${encodeURIComponent(user.username)}`}
+              title={user.username}
+              text={user.bio || `${user.username} — игрок на Esports.kz`}
+            />
           </div>
         </div>
 
