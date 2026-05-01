@@ -1,0 +1,414 @@
+# ТЗ — Домашний сервер для Esports.kz
+
+> Пошаговый гайд: как взять старый ПК (i5-10400 + RTX 1660 + 16 ГБ ОЗУ) и поднять на нём сайт, базу данных и игровые серверы CS2.
+
+**Статус:** черновик от 2026-05-01.
+
+---
+
+## ⚠ Прежде чем начать — честный разговор
+
+Твоё железо для **dev/тестового сервера** — отлично подходит. Можешь спокойно поднимать сайт локально, базу, играть с друзьями в CS2.
+
+Для **продакшена 24/7 в публичном интернете** есть проблемы:
+
+| Проблема | Почему важно |
+|---|---|
+| **Домашний интернет** | Провайдеры обычно дают серый IP за NAT. Внешний IP с https-сертификатом и stable upload требует "белый IP" — отдельная услуга у провайдера (от 1500 ₸/мес) |
+| **Аптайм** | Отключение электричества, перезагрузка роутера, любая семейная активность ломает доступ. Vercel/AWS — это 99.95% uptime. Дома — 95-98% |
+| **Скорость загрузки** | Домашний интернет асимметричный: 100 Мбит/с download, 10-30 Мбит/с upload. Мало игроков может одновременно качать страницу |
+| **DDoS** | Домашний роутер не выдержит атаки. Вычислительный/сетевой layer защиты у домашнего железа = ноль |
+| **Безопасность** | Если ломанут сервер дома — у атакующего доступ к твоей домашней сети, видеонаблюдению, личным файлам |
+| **Шум и тепло** | i5-10400 + RTX 1660 под нагрузкой греется, шумит. 24/7 в квартире — раздражает |
+| **Электричество** | ~400 Вт × 24 ч × 30 дней = ~290 кВт/мес. В РК это ~7000 ₸/мес |
+
+**Мой совет:**
+- **Сайт + БД** → лучше **Vercel + Supabase** как сейчас (бесплатно для трафика на старте, deploy одной командой, реальный uptime).
+- **CS2-серверы** → твой домашний ПК идеально подойдёт для **2-4 серверов на тестовых матчах с друзьями и небольших турнирах**.
+
+То есть оптимально: используем твой ПК **только для CS2-серверов** для матчей. Сайт остаётся в облаке.
+
+Дальше — пошагово как сделать оба варианта (домашний всё-в-одном **или** только CS2).
+
+---
+
+## Вариант А: только CS2-серверы дома (рекомендую)
+
+Сайт, БД, авторизация — остаются на Vercel + Supabase. Домашний ПК открывает 2-4 CS2-сервера для матчей.
+
+### Шаг 1 — что нужно
+
+| Что | Сколько | Где |
+|---|---|---|
+| **ПК** (твой) | 1 | i5-10400 / RTX 1660 / 16 ГБ — справится |
+| **Хороший интернет** | от 100 Мбит/с | твой текущий должен подойти |
+| **Белый IPv4** | 1 | Запросить у провайдера, услуга «выделенный IP», 1000-2000 ₸/мес |
+| **UPS** (источник бесперебойного питания) | 1 | 600-800 VA, чтобы пережить мини-отключения. APC 700 VA ~25-30к ₸ на kaspi.kz |
+| **Вентиляция** | хорошая | Корпус с минимум 2 кулерами, чтобы CPU не уходил в throttling |
+
+### Шаг 2 — установить Ubuntu Server
+
+Игровой сервер CS2 запускается под Linux. На той же машине **Windows работать НЕ будет** в нашем сценарии — нужна чистая Linux установка.
+
+⚠ **Это сотрёт Windows.** Перед установкой сделай резервную копию важных файлов на внешний диск.
+
+1. **Скачай** Ubuntu Server 22.04 LTS:
+   👉 https://ubuntu.com/download/server
+   - Версия: **Ubuntu Server 22.04 LTS** (Long Term Support до 2027)
+   - Файл: `ubuntu-22.04.X-live-server-amd64.iso` (~1.5 ГБ)
+
+2. **Создай загрузочную флешку:**
+   - Скачай Rufus (Windows): https://rufus.ie
+   - Вставь USB-флешку на 8 ГБ+
+   - Открой Rufus → выбери ISO Ubuntu → Start → жди 5 минут
+
+3. **Загрузись с флешки:**
+   - Перезагрузи ПК → нажимай F11 / F12 / Esc / Del (зависит от мат.платы) → Boot Menu → выбери USB
+   - Запустится установщик Ubuntu
+
+4. **Прокликай установщик** (≈15 минут):
+   - Язык: English (на сервере без UI — без разницы, но многие туториалы на английском)
+   - Network: оставь auto (получит IP по DHCP)
+   - Storage: **«Use entire disk»** → ⚠ это сотрёт всё!
+   - User: создай пользователя (например, `arsen`) и пароль — **запиши, не потеряй**
+   - **Install OpenSSH server**: ✅ ОБЯЗАТЕЛЬНО (для удалённого подключения)
+   - Snaps: пропусти всё
+5. Установка займёт 5-10 минут → reboot, **вытащи флешку**.
+
+### Шаг 3 — подключиться удалённо
+
+Теперь сервер можно отключить от монитора и положить в угол. Управлять будем по SSH с ноутбука.
+
+С другого компа в той же сети:
+
+```bash
+ssh arsen@<ip-твоего-сервера>
+# IP можно узнать: на сервере командой `ip addr show` или в роутере найти устройство Ubuntu
+```
+
+Если SSH работает — отлично, можешь убирать монитор и клавиатуру с сервера.
+
+### Шаг 4 — обновить и базовая настройка
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git ufw fail2ban htop
+```
+
+**Файрволл:**
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 27015:27050/udp comment "CS2 game ports"
+sudo ufw allow 27020:27055/udp comment "HLTV/SourceTV"
+sudo ufw enable
+```
+
+**Защита от brute-force:**
+```bash
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+```
+
+### Шаг 5 — установить SteamCMD и CS2 сервер
+
+CS2 dedicated server бесплатный, работает под анонимным Steam-логином.
+
+```bash
+# Создаём пользователя для игр
+sudo useradd -m -s /bin/bash steam
+sudo passwd steam   # задай пароль
+sudo su - steam
+
+# Папка для steamcmd
+mkdir ~/Steam
+cd ~/Steam
+
+# Скачиваем steamcmd
+wget https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+tar -xvzf steamcmd_linux.tar.gz
+
+# Устанавливаем CS2 сервер (App ID 730)
+./steamcmd.sh +force_install_dir ~/cs2-server-1 +login anonymous +app_update 730 validate +quit
+```
+
+Это займёт ~30 минут (40 ГБ скачивания).
+
+### Шаг 6 — запустить первый сервер
+
+```bash
+cd ~/cs2-server-1
+./game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 -port 27015 +sv_setsteamaccount <steam_token>
+```
+
+⚠ Для серверов с публичным VAC нужен **Steam Game Server Login Token (GSLT)**:
+- Получи на https://steamcommunity.com/dev/managegameservers
+- Это бесплатно, нужен Steam-аккаунт с подтверждённым Steam Guard
+
+**Запуск нескольких серверов** (на разных портах):
+```bash
+# Server 1: порт 27015
+# Server 2: порт 27016
+# Server 3: порт 27017
+# Server 4: порт 27018
+```
+
+Для управления — рекомендую **linuxgsm**:
+```bash
+wget -O linuxgsm.sh https://linuxgsm.sh && chmod +x linuxgsm.sh && bash linuxgsm.sh cs2server
+./cs2server install
+./cs2server start
+```
+
+LGSM упрощает start/stop/restart/update/backup для нескольких серверов.
+
+### Шаг 7 — белый IP и проброс портов
+
+Без белого IP игроки извне не смогут подключиться к твоему серверу.
+
+1. **Запроси у провайдера выделенный IP** — позвони в техподдержку Beeline / Kazakhtelecom / Activ. Скажи: «нужен статический белый IPv4-адрес». Услуга 1000-2000 ₸/мес.
+
+2. **Открой порты на роутере**:
+   - Войди в админку роутера (обычно http://192.168.1.1 или http://192.168.0.1)
+   - Раздел **Port Forwarding** / **NAT**
+   - Добавь правила:
+     - UDP 27015-27020 → IP сервера
+     - TCP 22 → IP сервера (для SSH; лучше другой порт сменить, например 2222)
+
+3. **Проверь снаружи**: с мобильного интернета (НЕ wifi домашнего) попробуй `ping <твой-белый-IP>`. Должен отвечать.
+
+### Шаг 8 — мониторинг
+
+Чтобы видеть что серверы живы:
+
+```bash
+sudo apt install -y prometheus prometheus-node-exporter grafana
+# Настройка через web-интерфейс на http://localhost:3000 (Grafana default)
+```
+
+Или проще — Telegram-бот, который раз в минуту пингует серверы и пишет если упал. Гайд — в отдельном issue.
+
+---
+
+## Вариант Б: всё-в-одном дома (сайт + БД + CS2)
+
+⚠ Не рекомендую для прода, но можно для тестов.
+
+Дополнительно к Варианту А:
+
+### Шаг 9 — Docker
+
+```bash
+# Установка Docker
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER  # добавить себя в группу
+# Перелогинься (logout / login снова)
+```
+
+### Шаг 10 — PostgreSQL в Docker
+
+```bash
+docker run -d \
+  --name esports-db \
+  -e POSTGRES_PASSWORD=твой_пароль \
+  -e POSTGRES_DB=esports \
+  -p 5432:5432 \
+  -v ~/postgres-data:/var/lib/postgresql/data \
+  postgres:16
+```
+
+### Шаг 11 — Node.js + Next.js приложение
+
+```bash
+sudo apt install -y nodejs npm
+sudo npm install -g pm2
+
+# Клонируем сайт
+cd ~
+git clone https://github.com/f16arena/cyber-site.git
+cd cyber-site
+npm install
+
+# .env с локальным DB
+cat > .env <<EOF
+DATABASE_URL="postgresql://postgres:твой_пароль@localhost:5432/esports"
+DIRECT_URL="postgresql://postgres:твой_пароль@localhost:5432/esports"
+SESSION_SECRET="..."
+STEAM_API_KEY="..."
+SITE_URL="https://твой-домен.kz"
+ADMIN_STEAM_IDS="76561199772287212"
+EOF
+
+npx prisma migrate deploy
+npm run build
+pm2 start npm --name esports-site -- start
+pm2 save
+pm2 startup  # автозапуск после ребута
+```
+
+### Шаг 12 — Nginx reverse-proxy + HTTPS
+
+```bash
+sudo apt install -y nginx certbot python3-certbot-nginx
+
+# Настройка Nginx
+sudo nano /etc/nginx/sites-available/esports
+```
+
+Содержимое:
+```nginx
+server {
+    listen 80;
+    server_name твой-домен.kz;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/esports /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# Получаем SSL-сертификат
+sudo certbot --nginx -d твой-домен.kz
+# Letsencrypt бесплатно, авто-обновление
+```
+
+### Шаг 13 — DNS
+
+У тебя должен быть домен (купи на reg.ru, namecheap.com, namesilo). Например, `esports.kz` (если свободен).
+
+В DNS-админке домена:
+- A-запись: `@` → `<твой-белый-IP>`
+- A-запись: `www` → `<твой-белый-IP>`
+
+Через 1-24 часа DNS пропагирует, и сайт откроется на `https://твой-домен.kz`.
+
+---
+
+## Что выбрать?
+
+**Если просто хочешь поиграть с друзьями + потестить:**
+- ✅ Вариант А (только CS2)
+- Сайт оставь на Vercel — он бесплатный, быстрее, надёжнее.
+
+**Если хочешь "своё всё":**
+- Вариант Б (всё дома)
+- Будь готов к перезагрузкам, DDoS, проблемам с IP.
+
+**Если серьёзный продакшн:**
+- Купи **VPS в Алматы** у локального хостера (Ducat, KazTeleCom Cloud, ICloud-Kazakhstan)
+- 8 ядер, 16 ГБ ОЗУ, 200 ГБ NVMe — около 30-50к ₸/мес
+- Профессиональный uptime, защита от DDoS, белый IP в комплекте
+
+См. [TZ_SERVERS.md](./TZ_SERVERS.md) — там полная стратегия для прод-серверов.
+
+---
+
+## Полезные ссылки
+
+- **Ubuntu Server**: https://ubuntu.com/download/server
+- **Rufus** (запись ISO на USB): https://rufus.ie
+- **Steam Game Server Login Token (GSLT)**: https://steamcommunity.com/dev/managegameservers
+- **CS2 dedicated server гайд**: https://developer.valvesoftware.com/wiki/Counter-Strike_2/Dedicated_Servers
+- **LinuxGSM** (управление серверами): https://linuxgsm.com
+- **SourceMod** (плагины для модов и админки): https://www.sourcemod.net
+- **CS2 Match Anti-Cheat**: https://developer.valvesoftware.com/wiki/Counter-Strike_2/Server_Configuration
+- **Cloudflare** (защита от DDoS, бесплатный tier): https://www.cloudflare.com
+- **Let's Encrypt** (бесплатный SSL): https://letsencrypt.org
+- **Prometheus + Grafana** (мониторинг): https://prometheus.io / https://grafana.com
+- **Discord-серверы LinuxGSM** для помощи: https://discord.gg/linuxgsm
+
+---
+
+## Шпаргалка по командам
+
+```bash
+# Подключиться к серверу
+ssh arsen@<ip>
+
+# Запуск/останов CS2
+./cs2server start
+./cs2server stop
+./cs2server restart
+
+# Логи
+./cs2server console     # открыть консоль сервера
+tail -f ~/log/server/cs2server-console.log
+
+# Список запущенных процессов
+htop                    # интерактивно
+ps aux | grep cs2
+
+# Обновить CS2 после патча Valve
+./cs2server update
+
+# Узнать ресурсы
+free -h                 # память
+df -h                   # диск
+top                     # процессы
+
+# Перезагрузить
+sudo reboot
+
+# Выключить
+sudo shutdown -h now
+```
+
+---
+
+## Что я могу сделать когда дойдёт до этого
+
+- Написать **скрипты автодеплоя** (одна команда поднимает 4 сервера CS2)
+- Создать **Telegram-бота** который мониторит серверы и пишет если упали
+- Добавить в наш сайт **интеграцию с RCON** — админ нажимает на странице турнира «Создать сервер для матча», бэкенд через RCON-команду создаёт CS2-комнату с уникальным паролем и шлёт ссылку капитанам
+- Парсер `.dem` файлов для авто-импорта статистики наших матчей (без FACEIT)
+- Свой **античит-демо-анализатор** через ML
+
+Это всё — phase 2/3 после того как поднимешь базовую инфраструктуру.
+
+---
+
+## Стоимость на старте (Вариант А — только CS2)
+
+| Статья | Цена |
+|---|---|
+| ПК (твой) | 0 |
+| Ubuntu Server | бесплатно |
+| CS2 dedicated server | бесплатно |
+| Электричество (~400 Вт × 24/7) | ~7000 ₸/мес |
+| Белый IP у провайдера | ~1500 ₸/мес |
+| UPS APC 700VA | 25-30к ₸ единоразово |
+| Домен `.kz` | ~3000-5000 ₸/год |
+| **Итого** | **~10к ₸/мес операционно** |
+
+vs. готовый VPS в Алматы (8 ядер / 16 ГБ / 200 ГБ NVMe): ~30-50к ₸/мес.
+
+Дома дешевле, но качество ниже. Для **домашнего тестового стенда** — отлично. Для прода с реальными игроками — лучше VPS.
+
+---
+
+## Финальная рекомендация
+
+**Прямо сейчас:**
+1. Не разбирай Windows на твоём ПК
+2. Сайт остаётся на Vercel + Supabase — бесплатно и надёжно
+3. ПК используй как dev-машину для разработки
+
+**Через месяц-два, когда хочешь поиграть с друзьями:**
+1. Возьми старый ноутбук или **отдельный ПК** под Ubuntu (не основной)
+2. Подними 2 CS2-сервера для тестов
+3. Зови друзей играть
+
+**Через 6 месяцев, когда будут реальные турниры:**
+1. Возьми VPS в Алматы у локального хостера
+2. На нём подними 4-8 CS2-серверов профессионально
+3. Интегрируй с сайтом через RCON
+
+Это **здравый эволюционный путь.** Не пытайся сразу строить дата-центр дома.
