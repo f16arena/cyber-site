@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientKey } from "@/lib/rate-limit";
 import { headers } from "next/headers";
-import { emailSponsorInquiry } from "@/lib/email";
+import { emailSponsorInquiry, emailSponsorInquiryReceived } from "@/lib/email";
 
 export type InquiryState = { ok?: boolean; error?: string };
 
@@ -69,6 +69,9 @@ export async function submitSponsorshipInquiry(
       }).catch(() => {});
     }
   }
+
+  // Подтверждение пользователю
+  emailSponsorInquiryReceived(email, contactName, companyName).catch(() => {});
 
   revalidatePath("/admin/inquiries");
   return { ok: true };

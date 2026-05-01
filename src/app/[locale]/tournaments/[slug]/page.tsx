@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { TournamentBracket } from "./bracket";
 import { ShareButtons } from "@/components/ShareButtons";
+import { Markdown } from "@/components/Markdown";
 import type { BracketSide } from "@prisma/client";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -196,9 +197,7 @@ export default async function TournamentDetailPage({
             <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
               О турнире
             </h2>
-            <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
-              {tournament.description}
-            </p>
+            <Markdown source={tournament.description} />
           </section>
         )}
       </main>

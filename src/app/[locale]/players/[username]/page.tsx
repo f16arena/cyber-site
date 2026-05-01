@@ -280,6 +280,26 @@ export default async function PlayerPublicPage({
   const lastSeen = user.lastSeenAt;
   const isOnline = lastSeen && Date.now() - lastSeen.getTime() < 5 * 60 * 1000;
 
+  // Похожие игроки: те же игры, тот же регион (если указан)
+  const userGames = user.profiles.map((p) => p.game);
+  const similarPlayers = userGames.length
+    ? await prisma.user.findMany({
+        where: {
+          id: { not: user.id },
+          ...(user.region ? { region: user.region } : {}),
+          profiles: { some: { game: { in: userGames } } },
+        },
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+          region: true,
+          profiles: { select: { game: true, inGameRole: true } },
+        },
+        take: 6,
+      })
+    : [];
+
   return (
     <>
       <SiteHeader />
@@ -776,6 +796,46 @@ export default async function PlayerPublicPage({
                     <p className="text-sm text-zinc-400 mt-1">{a.comment}</p>
                   )}
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {similarPlayers.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+              Похожие игроки
+            </h2>
+            <p className="text-xs text-zinc-500 mb-4">
+              Из того же региона{user.region ? ` (${REGION_LABEL[user.region]})` : ""},
+              играют в те же игры
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {similarPlayers.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/players/${encodeURIComponent(p.username)}`}
+                  className="rounded-lg border border-zinc-800 hover:border-violet-500/40 bg-zinc-900/40 p-3 text-center transition-colors"
+                >
+                  {p.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.avatarUrl}
+                      alt={p.username}
+                      className="w-14 h-14 rounded-full mx-auto border border-zinc-700"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full mx-auto bg-violet-500/20 border border-violet-500/30 flex items-center justify-center font-bold">
+                      {p.username[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="text-sm font-bold mt-2 truncate">
+                    {p.username}
+                  </div>
+                  <div className="text-[10px] font-mono text-zinc-500 mt-0.5 truncate">
+                    {p.profiles.map((pr) => pr.game).join("/")}
+                  </div>
+                </Link>
               ))}
             </div>
           </section>

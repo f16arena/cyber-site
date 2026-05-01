@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { ClaimResultForm } from "./claim-form";
+import { LiveAutoRefresh } from "@/components/LiveAutoRefresh";
 
 const STATUS_LABEL: Record<string, string> = {
   SCHEDULED: "Запланирован",
@@ -93,6 +94,7 @@ export default async function MatchDetailPage({
   return (
     <>
       <SiteHeader />
+      <LiveAutoRefresh enabled={match.status === "LIVE"} />
       <main className="flex-1 mx-auto max-w-6xl w-full px-6 py-8">
         <Link
           href="/matches"

@@ -183,6 +183,27 @@ export async function emailNewMessage(
   });
 }
 
+export async function emailSponsorInquiryReceived(
+  toEmail: string,
+  contactName: string,
+  companyName: string
+) {
+  return sendEmail({
+    to: toEmail,
+    subject: "Спасибо за интерес к Esports.kz",
+    type: "SPONSOR_INQUIRY_THANK_YOU",
+    html: wrapTemplate(`
+      <h1>👋 Получили твою заявку</h1>
+      <p>Привет, <strong>${contactName}</strong>!</p>
+      <p>Спасибо за интерес от <strong>${companyName}</strong>. Мы получили заявку и
+      свяжемся в течение <strong>24 часов</strong> с персональным предложением — без шаблонов.</p>
+      <p>Если срочно — пиши на <a href="mailto:hello@esports.kz" style="color:#a78bfa">hello@esports.kz</a>.</p>
+      <a class="btn" href="${SITE_URL}/sponsors">Снова на сайт</a>
+    `),
+    text: `Спасибо, ${contactName}! Заявка от ${companyName} получена. Свяжемся в течение 24ч.`,
+  });
+}
+
 export async function emailSponsorInquiry(
   toEmail: string,
   inquiry: {

@@ -92,6 +92,7 @@ export default async function Home({
     topTeams,
     regionTeams,
     onlineUsers,
+    streamers,
     featuredTournament,
     stats,
   ] = await Promise.all([
@@ -152,6 +153,18 @@ export default async function Home({
       orderBy: { lastSeenAt: "desc" },
       take: 8,
       select: { id: true, username: true, avatarUrl: true },
+    }),
+    prisma.user.findMany({
+      where: { twitchUrl: { not: null } },
+      orderBy: { lastSeenAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true,
+        twitchUrl: true,
+        lastSeenAt: true,
+      },
     }),
     prisma.tournament.findFirst({
       where: { status: { in: ["REGISTRATION_OPEN", "ONGOING"] } },
@@ -603,6 +616,60 @@ export default async function Home({
                         </Link>
                       ))}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Streamers */}
+              {streamers.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-mono uppercase tracking-widest text-fuchsia-400">
+                      📺 Стримеры
+                    </h3>
+                  </div>
+                  <div className="rounded border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+                    {streamers.map((s) => {
+                      const channel =
+                        s.twitchUrl?.match(/twitch\.tv\/([\w-]+)/i)?.[1] ?? "";
+                      const isOnline =
+                        s.lastSeenAt &&
+                        Date.now() - new Date(s.lastSeenAt).getTime() < 5 * 60_000;
+                      return (
+                        <a
+                          key={s.id}
+                          href={s.twitchUrl ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors"
+                        >
+                          <div className="relative shrink-0">
+                            {s.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={s.avatarUrl}
+                                alt={s.username}
+                                className="w-8 h-8 rounded border border-zinc-700"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded bg-fuchsia-500/20 border border-fuchsia-500/30" />
+                            )}
+                            {isOnline && (
+                              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-zinc-950" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold truncate">
+                              {s.username}
+                            </div>
+                            <div className="text-[10px] font-mono text-zinc-500 truncate">
+                              twitch.tv/{channel}
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-mono text-fuchsia-400">→</span>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}
