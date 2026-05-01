@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/session";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
+import { sendFriendRequest } from "@/app/friends/actions";
 import type { Region } from "@prisma/client";
 
 const REGION_LABEL: Partial<Record<Region, string>> = {
@@ -38,6 +40,19 @@ export default async function PlayerPublicPage({
   });
 
   if (!user) notFound();
+
+  const me = await getCurrentUser();
+  const isMe = me?.id === user.id;
+  const friendship = me && !isMe
+    ? await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { fromId: me.id, toId: user.id },
+            { fromId: user.id, toId: me.id },
+          ],
+        },
+      })
+    : null;
 
   // Агрегированная статистика по матчам
   const aggStats = await prisma.matchPlayerStat.groupBy({
@@ -127,6 +142,35 @@ export default async function PlayerPublicPage({
                   </span>
                 )}
               </div>
+              {me && !isMe && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {friendship?.status === "ACCEPTED" ? (
+                    <span className="text-xs font-mono px-3 h-9 inline-flex items-center rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                      ✓ В друзьях
+                    </span>
+                  ) : friendship?.status === "PENDING" ? (
+                    <span className="text-xs font-mono px-3 h-9 inline-flex items-center rounded border border-zinc-700 text-zinc-400">
+                      ⌛ Запрос отправлен
+                    </span>
+                  ) : (
+                    <form action={sendFriendRequest}>
+                      <input type="hidden" name="username" value={user.username} />
+                      <button
+                        type="submit"
+                        className="text-xs font-mono px-3 h-9 rounded bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 border border-violet-500/30 transition-all"
+                      >
+                        + Добавить в друзья
+                      </button>
+                    </form>
+                  )}
+                  <Link
+                    href={`/messages/${user.id}`}
+                    className="text-xs font-mono px-3 h-9 inline-flex items-center rounded border border-zinc-700 hover:border-violet-400 hover:bg-violet-500/5"
+                  >
+                    💬 Написать
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -112,6 +112,14 @@ export default async function TeamPage({
               )}
             </div>
             <div className="flex flex-col gap-2">
+              {isCaptain && (
+                <Link
+                  href={`/teams/${team.tag}/edit`}
+                  className="text-xs font-mono px-4 h-9 inline-flex items-center justify-center rounded border border-violet-500/30 hover:bg-violet-500/10 text-violet-300"
+                >
+                  ⚙ Редактировать
+                </Link>
+              )}
               {canJoin && (
                 <form action={joinTeam}>
                   <input type="hidden" name="teamId" value={team.id} />

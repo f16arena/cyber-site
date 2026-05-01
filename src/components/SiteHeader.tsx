@@ -7,8 +7,8 @@ const navLinks = [
   { href: "/matches", label: "Матчи" },
   { href: "/teams", label: "Команды" },
   { href: "/players", label: "Игроки" },
+  { href: "/leaderboard", label: "Рейтинг" },
   { href: "/news", label: "Новости" },
-  { href: "/streams", label: "Стримы" },
 ];
 
 export function SiteHeader() {

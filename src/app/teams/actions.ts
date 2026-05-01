@@ -106,6 +106,68 @@ export async function leaveTeam(formData: FormData) {
   redirect("/profile");
 }
 
+export async function updateTeam(
+  _prev: TeamFormState,
+  formData: FormData
+): Promise<TeamFormState> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Не авторизован" };
+
+  const teamId = formData.get("teamId") as string | null;
+  if (!teamId) return { error: "teamId отсутствует" };
+
+  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  if (!team) return { error: "Команда не найдена" };
+  if (team.captainId !== user.id) {
+    return { error: "Только капитан может редактировать команду" };
+  }
+
+  const name = ((formData.get("name") as string | null) || "").trim();
+  const description = ((formData.get("description") as string | null) || "").trim();
+  const region = formData.get("region") as string | null;
+
+  if (name.length < 2 || name.length > 40) {
+    return { error: "Название команды: 2–40 символов" };
+  }
+  if (description.length > 500) {
+    return { error: "Описание не более 500 символов" };
+  }
+  if (region && !VALID_REGIONS.includes(region as Region)) {
+    return { error: "Неверный регион" };
+  }
+
+  await prisma.team.update({
+    where: { id: teamId },
+    data: {
+      name,
+      description: description || null,
+      region: (region as Region) || null,
+    },
+  });
+
+  revalidatePath(`/teams/${team.tag}`);
+  redirect(`/teams/${team.tag}`);
+}
+
+export async function kickMember(formData: FormData) {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user) return;
+  const teamId = formData.get("teamId") as string | null;
+  const memberId = formData.get("memberId") as string | null;
+  if (!teamId || !memberId) return;
+
+  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  if (!team || team.captainId !== user.id) return;
+  if (memberId === team.captainId) return; // капитан не может выгнать сам себя
+
+  await prisma.teamMember.deleteMany({
+    where: { teamId, userId: memberId },
+  });
+
+  revalidatePath(`/teams/${team.tag}`);
+}
+
 export async function joinTeam(formData: FormData) {
   "use server";
   const user = await getCurrentUser();
