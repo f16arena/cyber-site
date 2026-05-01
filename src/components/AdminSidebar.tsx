@@ -65,6 +65,8 @@ export function AdminSidebar({
       items: [
         { href: "/admin/news", label: "Новости", icon: "📰" },
         { href: "/admin/news/new", label: "Создать новость", icon: "+" },
+        { href: "/admin/world-news", label: "Мировые новости", icon: "🌍" },
+        { href: "/admin/world-news/new", label: "Добавить мировую", icon: "+" },
       ],
     },
     {

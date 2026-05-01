@@ -92,6 +92,14 @@ enum NewsCategory {
   GENERAL
 }
 
+enum WorldNewsCategory {
+  TOURNAMENT_RESULT
+  TRANSFER
+  ROSTER_CHANGE
+  ANNOUNCEMENT
+  GENERAL
+}
+
 enum NotificationType {
   FRIEND_REQUEST
   FRIEND_ACCEPTED
@@ -494,6 +502,30 @@ model SponsorshipInquiry {
   isHandled   Boolean      @default(false)
 
   @@index([isHandled, createdAt])
+}
+
+// ─── WORLD NEWS (мировые трансферы, результаты турниров) ───
+
+model WorldNews {
+  id           String            @id @default(cuid())
+  game         Game?
+  category     WorldNewsCategory @default(GENERAL)
+  title        String            // на оригинальном языке
+  excerpt      String?
+  body         String
+  sourceName   String?           // "HLTV", "Liquipedia", "Dotabuff"
+  sourceUrl    String?
+  imageUrl     String?
+  originalLang String            @default("en")
+  // {ru: {title, excerpt, body}, kk: {...}, en: {...}}
+  translations Json?
+  publishedAt  DateTime
+  isPublished  Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([game, publishedAt])
+  @@index([category, publishedAt])
 }
 
 // ─── NOTIFICATIONS ───────────────────────────────────────

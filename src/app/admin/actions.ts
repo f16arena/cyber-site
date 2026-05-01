@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { generateDoubleElimination, shuffle } from "@/lib/bracket";
 import { uploadImage, deleteImage } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
+import { translateAll } from "@/lib/translate";
 import type { Game, NewsCategory, TournamentFormat } from "@prisma/client";
 
 export type ActionState = { ok?: boolean; error?: string };
@@ -682,6 +683,89 @@ export async function importFaceitMatch(formData: FormData): Promise<void> {
   } catch (e) {
     console.error(`FACEIT import error: ${(e as Error).message}`);
   }
+}
+
+// ─── WORLD NEWS ─────────────────────────────────────────
+
+export async function createWorldNews(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const title = ((formData.get("title") as string) || "").trim();
+  const excerpt = ((formData.get("excerpt") as string) || "").trim();
+  const body = ((formData.get("body") as string) || "").trim();
+  const game = formData.get("game") as string | null;
+  const category = (formData.get("category") as string) || "GENERAL";
+  const sourceName = ((formData.get("sourceName") as string) || "").trim();
+  const sourceUrl = ((formData.get("sourceUrl") as string) || "").trim();
+  const imageUrl = ((formData.get("imageUrl") as string) || "").trim();
+  const originalLang = ((formData.get("originalLang") as string) || "en") as
+    | "ru"
+    | "kk"
+    | "en";
+  const autoTranslate = formData.get("autoTranslate") === "on";
+
+  if (title.length < 3) return { error: "Заголовок слишком короткий" };
+  if (body.length < 10) return { error: "Текст слишком короткий" };
+
+  const validCategories = [
+    "TOURNAMENT_RESULT",
+    "TRANSFER",
+    "ROSTER_CHANGE",
+    "ANNOUNCEMENT",
+    "GENERAL",
+  ];
+  const cat = validCategories.includes(category) ? category : "GENERAL";
+
+  let translations: Record<string, { title: string; excerpt: string | null; body: string }> | null = null;
+  if (autoTranslate) {
+    try {
+      translations = await translateAll(
+        { title, excerpt: excerpt || null, body },
+        originalLang
+      );
+    } catch (e) {
+      console.warn("translateAll failed:", (e as Error).message);
+    }
+  }
+
+  await prisma.worldNews.create({
+    data: {
+      title,
+      excerpt: excerpt || null,
+      body,
+      game: game && VALID_GAMES.includes(game as Game) ? (game as Game) : null,
+      category: cat as
+        | "TOURNAMENT_RESULT"
+        | "TRANSFER"
+        | "ROSTER_CHANGE"
+        | "ANNOUNCEMENT"
+        | "GENERAL",
+      sourceName: sourceName || null,
+      sourceUrl: sourceUrl || null,
+      imageUrl: imageUrl || null,
+      originalLang,
+      translations: translations ?? undefined,
+      publishedAt: new Date(),
+      isPublished: true,
+    },
+  });
+
+  revalidatePath("/world-news");
+  revalidatePath("/admin/world-news");
+  redirect("/admin/world-news");
+}
+
+export async function deleteWorldNews(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  if (!id) return;
+  await prisma.worldNews.delete({ where: { id } });
+  revalidatePath("/admin/world-news");
+  revalidatePath("/world-news");
 }
 
 // ─── NEWS ───────────────────────────────────────────────

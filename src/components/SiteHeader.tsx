@@ -15,6 +15,7 @@ export async function SiteHeader() {
     { href: "/players", label: t("players") },
     { href: "/leaderboard", label: t("leaderboard") },
     { href: "/news", label: t("news") },
+    { href: "/world-news", label: t("worldNews") },
   ];
 
   return (
