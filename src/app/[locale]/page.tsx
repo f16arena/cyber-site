@@ -33,21 +33,6 @@ const games = [
   },
 ];
 
-const sponsorTiers = [
-  { name: "БРОНЗА", kz: "Жез", price: "от 50 000 ₸",
-    perks: ["Лого в подвале", "Упоминание в 1 турнире/мес"],
-    accent: "from-amber-700 to-amber-900", border: "border-amber-700/40" },
-  { name: "СЕРЕБРО", kz: "Күміс", price: "от 200 000 ₸",
-    perks: ["Лого на главной", "Бренд в 2 турнирах", "Пост в соцсетях"],
-    accent: "from-zinc-300 to-zinc-500", border: "border-zinc-400/40" },
-  { name: "ЗОЛОТО", kz: "Алтын", price: "от 500 000 ₸",
-    perks: ["Title-спонсор турнира", "Баннер на стримах", "Кубок имени бренда"],
-    accent: "from-yellow-300 to-amber-600", border: "border-amber-400/50", featured: true },
-  { name: "ПЛАТИНА", kz: "Platinum", price: "по запросу",
-    perks: ["Эксклюзив на сезон", "Ко-брендинг", "Кастомная активация"],
-    accent: "from-violet-300 to-fuchsia-500", border: "border-violet-400/50" },
-];
-
 function GameTag({ code }: { code: Game | string }) {
   const colors: Record<string, string> = {
     CS2: "bg-orange-500/15 text-orange-300 border-orange-500/40",
@@ -605,91 +590,39 @@ export default async function Home({
           </div>
         </section>
 
-        {/* SPONSORS */}
+        {/* FOR BRANDS */}
         <section className="mx-auto max-w-7xl px-6 py-16 border-t border-zinc-800/60">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-fuchsia-400 font-mono text-xs uppercase tracking-widest mb-2">
-                // 02 · Partners
-              </p>
-              <h2 className="text-3xl font-black tracking-tight">
-                Поддержка киберспорта Казахстана
-              </h2>
-              <p className="text-zinc-400 mt-3 max-w-2xl">
-                Бренды, которые помогают развивать локальную сцену. Стань частью
-                экосистемы — выбери ежемесячный пакет спонсорства.
-              </p>
-            </div>
-          </div>
-
-          <div className="mb-10 rounded-lg border border-zinc-800 bg-zinc-900/40 p-6">
-            <p className="text-xs font-mono text-zinc-500 uppercase tracking-wider mb-4">
-              Наши партнёры
+          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/10 to-rose-500/10 p-8 sm:p-12">
+            <p className="text-violet-300 font-mono text-xs uppercase tracking-widest mb-3">
+              // Для брендов
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-[3/1] rounded border border-dashed border-zinc-700 flex items-center justify-center text-zinc-600 text-xs font-mono hover:border-violet-500/40 transition-colors"
-                >
-                  SLOT {i + 1}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {sponsorTiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`relative rounded-lg border ${tier.border} bg-zinc-900/60 p-6 hover:bg-zinc-900/80 transition-all ${
-                  tier.featured ? "lg:-translate-y-2 ring-1 ring-amber-400/30" : ""
-                }`}
+            <h2 className="text-3xl sm:text-5xl font-display font-black tracking-tighter leading-[1.05] max-w-3xl">
+              <span className="block text-zinc-300">Хочешь быть в&nbsp;ногу</span>
+              <span className="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-transparent">
+                с&nbsp;молодёжью Казахстана?
+              </span>
+            </h2>
+            <p className="text-zinc-400 mt-6 text-lg max-w-2xl leading-relaxed">
+              Прорекламировать свой продукт там, где её внимание не делится между
+              десятком вкладок? Получить лояльных клиентов, а не разовые показы?
+            </p>
+            <p className="text-zinc-300 mt-4 text-lg max-w-2xl">
+              Свяжись с нами — обсудим программу спонсорства.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/sponsors"
+                className="inline-flex items-center justify-center h-12 px-8 rounded font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all clip-corner"
               >
-                {tier.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-amber-400 text-amber-950 text-xs font-bold uppercase tracking-wider">
-                    Популярный
-                  </div>
-                )}
-                <div className={`text-2xl font-black bg-gradient-to-r ${tier.accent} bg-clip-text text-transparent`}>
-                  {tier.name}
-                </div>
-                <div className="text-zinc-500 text-sm font-mono mt-1">{tier.kz}</div>
-                <div className="mt-4 pb-4 border-b border-zinc-800">
-                  <div className="text-xl font-bold">{tier.price}</div>
-                  <div className="text-xs text-zinc-500 font-mono">в месяц</div>
-                </div>
-                <ul className="mt-4 space-y-2 text-sm text-zinc-300">
-                  {tier.perks.map((perk) => (
-                    <li key={perk} className="flex items-start gap-2">
-                      <span className="text-violet-400 mt-1">▸</span>
-                      <span>{perk}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 rounded-lg border border-violet-500/30 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-rose-500/10 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-violet-300 mb-2">
-                Для брендов и инвесторов
-              </p>
-              <h3 className="text-2xl font-black tracking-tight">
-                Ваш бренд + наша аудитория = рост киберспорта в КЗ
-              </h3>
-              <p className="text-zinc-400 mt-2 text-sm">
-                Прямой доступ к 16-35 геймерам Казахстана. Прозрачная отчётность,
-                индивидуальные активации, ко-брендинг турниров.
-              </p>
+                Узнать подробнее →
+              </Link>
+              <Link
+                href="/sponsors#contact"
+                className="inline-flex items-center justify-center h-12 px-8 rounded font-bold text-sm uppercase tracking-wider border border-violet-400/40 text-violet-200 hover:border-violet-300 hover:bg-violet-500/10 transition-all clip-corner"
+              >
+                Связаться с нами
+              </Link>
             </div>
-            <Link
-              href="/sponsors"
-              className="shrink-0 inline-flex items-center justify-center h-12 px-8 rounded font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all clip-corner"
-            >
-              Стать спонсором →
-            </Link>
           </div>
         </section>
       </main>
