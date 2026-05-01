@@ -593,6 +593,22 @@ model News {
   @@index([game, publishedAt])
 }
 
+model TournamentTemplate {
+  id          String           @id @default(cuid())
+  name        String
+  game        Game
+  format      TournamentFormat
+  prize       BigInt           @default(0)
+  maxTeams    Int              @default(8)
+  description String?
+  rules       String?
+  createdById String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([game])
+}
+
 model EmailLog {
   id        String   @id @default(cuid())
   to        String

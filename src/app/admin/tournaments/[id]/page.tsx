@@ -5,7 +5,12 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-import { generateBracket, registerTeam, uploadTournamentBanner } from "../../actions";
+import {
+  generateBracket,
+  registerTeam,
+  uploadTournamentBanner,
+  saveAsTemplate,
+} from "../../actions";
 import { ImageUploader } from "@/components/ImageUploader";
 
 export default async function AdminTournamentManagePage({
@@ -99,6 +104,17 @@ export default async function AdminTournamentManagePage({
                 </button>
               </form>
             )}
+            <form action={saveAsTemplate}>
+              <input type="hidden" name="tournamentId" value={tournament.id} />
+              <input type="hidden" name="templateName" value={tournament.name} />
+              <button
+                type="submit"
+                className="text-xs font-mono px-4 h-9 inline-flex items-center rounded border border-zinc-700 hover:border-violet-400 hover:bg-violet-500/5 transition-all"
+                title="Сохранить настройки как шаблон для будущих турниров"
+              >
+                💾 Сохранить как шаблон
+              </button>
+            </form>
           </div>
         </div>
 

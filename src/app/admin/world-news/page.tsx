@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { deleteWorldNews } from "../actions";
 
 export default async function AdminWorldNewsPage() {
   await requireAdmin();
@@ -43,9 +42,10 @@ export default async function AdminWorldNewsPage() {
               ? Object.keys(tr).filter((k) => tr[k]?.title)
               : [n.originalLang];
             return (
-              <div
+              <Link
                 key={n.id}
-                className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                href={`/admin/world-news/${n.id}`}
+                className="flex items-center gap-3 rounded-lg border border-zinc-800 hover:border-violet-500/40 bg-zinc-900/40 hover:bg-zinc-900/70 p-4 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -76,16 +76,8 @@ export default async function AdminWorldNewsPage() {
                     </div>
                   )}
                 </div>
-                <form action={deleteWorldNews}>
-                  <input type="hidden" name="id" value={n.id} />
-                  <button
-                    type="submit"
-                    className="text-xs font-mono px-3 h-8 rounded border border-rose-500/30 hover:bg-rose-500/10 text-rose-300"
-                  >
-                    Удалить
-                  </button>
-                </form>
-              </div>
+                <span className="text-violet-300 text-xs font-mono">→</span>
+              </Link>
             );
           })}
         </div>

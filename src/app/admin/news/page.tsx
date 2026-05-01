@@ -44,9 +44,10 @@ export default async function AdminNewsPage() {
         ) : (
           <div className="space-y-2">
             {news.map((n) => (
-              <div
+              <Link
                 key={n.id}
-                className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 p-4"
+                href={`/admin/news/${n.id}`}
+                className="flex items-center justify-between rounded-lg border border-zinc-800 hover:border-violet-500/40 bg-zinc-900/40 hover:bg-zinc-900/70 p-4 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -68,7 +69,8 @@ export default async function AdminNewsPage() {
                     /news/{n.slug}
                   </div>
                 </div>
-              </div>
+                <span className="text-violet-300 text-xs font-mono">→</span>
+              </Link>
             ))}
           </div>
         )}

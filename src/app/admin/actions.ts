@@ -8,6 +8,7 @@ import { generateDoubleElimination, shuffle } from "@/lib/bracket";
 import { uploadImage, deleteImage } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
 import { translateAll } from "@/lib/translate";
+import { emailMvpAwarded } from "@/lib/email";
 import type { Game, NewsCategory, TournamentFormat } from "@prisma/client";
 
 export type ActionState = { ok?: boolean; error?: string };
@@ -320,6 +321,19 @@ export async function recordPlayerStat(formData: FormData) {
         : undefined,
       link: `/matches/${matchId}`,
     });
+    const recipient = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, email: true, emailNotifications: true },
+    });
+    if (recipient?.email && recipient.emailNotifications) {
+      const siteUrl = process.env.SITE_URL || "https://cyber-site-five.vercel.app";
+      emailMvpAwarded(
+        recipient.email,
+        recipient.username,
+        `${siteUrl}/matches/${matchId}`,
+        match?.tournament?.name ?? undefined
+      ).catch(() => {});
+    }
   }
 
   revalidatePath(`/admin/matches/${matchId}`);
@@ -355,6 +369,94 @@ export async function uploadTournamentBanner(
 
   revalidatePath(`/admin/tournaments/${tournamentId}`);
   return { ok: true };
+}
+
+/**
+ * Импорт статистики Dota 2 матча через OpenDota API.
+ * https://api.opendota.com/api/matches/{match_id}
+ *
+ * OpenDota не требует ключа для базовых запросов (rate limit 60/мин),
+ * но с OPENDOTA_API_KEY лимит выше.
+ *
+ * Ответ содержит per-player массив с полями:
+ *   - account_id, hero_id, kills, deaths, assists
+ *   - gold_per_min, xp_per_min
+ *   - last_hits, denies
+ *   - hero_damage, tower_damage, hero_healing
+ *
+ * Маппинг steamId → openDota account_id:
+ *   account_id = steamId - 76561197960265728
+ */
+export async function importOpenDotaMatch(formData: FormData): Promise<void> {
+  "use server";
+  await requireAdmin();
+
+  const matchUrlOrId = ((formData.get("opendotaMatch") as string) || "").trim();
+  if (!matchUrlOrId) return;
+
+  // Парсим match ID из URL вида https://www.opendota.com/matches/8234567890
+  const idMatch = matchUrlOrId.match(/(?:matches\/)?(\d{8,12})/);
+  const matchId = idMatch?.[1] ?? matchUrlOrId;
+  if (!/^\d{8,12}$/.test(matchId)) {
+    console.warn(`OpenDota: не похоже на match ID: ${matchUrlOrId}`);
+    return;
+  }
+
+  try {
+    const apiKey = process.env.OPENDOTA_API_KEY;
+    const url = apiKey
+      ? `https://api.opendota.com/api/matches/${matchId}?api_key=${apiKey}`
+      : `https://api.opendota.com/api/matches/${matchId}`;
+
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      console.warn(`OpenDota API: ${response.status} ${response.statusText}`);
+      return;
+    }
+    // const data = await response.json();
+    // TODO: парсер data.players → MatchPlayerStat
+    // Маппинг: account_id ↔ User.steamId через формулу
+  } catch (e) {
+    console.error(`OpenDota import error: ${(e as Error).message}`);
+  }
+}
+
+// ─── TOURNAMENT TEMPLATES ───────────────────────────────
+
+export async function saveAsTemplate(formData: FormData): Promise<void> {
+  "use server";
+  const admin = await requireAdmin();
+  const tournamentId = formData.get("tournamentId") as string | null;
+  const templateName = ((formData.get("templateName") as string) || "").trim();
+  if (!tournamentId || !templateName) return;
+
+  const t = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+  if (!t) return;
+
+  await prisma.tournamentTemplate.create({
+    data: {
+      name: templateName,
+      game: t.game,
+      format: t.format,
+      prize: t.prize,
+      maxTeams: t.maxTeams,
+      description: t.description,
+      rules: t.rules,
+      createdById: admin.id,
+    },
+  });
+
+  revalidatePath("/admin/tournaments");
+  revalidatePath("/admin/tournaments/new");
+}
+
+export async function deleteTournamentTemplate(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const id = formData.get("id") as string | null;
+  if (!id) return;
+  await prisma.tournamentTemplate.delete({ where: { id } });
+  revalidatePath("/admin/tournaments/new");
 }
 
 // ─── ADMIN: TEAMS ───────────────────────────────────────

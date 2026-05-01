@@ -5,7 +5,19 @@ import { createTournament, type ActionState } from "../../actions";
 
 const initialState: ActionState = {};
 
-export function TournamentCreateForm() {
+type Defaults = {
+  game?: string;
+  format?: string;
+  prize?: number;
+  maxTeams?: number;
+  description?: string;
+};
+
+export function TournamentCreateForm({
+  defaults,
+}: {
+  defaults?: Defaults;
+}) {
   const [state, action, pending] = useActionState(createTournament, initialState);
 
   return (
@@ -39,7 +51,7 @@ export function TournamentCreateForm() {
         </Field>
 
         <Field label="Игра">
-          <select name="game" required defaultValue="" className={inputCls}>
+          <select name="game" required defaultValue={defaults?.game ?? ""} className={inputCls}>
             <option value="" disabled>
               — выбери —
             </option>
@@ -53,7 +65,7 @@ export function TournamentCreateForm() {
           <select
             name="format"
             required
-            defaultValue="DOUBLE_ELIMINATION"
+            defaultValue={defaults?.format ?? "DOUBLE_ELIMINATION"}
             className={inputCls}
           >
             <option value="DOUBLE_ELIMINATION">Double Elimination</option>
@@ -64,7 +76,7 @@ export function TournamentCreateForm() {
         </Field>
 
         <Field label="Команд (4 / 8 / 16)">
-          <select name="maxTeams" required defaultValue="8" className={inputCls}>
+          <select name="maxTeams" required defaultValue={String(defaults?.maxTeams ?? 8)} className={inputCls}>
             <option value="4">4</option>
             <option value="8">8</option>
             <option value="16">16</option>
@@ -77,7 +89,7 @@ export function TournamentCreateForm() {
             type="number"
             min={0}
             step={10000}
-            defaultValue={0}
+            defaultValue={defaults?.prize ?? 0}
             className={inputCls}
             placeholder="500000"
           />
@@ -104,6 +116,7 @@ export function TournamentCreateForm() {
             name="description"
             rows={6}
             maxLength={2000}
+            defaultValue={defaults?.description ?? ""}
             placeholder="Формат, правила, требования к составу..."
             className={`${inputCls} resize-none`}
           />

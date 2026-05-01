@@ -8,6 +8,7 @@ import {
   getOrCreateTeamConversation,
 } from "@/lib/conversations";
 import { notify } from "@/lib/notifications";
+import { emailNewMessage } from "@/lib/email";
 
 export { getOrCreateDirectConversation };
 
@@ -100,6 +101,17 @@ export async function sendMessage(formData: FormData) {
       body: body.slice(0, 100),
       link: `/messages/${me.id}`,
     });
+    const fullRecipient = await prisma.user.findUnique({
+      where: { id: toUserId },
+      select: { email: true, emailNotifications: true },
+    });
+    if (fullRecipient?.email && fullRecipient.emailNotifications) {
+      emailNewMessage(
+        fullRecipient.email,
+        me.username ?? "игрок",
+        body.slice(0, 200)
+      ).catch(() => {});
+    }
   }
 
   revalidatePath(`/messages/${toUserId}`);

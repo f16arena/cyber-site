@@ -340,6 +340,22 @@ export async function approveJoinRequest(formData: FormData) {
     link: `/teams/${req.team.tag}`,
   });
 
+  // Email
+  const player = await prisma.user.findUnique({
+    where: { id: req.userId },
+    select: { email: true, emailNotifications: true },
+  });
+  if (player?.email && player.emailNotifications) {
+    const { sendEmail } = await import("@/lib/email");
+    sendEmail({
+      to: player.email,
+      subject: `✓ Тебя приняли в ${req.team.name}`,
+      type: "TEAM_REQUEST_ACCEPTED",
+      html: `<h1>Поздравляем!</h1><p>Капитан принял тебя в команду <strong>${req.team.name}</strong>.</p>`,
+      text: `Принят в ${req.team.name}`,
+    }).catch(() => {});
+  }
+
   revalidatePath(`/teams/${req.team.tag}/edit`);
   revalidatePath(`/teams/${req.team.tag}`);
 }

@@ -5,7 +5,12 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 
-import { setMatchResult, recordPlayerStat, importFaceitMatch } from "../../actions";
+import {
+  setMatchResult,
+  recordPlayerStat,
+  importFaceitMatch,
+  importOpenDotaMatch,
+} from "../../actions";
 
 export default async function AdminMatchPage({
   params,
@@ -108,6 +113,39 @@ export default async function AdminMatchPage({
             </div>
           </div>
         </div>
+
+        {/* OpenDota Import */}
+        {game === "DOTA2" && (
+          <section className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-5 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono font-bold px-2 py-1 rounded border bg-rose-500/15 text-rose-300 border-rose-500/40">
+                OPENDOTA
+              </span>
+              <span className="text-xs font-mono text-zinc-400">
+                Авто-импорт статистики Dota 2 матча
+              </span>
+            </div>
+            <form
+              action={importOpenDotaMatch}
+              className="flex flex-col sm:flex-row gap-3 items-start"
+            >
+              <input
+                name="opendotaMatch"
+                placeholder="https://www.opendota.com/matches/8234567890 или 8234567890"
+                className="flex-1 bg-zinc-900/60 border border-zinc-700 rounded h-11 px-4 text-sm focus:outline-none focus:border-rose-400 transition-colors font-mono"
+              />
+              <button
+                type="submit"
+                className="h-11 px-6 rounded font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 transition-all"
+              >
+                Импортировать
+              </button>
+            </form>
+            <p className="text-[10px] font-mono text-zinc-500 mt-2">
+              Бесплатно (60 запросов/мин). С OPENDOTA_API_KEY лимит выше.
+            </p>
+          </section>
+        )}
 
         {/* FACEIT Import */}
         {game === "CS2" && (
