@@ -136,6 +136,21 @@ export async function uploadAvatar(formData: FormData): Promise<ProfileFormState
   return { ok: true };
 }
 
+export async function deleteAccount() {
+  "use server";
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  // Удаляем всё связанное с пользователем (cascade в schema справится)
+  await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+
+  // Очищаем сессию
+  const session = await getSession();
+  session.destroy();
+
+  redirect("/?account_deleted=1");
+}
+
 export async function resetAvatarToSteam(): Promise<ProfileFormState> {
   "use server";
   const user = await getCurrentUser();
