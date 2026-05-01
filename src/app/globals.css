@@ -5,7 +5,7 @@
   --foreground: #ededed;
   --accent: #a78bfa;
   --accent-hot: #f43f5e;
-  --grid-color: rgba(167, 139, 250, 0.07);
+  --grid-color: rgba(167, 139, 250, 0.05);
 }
 
 @theme inline {
@@ -13,34 +13,71 @@
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-accent-hot: var(--accent-hot);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
 html,
 body {
   background: var(--background);
   color: var(--foreground);
+  font-feature-settings: "ss01", "cv11";
 }
 
 body {
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   background-image:
+    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(167, 139, 250, 0.15), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 10%, rgba(244, 63, 94, 0.10), transparent 60%),
     linear-gradient(var(--grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(167, 139, 250, 0.18), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 90% 10%, rgba(244, 63, 94, 0.12), transparent 60%);
-  background-size: 56px 56px, 56px 56px, 100% 100%, 100% 100%;
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px;
   background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Display-шрифт для больших заголовков и брендовых элементов */
+h1,
+h2,
+.font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-mono,
+[class*="font-mono"] {
+  font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace !important;
+}
+
+/* Smooth focus ring везде */
+*:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.5);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Плавные transitions по умолчанию для интерактивных элементов */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+  transition-property: background-color, border-color, color, transform, box-shadow, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(167, 139, 250, 0.4),
-      0 0 40px rgba(167, 139, 250, 0.2);
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.35),
+      0 0 40px rgba(167, 139, 250, 0.18);
   }
   50% {
-    box-shadow: 0 0 30px rgba(167, 139, 250, 0.6),
-      0 0 60px rgba(167, 139, 250, 0.3);
+    box-shadow: 0 0 28px rgba(167, 139, 250, 0.5),
+      0 0 56px rgba(167, 139, 250, 0.25);
   }
 }
 
@@ -50,11 +87,11 @@ body {
 }
 
 .glow-violet {
-  animation: pulse-glow 3s ease-in-out infinite;
+  animation: pulse-glow 3.2s ease-in-out infinite;
 }
 
 .text-glow {
-  text-shadow: 0 0 30px rgba(167, 139, 250, 0.5);
+  text-shadow: 0 0 30px rgba(167, 139, 250, 0.45);
 }
 
 .scan-line::after {
@@ -64,20 +101,50 @@ body {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(167, 139, 250, 0.08) 50%,
+    rgba(167, 139, 250, 0.06) 50%,
     transparent 100%
   );
   animation: scan 4s linear infinite;
   pointer-events: none;
 }
 
+/* Старый clip-corner с резкими углами заменён на плавный rounded.
+   Класс оставлен для совместимости с кодом — теперь даёт мягкое скругление. */
 .clip-corner {
-  clip-path: polygon(
-    0 0,
-    calc(100% - 14px) 0,
-    100% 14px,
-    100% 100%,
-    14px 100%,
-    0 calc(100% - 14px)
-  );
+  border-radius: 8px;
+}
+
+/* Современная карточка — мягкая тень и лёгкий glow на hover */
+.card-soft {
+  border-radius: 12px;
+  transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-soft:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px -10px rgba(167, 139, 250, 0.3);
+}
+
+/* Кастомный скроллбар */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.25);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.45);
+  background-clip: content-box;
+}
+
+/* Стильный selection */
+::selection {
+  background: rgba(167, 139, 250, 0.3);
+  color: white;
 }

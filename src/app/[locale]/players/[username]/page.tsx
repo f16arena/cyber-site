@@ -55,65 +55,199 @@ export default async function PlayerPublicPage({
     : null;
 
   // Агрегированная статистика по матчам
-  const [aggStats, recentStats, allStatsAgg] = await Promise.all([
-    prisma.matchPlayerStat.groupBy({
-      by: ["game"],
-      where: { userId: user.id },
-      _sum: { kills: true, deaths: true, assists: true },
-      _avg: { rating: true },
-      _count: { _all: true },
-    }),
-    prisma.matchPlayerStat.findMany({
-      where: { userId: user.id },
-      orderBy: { recordedAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        kills: true,
-        deaths: true,
-        assists: true,
-        rating: true,
-        isMvp: true,
-        game: true,
-        extra: true,
-        matchId: true,
-        recordedAt: true,
-      },
-    }),
-    prisma.matchPlayerStat.aggregate({
-      where: { userId: user.id },
-      _sum: { kills: true, deaths: true, assists: true, mvpRounds: true },
-      _avg: { rating: true },
-      _count: { _all: true },
-    }),
-  ]);
+  const [aggStats, recentStats, allStats, mapStats, wonMatchesCount] =
+    await Promise.all([
+      prisma.matchPlayerStat.groupBy({
+        by: ["game"],
+        where: { userId: user.id },
+        _sum: { kills: true, deaths: true, assists: true },
+        _avg: { rating: true },
+        _count: { _all: true },
+      }),
+      prisma.matchPlayerStat.findMany({
+        where: { userId: user.id },
+        orderBy: { recordedAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          kills: true,
+          deaths: true,
+          assists: true,
+          rating: true,
+          isMvp: true,
+          game: true,
+          extra: true,
+          matchId: true,
+          recordedAt: true,
+        },
+      }),
+      // ВСЕ матчи игрока — для перекрёстного агрегирования с матчами и картами
+      prisma.matchPlayerStat.findMany({
+        where: { userId: user.id },
+        select: {
+          kills: true,
+          deaths: true,
+          assists: true,
+          mvpRounds: true,
+          rating: true,
+          extra: true,
+          teamId: true,
+          match: { select: { map: true, winnerId: true, status: true } },
+        },
+      }),
+      // Карты + win count для них (через MatchPlayerStat и связанный Match)
+      prisma.match.findMany({
+        where: {
+          status: "FINISHED",
+          map: { not: null },
+          OR: [
+            { teamA: { members: { some: { userId: user.id } } } },
+            { teamB: { members: { some: { userId: user.id } } } },
+          ],
+        },
+        select: {
+          id: true,
+          map: true,
+          winnerId: true,
+          teamAId: true,
+          teamBId: true,
+        },
+      }),
+      prisma.match.count({
+        where: {
+          status: "FINISHED",
+          OR: [
+            {
+              teamAId: {
+                in: (
+                  await prisma.teamMember.findMany({
+                    where: { userId: user.id },
+                    select: { teamId: true },
+                  })
+                ).map((m) => m.teamId),
+              },
+            },
+            {
+              teamBId: {
+                in: (
+                  await prisma.teamMember.findMany({
+                    where: { userId: user.id },
+                    select: { teamId: true },
+                  })
+                ).map((m) => m.teamId),
+              },
+            },
+          ],
+          winnerId: {
+            in: (
+              await prisma.teamMember.findMany({
+                where: { userId: user.id },
+                select: { teamId: true },
+              })
+            ).map((m) => m.teamId),
+          },
+        },
+      }),
+    ]);
 
-  const totalKills = allStatsAgg._sum.kills ?? 0;
-  const totalDeaths = allStatsAgg._sum.deaths ?? 0;
-  const kdRatio = totalDeaths > 0 ? totalKills / totalDeaths : totalKills;
-  const avgRating = allStatsAgg._avg.rating ?? 0;
-  const matchesPlayed = allStatsAgg._count._all;
+  // Базовые агрегаты
+  const matchesPlayed = allStats.length;
+  const totalKills = allStats.reduce((s, x) => s + x.kills, 0);
+  const totalDeaths = allStats.reduce((s, x) => s + x.deaths, 0);
+  const totalAssists = allStats.reduce((s, x) => s + x.assists, 0);
+  const totalMvpRounds = allStats.reduce((s, x) => s + x.mvpRounds, 0);
   const totalMvps = user.mvpAwards.length;
 
-  // Извлекаем средние ADR/HS%/KAST из extra полей
+  const kdRatio = totalDeaths > 0 ? totalKills / totalDeaths : totalKills;
+  const kdaRatio =
+    totalDeaths > 0 ? (totalKills + totalAssists) / totalDeaths : totalKills + totalAssists;
+  const avgRating =
+    matchesPlayed > 0
+      ? allStats.reduce((s, x) => s + (x.rating ?? 0), 0) / matchesPlayed
+      : 0;
+  const kpr = matchesPlayed > 0 ? totalKills / matchesPlayed : 0;
+  const dpr = matchesPlayed > 0 ? totalDeaths / matchesPlayed : 0;
+  const apr = matchesPlayed > 0 ? totalAssists / matchesPlayed : 0;
+
+  // Из JSON extra собираем CS2-специфичные показатели
+  type Extra = {
+    adr?: number;
+    hsPct?: number;
+    kast?: number;
+    openingKills?: number;
+    clutches1v1?: number;
+    clutches1v2?: number;
+    multikills2k?: number;
+    multikills3k?: number;
+    multikills4k?: number;
+    multikills5k?: number;
+    utilityDamage?: number;
+    flashAssists?: number;
+  };
   let totalAdr = 0,
     totalHsPct = 0,
     totalKast = 0,
-    statsWithExtra = 0;
-  for (const s of recentStats) {
-    if (s.extra && typeof s.extra === "object") {
-      const e = s.extra as { adr?: number; hsPct?: number; kast?: number };
-      if (e.adr || e.hsPct || e.kast) {
-        statsWithExtra++;
-        totalAdr += e.adr || 0;
-        totalHsPct += e.hsPct || 0;
-        totalKast += e.kast || 0;
-      }
+    extraCount = 0;
+  let totalOpeningKills = 0,
+    totalUtilDmg = 0,
+    totalFlashAssists = 0;
+  let totalClutches1v1 = 0,
+    totalClutches1v2 = 0,
+    totalMK2 = 0,
+    totalMK3 = 0,
+    totalMK4 = 0,
+    totalMK5 = 0;
+  for (const s of allStats) {
+    const e = (s.extra ?? {}) as Extra;
+    if (e.adr || e.hsPct || e.kast) {
+      extraCount++;
+      totalAdr += e.adr ?? 0;
+      totalHsPct += e.hsPct ?? 0;
+      totalKast += e.kast ?? 0;
     }
+    totalOpeningKills += e.openingKills ?? 0;
+    totalUtilDmg += e.utilityDamage ?? 0;
+    totalFlashAssists += e.flashAssists ?? 0;
+    totalClutches1v1 += e.clutches1v1 ?? 0;
+    totalClutches1v2 += e.clutches1v2 ?? 0;
+    totalMK2 += e.multikills2k ?? 0;
+    totalMK3 += e.multikills3k ?? 0;
+    totalMK4 += e.multikills4k ?? 0;
+    totalMK5 += e.multikills5k ?? 0;
   }
-  const avgAdr = statsWithExtra > 0 ? totalAdr / statsWithExtra : 0;
-  const avgHsPct = statsWithExtra > 0 ? totalHsPct / statsWithExtra : 0;
-  const avgKast = statsWithExtra > 0 ? totalKast / statsWithExtra : 0;
+  const avgAdr = extraCount > 0 ? totalAdr / extraCount : 0;
+  const avgHsPct = extraCount > 0 ? totalHsPct / extraCount : 0;
+  const avgKast = extraCount > 0 ? totalKast / extraCount : 0;
+
+  // Win rate
+  const winRate =
+    matchesPlayed > 0 ? Math.round((wonMatchesCount / matchesPlayed) * 100) : 0;
+
+  // Per-map breakdown (только если игрок участвовал в матчах с картами)
+  const mapBreakdown = new Map<
+    string,
+    { played: number; wins: number }
+  >();
+  const myTeamIdsSet = new Set(allStats.map((s) => s.teamId));
+  for (const m of mapStats) {
+    if (!m.map) continue;
+    const mine =
+      myTeamIdsSet.has(m.teamAId ?? "") || myTeamIdsSet.has(m.teamBId ?? "");
+    if (!mine) continue;
+    const won = m.winnerId !== null && myTeamIdsSet.has(m.winnerId);
+    const cur = mapBreakdown.get(m.map) || { played: 0, wins: 0 };
+    cur.played++;
+    if (won) cur.wins++;
+    mapBreakdown.set(m.map, cur);
+  }
+  const mapList = Array.from(mapBreakdown.entries())
+    .map(([map, s]) => ({
+      map,
+      played: s.played,
+      wins: s.wins,
+      winRate: Math.round((s.wins / s.played) * 100),
+    }))
+    .sort((a, b) => b.played - a.played);
 
   const lastSeen = user.lastSeenAt;
   const isOnline = lastSeen && Date.now() - lastSeen.getTime() < 5 * 60 * 1000;
@@ -227,13 +361,20 @@ export default async function PlayerPublicPage({
           </div>
         </div>
 
-        {/* Profilerr-style stat cards */}
+        {/* Career overview — 12 stat-карточек как у профи */}
         {matchesPlayed > 0 && (
           <section className="mb-8">
-            <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
-              Общая статистика
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-violet-500/10 rounded-lg overflow-hidden border border-violet-500/20">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400">
+                Career Overview
+              </h2>
+              <span className="text-[10px] font-mono text-zinc-500">
+                {matchesPlayed} матчей · win rate {winRate}%
+              </span>
+            </div>
+
+            {/* Главные показатели */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-violet-500/10 rounded-xl overflow-hidden border border-violet-500/20">
               <BigStat
                 label="Rating 2.0"
                 value={avgRating.toFixed(2)}
@@ -245,25 +386,144 @@ export default async function PlayerPublicPage({
                       : "text-rose-300"
                 }
               />
-              <BigStat label="K/D" value={kdRatio.toFixed(2)} accent={kdRatio >= 1 ? "text-emerald-300" : "text-rose-300"} />
+              <BigStat
+                label="K/D"
+                value={kdRatio.toFixed(2)}
+                accent={kdRatio >= 1 ? "text-emerald-300" : "text-rose-300"}
+              />
+              <BigStat label="K+A/D" value={kdaRatio.toFixed(2)} />
               <BigStat label="ADR" value={avgAdr.toFixed(1)} />
               <BigStat label="HS %" value={`${avgHsPct.toFixed(0)}%`} />
               <BigStat label="KAST" value={`${avgKast.toFixed(0)}%`} />
+            </div>
+
+            {/* Per-round и матчевые */}
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-800">
+              <BigStat
+                label="KPR"
+                value={kpr.toFixed(2)}
+                small
+                hint="Kills / round"
+              />
+              <BigStat
+                label="DPR"
+                value={dpr.toFixed(2)}
+                small
+                hint="Deaths / round"
+              />
+              <BigStat
+                label="APR"
+                value={apr.toFixed(2)}
+                small
+                hint="Assists / round"
+              />
+              <BigStat
+                label="Win Rate"
+                value={`${winRate}%`}
+                accent={winRate >= 50 ? "text-emerald-300" : "text-rose-300"}
+                small
+              />
               <BigStat
                 label="MVP"
                 value={String(totalMvps)}
                 accent="text-amber-300"
-              />
-            </div>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-800/50 rounded-lg overflow-hidden border border-zinc-800">
-              <BigStat label="Матчей" value={String(matchesPlayed)} small />
-              <BigStat label="Убийств" value={String(totalKills)} small />
-              <BigStat label="Смертей" value={String(totalDeaths)} small />
-              <BigStat
-                label="MVP-раундов"
-                value={String(allStatsAgg._sum.mvpRounds ?? 0)}
                 small
               />
+              <BigStat
+                label="MVP-раундов"
+                value={String(totalMvpRounds)}
+                small
+              />
+            </div>
+
+            {/* Сырые числа */}
+            <div className="mt-3 grid grid-cols-3 sm:grid-cols-6 gap-px bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800">
+              <BigStat label="Матчей" value={String(matchesPlayed)} tiny />
+              <BigStat label="Побед" value={String(wonMatchesCount)} tiny accent="text-emerald-300" />
+              <BigStat label="Убийств" value={totalKills.toLocaleString("ru-RU")} tiny />
+              <BigStat label="Смертей" value={totalDeaths.toLocaleString("ru-RU")} tiny />
+              <BigStat label="Помощи" value={totalAssists.toLocaleString("ru-RU")} tiny />
+              <BigStat
+                label="OpeningK"
+                value={String(totalOpeningKills)}
+                tiny
+                hint="Первые килы"
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Multikills (CS2) */}
+        {(totalMK2 + totalMK3 + totalMK4 + totalMK5 + totalClutches1v1 + totalClutches1v2 > 0) && (
+          <section className="mb-8 grid lg:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+              <h3 className="text-xs font-mono uppercase tracking-widest text-rose-400 mb-3">
+                Мульти-килы
+              </h3>
+              <div className="grid grid-cols-4 gap-2">
+                <Multikill label="2K" value={totalMK2} color="text-zinc-300" />
+                <Multikill label="3K" value={totalMK3} color="text-violet-300" />
+                <Multikill label="4K" value={totalMK4} color="text-amber-300" />
+                <Multikill label="5K (ACE)" value={totalMK5} color="text-rose-300" />
+              </div>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+              <h3 className="text-xs font-mono uppercase tracking-widest text-amber-400 mb-3">
+                Клатчи
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Multikill label="1v1" value={totalClutches1v1} color="text-emerald-300" />
+                <Multikill label="1v2+" value={totalClutches1v2} color="text-rose-300" />
+              </div>
+              {(totalUtilDmg > 0 || totalFlashAssists > 0) && (
+                <div className="mt-4 pt-3 border-t border-zinc-800 grid grid-cols-2 gap-2 text-xs font-mono">
+                  <div>
+                    <div className="text-zinc-500">Util damage</div>
+                    <div className="font-bold">{totalUtilDmg.toLocaleString("ru-RU")}</div>
+                  </div>
+                  <div>
+                    <div className="text-zinc-500">Flash assists</div>
+                    <div className="font-bold">{totalFlashAssists}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Per-map breakdown */}
+        {mapList.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-amber-400 mb-3">
+              По картам
+            </h2>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
+              {mapList.map((m) => (
+                <div
+                  key={m.map}
+                  className="flex items-center gap-3 p-3 text-sm"
+                >
+                  <span className="font-bold w-32 truncate">{m.map}</span>
+                  <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        m.winRate >= 50 ? "bg-emerald-500" : "bg-rose-500"
+                      }`}
+                      style={{ width: `${m.winRate}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-xs w-16 text-right text-zinc-400">
+                    {m.wins} / {m.played}
+                  </span>
+                  <span
+                    className={`font-mono text-xs font-bold w-12 text-right ${
+                      m.winRate >= 50 ? "text-emerald-300" : "text-rose-300"
+                    }`}
+                  >
+                    {m.winRate}%
+                  </span>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -485,18 +745,48 @@ function BigStat({
   value,
   accent,
   small = false,
+  tiny = false,
+  hint,
 }: {
   label: string;
   value: string;
   accent?: string;
   small?: boolean;
+  tiny?: boolean;
+  hint?: string;
 }) {
+  const padding = tiny ? "p-2.5" : small ? "p-3" : "p-4 sm:p-5";
+  const fontSize = tiny ? "text-base" : small ? "text-xl" : "text-2xl sm:text-3xl";
   return (
-    <div className={`bg-zinc-950/60 backdrop-blur ${small ? "p-3" : "p-4 sm:p-5"} text-center`}>
-      <div className={`${small ? "text-xl" : "text-2xl sm:text-3xl"} font-black ${accent ?? "text-zinc-100"}`}>
+    <div
+      className={`bg-zinc-950/60 backdrop-blur ${padding} text-center`}
+      title={hint}
+    >
+      <div className={`${fontSize} font-display font-black ${accent ?? "text-zinc-100"}`}>
         {value}
       </div>
       <div className="text-[9px] uppercase tracking-wider text-zinc-500 mt-1 font-mono">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function Multikill({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div className="text-center rounded-lg bg-zinc-950/40 border border-zinc-800 p-3">
+      <div className={`text-2xl font-display font-black ${color}`}>
+        {value}
+      </div>
+      <div className="text-[9px] uppercase tracking-widest text-zinc-500 mt-1 font-mono">
         {label}
       </div>
     </div>
