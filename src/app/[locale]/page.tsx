@@ -87,6 +87,7 @@ export default async function Home({
     recentResults,
     newsFeed,
     topTeams,
+    regionTeams,
     featuredTournament,
     stats,
   ] = await Promise.all([
@@ -128,6 +129,19 @@ export default async function Home({
       orderBy: { rating: "desc" },
       take: 5,
       select: { id: true, name: true, tag: true, rating: true, game: true },
+    }),
+    prisma.team.findMany({
+      where: { region: { in: ["ALMATY", "ASTANA", "SHYMKENT", "KARAGANDA"] } },
+      orderBy: { rating: "desc" },
+      take: 12,
+      select: {
+        id: true,
+        name: true,
+        tag: true,
+        rating: true,
+        game: true,
+        region: true,
+      },
     }),
     prisma.tournament.findFirst({
       where: { status: { in: ["REGISTRATION_OPEN", "ONGOING"] } },
@@ -589,6 +603,95 @@ export default async function Home({
             ))}
           </div>
         </section>
+
+        {/* TEAMS BY REGION */}
+        {regionTeams.length > 0 && (
+          <section className="mx-auto max-w-7xl px-6 py-16 border-t border-zinc-800/60">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <p className="text-fuchsia-400 font-mono text-xs uppercase tracking-widest mb-2">
+                  // 03 · Regions
+                </p>
+                <h2 className="text-3xl font-black tracking-tight">
+                  Команды по регионам
+                </h2>
+                <p className="text-zinc-500 mt-2 text-sm">
+                  Сильнейшие составы из главных городов КЗ
+                </p>
+              </div>
+              <Link
+                href="/teams"
+                className="text-sm text-zinc-400 hover:text-violet-300 font-medium hidden sm:inline"
+              >
+                Все команды →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(["ALMATY", "ASTANA", "SHYMKENT", "KARAGANDA"] as const).map(
+                (region) => {
+                  const cityTeams = regionTeams
+                    .filter((t) => t.region === region)
+                    .slice(0, 3);
+                  const cityLabel = {
+                    ALMATY: "Алматы",
+                    ASTANA: "Астана",
+                    SHYMKENT: "Шымкент",
+                    KARAGANDA: "Караганда",
+                  }[region];
+                  return (
+                    <div
+                      key={region}
+                      className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-bold text-base">📍 {cityLabel}</h3>
+                        <Link
+                          href={`/teams?region=${region.toLowerCase()}`}
+                          className="text-[10px] font-mono text-zinc-500 hover:text-violet-300"
+                        >
+                          ALL →
+                        </Link>
+                      </div>
+                      {cityTeams.length === 0 ? (
+                        <p className="text-xs text-zinc-500 py-4">Команд пока нет</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {cityTeams.map((t, i) => (
+                            <Link
+                              key={t.id}
+                              href={`/teams/${t.tag}`}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-violet-500/10 transition-colors"
+                            >
+                              <span
+                                className={`font-mono font-black text-xs w-4 ${
+                                  i === 0
+                                    ? "text-amber-300"
+                                    : i === 1
+                                      ? "text-zinc-300"
+                                      : "text-amber-700"
+                                }`}
+                              >
+                                {i + 1}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-bold truncate">
+                                  {t.name}
+                                </div>
+                                <div className="text-[10px] font-mono text-zinc-500">
+                                  {t.game} · {t.rating} pts
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          </section>
+        )}
 
         {/* FOR BRANDS */}
         <section className="mx-auto max-w-7xl px-6 py-16 border-t border-zinc-800/60">

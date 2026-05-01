@@ -276,13 +276,13 @@ export default async function MatchDetailPage({
           </section>
         )}
 
-        {/* Player stats */}
+        {/* Player stats — HLTV-style scoreboard */}
         {match.playerStats.length > 0 && (
           <section>
             <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
-              Статистика игроков
+              Scoreboard
             </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {[
                 { team: match.teamA, stats: statsTeamA },
                 { team: match.teamB, stats: statsTeamB },
@@ -292,74 +292,117 @@ export default async function MatchDetailPage({
                     key={i}
                     className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden"
                   >
-                    <div className="p-3 border-b border-zinc-800 bg-zinc-900/60">
-                      <span className="font-bold">{side.team.name}</span>
-                      <span className="text-xs font-mono text-zinc-500 ml-2">
-                        [{side.team.tag}]
+                    <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/60 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold">{side.team.name}</span>
+                        <span className="text-xs font-mono text-zinc-500 ml-2">
+                          [{side.team.tag}]
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono text-zinc-500">
+                        {side.stats.reduce((a, s) => a + s.kills, 0)}–
+                        {side.stats.reduce((a, s) => a + s.deaths, 0)} K–D
                       </span>
                     </div>
-                    <table className="w-full text-xs font-mono">
-                      <thead>
-                        <tr className="text-zinc-500">
-                          <th className="text-left p-2 font-normal">Игрок</th>
-                          <th className="text-right p-2 font-normal">K</th>
-                          <th className="text-right p-2 font-normal">D</th>
-                          <th className="text-right p-2 font-normal">A</th>
-                          <th className="text-right p-2 font-normal">Rating</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {side.stats.map((s) => {
-                          const u = userMap.get(s.userId);
-                          return (
-                            <tr
-                              key={s.id}
-                              className="border-t border-zinc-800/50 hover:bg-zinc-800/30"
-                            >
-                              <td className="p-2">
-                                {u ? (
-                                  <Link
-                                    href={`/players/${encodeURIComponent(u.username)}`}
-                                    className="hover:text-violet-300 font-medium"
-                                  >
-                                    {u.username}
-                                  </Link>
-                                ) : (
-                                  "—"
-                                )}
-                                {s.isMvp && (
-                                  <span className="ml-2 text-amber-300">⭐</span>
-                                )}
-                              </td>
-                              <td className="text-right p-2 text-zinc-300">
-                                {s.kills}
-                              </td>
-                              <td className="text-right p-2 text-zinc-500">
-                                {s.deaths}
-                              </td>
-                              <td className="text-right p-2 text-zinc-300">
-                                {s.assists}
-                              </td>
-                              <td
-                                className={`text-right p-2 font-bold ${
-                                  (s.rating ?? 0) >= 1.1
-                                    ? "text-emerald-300"
-                                    : (s.rating ?? 0) >= 0.9
-                                      ? "text-zinc-300"
-                                      : "text-rose-400"
-                                }`}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs font-mono min-w-[640px]">
+                        <thead>
+                          <tr className="text-zinc-500 border-b border-zinc-800">
+                            <th className="text-left px-3 py-2 font-normal">Игрок</th>
+                            <th className="text-right px-2 py-2 font-normal">K</th>
+                            <th className="text-right px-2 py-2 font-normal">D</th>
+                            <th className="text-right px-2 py-2 font-normal">A</th>
+                            <th className="text-right px-2 py-2 font-normal">±</th>
+                            <th className="text-right px-2 py-2 font-normal">ADR</th>
+                            <th className="text-right px-2 py-2 font-normal">HS%</th>
+                            <th className="text-right px-2 py-2 font-normal">KAST</th>
+                            <th className="text-right px-3 py-2 font-normal">Rating</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {side.stats.map((s) => {
+                            const u = userMap.get(s.userId);
+                            const extra = (s.extra ?? {}) as Record<string, number>;
+                            const diff = s.kills - s.deaths;
+                            return (
+                              <tr
+                                key={s.id}
+                                className="border-t border-zinc-800/50 hover:bg-zinc-800/30"
                               >
-                                {(s.rating ?? 0).toFixed(2)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    {u?.avatarUrl ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img
+                                        src={u.avatarUrl}
+                                        alt={u.username}
+                                        className="w-6 h-6 rounded border border-zinc-700"
+                                      />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded bg-violet-500/20 border border-violet-500/30" />
+                                    )}
+                                    {u ? (
+                                      <Link
+                                        href={`/players/${encodeURIComponent(u.username)}`}
+                                        className="hover:text-violet-300 font-medium font-sans"
+                                      >
+                                        {u.username}
+                                      </Link>
+                                    ) : (
+                                      "—"
+                                    )}
+                                    {s.isMvp && (
+                                      <span className="text-amber-300" title="MVP">⭐</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="text-right px-2 py-2 text-zinc-200">{s.kills}</td>
+                                <td className="text-right px-2 py-2 text-zinc-500">{s.deaths}</td>
+                                <td className="text-right px-2 py-2 text-zinc-300">{s.assists}</td>
+                                <td
+                                  className={`text-right px-2 py-2 ${
+                                    diff > 0
+                                      ? "text-emerald-300"
+                                      : diff < 0
+                                        ? "text-rose-400"
+                                        : "text-zinc-400"
+                                  }`}
+                                >
+                                  {diff > 0 ? `+${diff}` : diff}
+                                </td>
+                                <td className="text-right px-2 py-2 text-zinc-400">
+                                  {extra.adr ? extra.adr.toFixed(0) : "—"}
+                                </td>
+                                <td className="text-right px-2 py-2 text-zinc-400">
+                                  {extra.hsPct ? `${extra.hsPct.toFixed(0)}%` : "—"}
+                                </td>
+                                <td className="text-right px-2 py-2 text-zinc-400">
+                                  {extra.kast ? `${extra.kast.toFixed(0)}%` : "—"}
+                                </td>
+                                <td
+                                  className={`text-right px-3 py-2 font-bold ${
+                                    (s.rating ?? 0) >= 1.1
+                                      ? "text-emerald-300"
+                                      : (s.rating ?? 0) >= 0.9
+                                        ? "text-zinc-200"
+                                        : "text-rose-400"
+                                  }`}
+                                >
+                                  {(s.rating ?? 0).toFixed(2)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )
               )}
             </div>
+            <p className="text-[10px] font-mono text-zinc-600 mt-3">
+              Rating = (K/D)*0.5 + (ADR/100)*0.3 + (KAST/100)*0.2 · упрощённая HLTV-формула
+            </p>
           </section>
         )}
       </main>

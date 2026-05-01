@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { prisma } from "./prisma";
+import { rateLimit } from "./rate-limit";
 
 let resendClient: Resend | null = null;
 
@@ -25,6 +26,15 @@ export async function sendEmail(args: SendArgs): Promise<boolean> {
   const client = getClient();
   if (!client) {
     console.warn(`[email] RESEND_API_KEY not set; skipping "${args.subject}"`);
+    return false;
+  }
+
+  // Rate limit per recipient: 5 писем в час одного типа.
+  // Защита: если кто-то спамит submit на /sponsors, мы не зашлём
+  // 100 писем админу — резендa-квоту бережём.
+  const rlKey = `email:${args.type}:${args.to}`;
+  if (!rateLimit(rlKey, 5, 60 * 60_000).allowed) {
+    console.warn(`[email] rate-limited: ${rlKey}`);
     return false;
   }
 
