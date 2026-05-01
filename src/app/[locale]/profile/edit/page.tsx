@@ -111,6 +111,9 @@ export default async function ProfileEditPage() {
             twitchUrl: user.twitchUrl,
             discordTag: user.discordTag,
             messagePrivacy: user.messagePrivacy,
+            faceitNickname: user.faceitNickname,
+            dotaAccountId: user.dotaAccountId,
+            pubgNickname: user.pubgNickname,
           }}
           profiles={user.profiles.map((p) => ({
             game: p.game,

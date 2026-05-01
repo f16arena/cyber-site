@@ -316,6 +316,31 @@ export default async function PlayerPublicPage({
                     💬 {user.discordTag}
                   </span>
                 )}
+                {user.faceitNickname && (
+                  <a
+                    href={`https://www.faceit.com/en/players/${user.faceitNickname}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 rounded bg-orange-500/15 text-orange-300 border border-orange-500/30 hover:bg-orange-500/25"
+                  >
+                    🎯 FACEIT
+                  </a>
+                )}
+                {user.dotaAccountId && (
+                  <a
+                    href={`https://www.opendota.com/players/${user.dotaAccountId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25"
+                  >
+                    ⚔ Dotabuff
+                  </a>
+                )}
+                {user.pubgNickname && (
+                  <span className="px-2 py-1 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">
+                    🐔 {user.pubgNickname}
+                  </span>
+                )}
               </div>
               {me && !isMe && (
                 <div className="mt-5 flex flex-wrap gap-2">

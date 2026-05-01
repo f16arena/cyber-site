@@ -38,6 +38,9 @@ export async function updateProfile(
   const discordTag = typeof discordRaw === "string" ? discordRaw.trim() : "";
   const messagePrivacy =
     formData.get("messagePrivacy") === "FRIENDS_ONLY" ? "FRIENDS_ONLY" : "EVERYONE";
+  const faceitNickname = ((formData.get("faceitNickname") as string) || "").trim();
+  const dotaAccountId = ((formData.get("dotaAccountId") as string) || "").trim();
+  const pubgNickname = ((formData.get("pubgNickname") as string) || "").trim();
 
   if (username.length < 2 || username.length > 32) {
     return { error: "Ник должен быть от 2 до 32 символов" };
@@ -59,6 +62,40 @@ export async function updateProfile(
   });
   if (conflict) return { error: "Этот ник уже занят" };
 
+  // Валидация FACEIT-ника через FACEIT API (если введён)
+  let faceitId: string | null = null;
+  if (faceitNickname) {
+    const apiKey = process.env.FACEIT_API_KEY;
+    if (apiKey) {
+      try {
+        const res = await fetch(
+          `https://open.faceit.com/data/v4/players?nickname=${encodeURIComponent(faceitNickname)}`,
+          {
+            headers: { Authorization: `Bearer ${apiKey}` },
+            cache: "no-store",
+          }
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { player_id?: string };
+          faceitId = data.player_id ?? null;
+        } else if (res.status === 404) {
+          return { error: `FACEIT-игрок "${faceitNickname}" не найден` };
+        }
+      } catch {
+        // если FACEIT API недоступен — сохраняем ник без верификации
+      }
+    }
+  }
+
+  // Уникальность faceitNickname
+  if (faceitNickname) {
+    const conflict = await prisma.user.findFirst({
+      where: { faceitNickname, NOT: { id: user.id } },
+      select: { id: true },
+    });
+    if (conflict) return { error: "Этот FACEIT-ник уже привязан к другому игроку" };
+  }
+
   await prisma.user.update({
     where: { id: user.id },
     data: {
@@ -68,6 +105,10 @@ export async function updateProfile(
       twitchUrl: twitchUrl || null,
       discordTag: discordTag || null,
       messagePrivacy,
+      faceitNickname: faceitNickname || null,
+      faceitId,
+      dotaAccountId: dotaAccountId || null,
+      pubgNickname: pubgNickname || null,
     },
   });
 

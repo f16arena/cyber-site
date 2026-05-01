@@ -42,6 +42,9 @@ type Props = {
     twitchUrl: string | null;
     discordTag: string | null;
     messagePrivacy?: string;
+    faceitNickname?: string | null;
+    dotaAccountId?: string | null;
+    pubgNickname?: string | null;
   };
   profiles: Array<{
     game: Game;
@@ -113,6 +116,30 @@ export function ProfileEditForm({ user, profiles }: Props) {
             name="discordTag"
             defaultValue={user.discordTag ?? ""}
             placeholder="username или username#1234"
+            className={inputCls}
+          />
+        </Field>
+        <Field label="FACEIT ник">
+          <input
+            name="faceitNickname"
+            defaultValue={user.faceitNickname ?? ""}
+            placeholder="например: Lion707zzz"
+            className={inputCls}
+          />
+        </Field>
+        <Field label="Dota account ID">
+          <input
+            name="dotaAccountId"
+            defaultValue={user.dotaAccountId ?? ""}
+            placeholder="например: 123456789 (32-bit)"
+            className={inputCls}
+          />
+        </Field>
+        <Field label="PUBG ник">
+          <input
+            name="pubgNickname"
+            defaultValue={user.pubgNickname ?? ""}
+            placeholder="например: chicken_dinner"
             className={inputCls}
           />
         </Field>

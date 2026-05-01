@@ -466,11 +466,18 @@ export async function importOpenDotaMatch(formData: FormData): Promise<void> {
     for (const p of data.players) {
       if (!p.account_id) continue; // anonymous player
 
-      const steamId = accountIdToSteamId(p.account_id);
-      const user = await prisma.user.findUnique({
-        where: { steamId },
+      // Сначала ищем по dotaAccountId, потом fallback на steamId
+      let user = await prisma.user.findFirst({
+        where: { dotaAccountId: String(p.account_id) },
         select: { id: true },
       });
+      if (!user) {
+        const steamId = accountIdToSteamId(p.account_id);
+        user = await prisma.user.findUnique({
+          where: { steamId },
+          select: { id: true },
+        });
+      }
       if (!user) continue;
 
       const isRadiant = (p.player_slot & 128) === 0;
@@ -1009,11 +1016,17 @@ export async function importFaceitMatch(formData: FormData): Promise<void> {
         if (!ourTeamId) continue;
 
         for (const p of faceitTeam.players) {
-          // Маппинг по nickname (case-insensitive)
-          const user = await prisma.user.findFirst({
-            where: { username: { equals: p.nickname, mode: "insensitive" } },
+          // Маппинг: сначала по faceitNickname, потом по username (fallback)
+          let user = await prisma.user.findFirst({
+            where: { faceitNickname: { equals: p.nickname, mode: "insensitive" } },
             select: { id: true },
           });
+          if (!user) {
+            user = await prisma.user.findFirst({
+              where: { username: { equals: p.nickname, mode: "insensitive" } },
+              select: { id: true },
+            });
+          }
           if (!user) continue;
 
           const stats = p.player_stats || {};
