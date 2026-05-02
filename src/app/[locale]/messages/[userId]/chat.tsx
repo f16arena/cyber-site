@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { sendMessage } from "../actions";
@@ -89,7 +89,7 @@ export function ChatWindow({
         className="flex-1 overflow-y-auto p-4 space-y-2"
       >
         {messages.length === 0 ? (
-          <div className="text-center text-sm text-zinc-500 py-8">
+          <div className="text-center text-sm text-zinc-400 py-8">
             Сообщений пока нет. Напиши первый.
           </div>
         ) : (

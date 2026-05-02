@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -27,7 +27,7 @@ export default async function AdminSponsorsPage() {
   return (
     <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-8">
       <div className="flex items-end justify-between mb-6">
-        <h1 className="text-2xl font-black tracking-tight">Спонсоры</h1>
+        <h1 className="text-xl font-bold tracking-tight">Спонсоры</h1>
         <Link
           href="/admin/sponsors/new"
           className="inline-flex items-center justify-center h-10 px-5 rounded font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all"

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -80,7 +80,7 @@ export function TeamChatWindow({
         className="flex-1 overflow-y-auto p-4 space-y-3"
       >
         {messages.length === 0 ? (
-          <div className="text-center text-sm text-zinc-500 py-8">
+          <div className="text-center text-sm text-zinc-400 py-8">
             Сообщений пока нет. Напиши первый.
           </div>
         ) : (

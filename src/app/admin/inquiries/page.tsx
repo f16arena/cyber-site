@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -23,7 +23,7 @@ export default async function AdminInquiriesPage() {
 
   return (
     <main className="flex-1 mx-auto max-w-4xl w-full px-6 py-8">
-      <h1 className="text-2xl font-black tracking-tight mb-6">
+      <h1 className="text-xl font-bold tracking-tight mb-6">
         Заявки от спонсоров
       </h1>
 
@@ -32,7 +32,7 @@ export default async function AdminInquiriesPage() {
           Новые ({open.length})
         </h2>
         {open.length === 0 ? (
-          <p className="text-sm text-zinc-500">Новых заявок нет.</p>
+          <p className="text-sm text-zinc-400">Новых заявок нет.</p>
         ) : (
           <div className="space-y-3">
             {open.map((i) => (

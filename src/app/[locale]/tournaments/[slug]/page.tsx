@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -305,7 +305,7 @@ export default async function TournamentDetailPage({
             <TournamentBracket matches={matches} />
           </section>
         ) : (
-          <section className="rounded-xl border border-dashed border-zinc-800 p-12 text-center text-zinc-500 mb-8">
+          <section className="rounded-xl border border-dashed border-zinc-800 p-12 text-center text-zinc-400 mb-8">
             <p className="font-bold mb-2 text-zinc-300">Сетка ещё не сгенерирована</p>
             <p className="text-sm">
               Появится после закрытия регистрации и жеребьёвки.
@@ -319,7 +319,7 @@ export default async function TournamentDetailPage({
             Участники ({tournament.registrations.length})
           </h2>
           {tournament.registrations.length === 0 ? (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-400">
               Команды ещё не зарегистрированы.
             </p>
           ) : (

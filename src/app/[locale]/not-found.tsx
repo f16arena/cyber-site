@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 
 export default function NotFound() {
@@ -18,7 +18,7 @@ export default function NotFound() {
           <p className="text-xl font-display font-bold text-zinc-300 mb-3">
             Страница не найдена
           </p>
-          <p className="text-zinc-500 mb-8 text-sm">
+          <p className="text-zinc-400 mb-8 text-sm">
             Может, её снесли с патчем. А может, ссылка кривая. Возвращайся на
             базу.
           </p>

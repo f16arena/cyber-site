@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -38,7 +38,7 @@ export default async function AdminTeamEditPage({
       >
         ← Команды
       </Link>
-      <h1 className="text-2xl font-black tracking-tight mb-2">
+      <h1 className="text-xl font-bold tracking-tight mb-2">
         {team.name}{" "}
         <span className="text-zinc-500 text-base font-mono">[{team.tag}]</span>
       </h1>

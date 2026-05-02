@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,7 +27,7 @@ export default async function AdminSponsorEditPage({
       >
         ← Спонсоры
       </Link>
-      <h1 className="text-2xl font-black tracking-tight mb-2">{sponsor.name}</h1>
+      <h1 className="text-xl font-bold tracking-tight mb-2">{sponsor.name}</h1>
       <p className="text-zinc-400 mb-8 text-sm">
         {sponsor.tier} · {sponsor.isActive ? "активен" : "архив"}
       </p>

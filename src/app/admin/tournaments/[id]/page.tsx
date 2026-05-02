@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -77,7 +77,7 @@ export default async function AdminTournamentManagePage({
                 {tournament.status}
               </span>
             </div>
-            <h1 className="text-3xl font-black tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">
               {tournament.name}
             </h1>
             <p className="text-zinc-400 text-sm mt-1 font-mono">
@@ -125,7 +125,7 @@ export default async function AdminTournamentManagePage({
               Зарегистрированные ({tournament.registrations.length})
             </h2>
             {tournament.registrations.length === 0 ? (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-400">
                 Команд ещё нет. Регистрируй вручную справа.
               </p>
             ) : (
@@ -156,7 +156,7 @@ export default async function AdminTournamentManagePage({
               Можно зарегистрировать
             </h2>
             {availableTeams.length === 0 ? (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-400">
                 Нет других команд по {tournament.game}.
               </p>
             ) : (

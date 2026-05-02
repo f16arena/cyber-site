@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -78,13 +78,13 @@ export default async function AdminMatchPage({
           </div>
           <div className="grid grid-cols-3 items-center gap-4">
             <div className="text-right">
-              <div className="text-2xl font-black">{match.teamA?.name ?? "TBD"}</div>
+              <div className="text-xl font-bold">{match.teamA?.name ?? "TBD"}</div>
               <div className="text-xs font-mono text-zinc-500">
                 [{match.teamA?.tag ?? "—"}]
               </div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-black font-mono">
+              <div className="text-3xl font-extrabold font-mono">
                 <span
                   className={
                     match.scoreA > match.scoreB ? "text-emerald-400" : "text-zinc-500"
@@ -106,7 +106,7 @@ export default async function AdminMatchPage({
               </div>
             </div>
             <div>
-              <div className="text-2xl font-black">{match.teamB?.name ?? "TBD"}</div>
+              <div className="text-xl font-bold">{match.teamB?.name ?? "TBD"}</div>
               <div className="text-xs font-mono text-zinc-500">
                 [{match.teamB?.tag ?? "—"}]
               </div>

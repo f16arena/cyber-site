@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -23,7 +23,7 @@ export default async function AdminNewsPage() {
           ← Админка
         </Link>
         <div className="flex items-end justify-between mb-8">
-          <h1 className="text-3xl font-black tracking-tight">Новости</h1>
+          <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Новости</h1>
           <Link
             href="/admin/news/new"
             className="inline-flex items-center justify-center h-11 px-6 rounded font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all clip-corner"

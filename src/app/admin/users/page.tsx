@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -27,7 +27,7 @@ export default async function AdminUsersPage() {
         >
           ← Админка
         </Link>
-        <h1 className="text-3xl font-black tracking-tight mb-6">
+        <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-6">
           Игроки ({users.length})
         </h1>
 

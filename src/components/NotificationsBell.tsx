@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -110,7 +110,7 @@ export function NotificationsBell() {
           </div>
           <div className="overflow-y-auto flex-1">
             {items.length === 0 ? (
-              <div className="p-6 text-center text-sm text-zinc-500">
+              <div className="p-6 text-center text-sm text-zinc-400">
                 Уведомлений нет
               </div>
             ) : (

@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -37,6 +37,31 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/api/auth/steam");
   }
+
+  // Рекомендации команд: те, в которые юзер ещё не вступил, играют в его игры,
+  // тот же регион (если указан), и есть свободные слоты (members < 7)
+  const myTeamIds = user.teamMemberships.map((m) => m.teamId);
+  const myGames = user.profiles.map((p) => p.game);
+  const recommendedTeams = myGames.length
+    ? await prisma.team.findMany({
+        where: {
+          id: { notIn: myTeamIds },
+          game: { in: myGames },
+          privacy: "PUBLIC",
+          ...(user.region ? { region: user.region } : {}),
+        },
+        include: {
+          captain: { select: { username: true } },
+          _count: { select: { members: true } },
+        },
+        orderBy: { rating: "desc" },
+        take: 6,
+      })
+    : [];
+  // Только с реальной свободой (members < 7 = 5 + 2 запасных)
+  const teamsWithSlots = recommendedTeams
+    .filter((t) => t._count.members < 7)
+    .slice(0, 3);
 
   return (
     <>
@@ -91,7 +116,7 @@ export default async function ProfilePage() {
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-black tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight">
                   {user.username}
                 </h1>
                 {user.isAdmin && (
@@ -100,7 +125,7 @@ export default async function ProfilePage() {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-zinc-500 font-mono mt-1">
+              <div className="text-sm text-zinc-400 font-mono mt-1">
                 Steam ID: {user.steamId}
               </div>
               {user.bio && (
@@ -237,10 +262,52 @@ export default async function ProfilePage() {
             </div>
           </section>
         )}
+
+        {teamsWithSlots.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
+              🛡 Команды для тебя
+            </h2>
+            <p className="text-sm text-zinc-400 mb-4">
+              Открыты для приёма, играют в твои игры
+              {user.region ? ", из твоего региона" : ""}.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {teamsWithSlots.map((t) => {
+                const free = 7 - t._count.members;
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/teams/${t.tag}`}
+                    className="rounded-lg border border-zinc-800 hover:border-violet-500/40 bg-zinc-900/40 p-4 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-zinc-900/40 border-zinc-700">
+                        {t.game}
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-400">
+                        +{free} слот{free === 1 ? "" : "ов"}
+                      </span>
+                    </div>
+                    <div className="text-base font-bold tracking-tight truncate">
+                      {t.name}
+                    </div>
+                    <div className="text-[11px] font-mono text-zinc-500 mt-1">
+                      [{t.tag}] · {t.rating} pts
+                    </div>
+                    <div className="text-[11px] text-zinc-400 mt-2">
+                      Капитан: {t.captain.username}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
 
       <footer className="border-t border-violet-500/10 mt-auto bg-zinc-950/80">
-        <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-500 flex flex-col sm:flex-row justify-between gap-3">
+        <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-400 flex flex-col sm:flex-row justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center font-black text-xs">
               E

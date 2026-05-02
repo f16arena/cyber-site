@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -124,7 +124,7 @@ export default async function LeaderboardPage({
               ⚡ Top Players
             </h2>
             {topPlayersByRating.length === 0 ? (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-400">
                 Пока нет сыгранных матчей.
               </p>
             ) : (
@@ -181,7 +181,7 @@ export default async function LeaderboardPage({
               🏆 Top Teams
             </h2>
             {topTeams.length === 0 ? (
-              <p className="text-sm text-zinc-500">Команд ещё нет.</p>
+              <p className="text-sm text-zinc-400">Команд ещё нет.</p>
             ) : (
               <ol className="space-y-2">
                 {topTeams.map((t, i) => (
@@ -222,7 +222,7 @@ export default async function LeaderboardPage({
               ⭐ MVP Leaders
             </h2>
             {mvpCounts.length === 0 ? (
-              <p className="text-sm text-zinc-500">Пока нет MVP-наград.</p>
+              <p className="text-sm text-zinc-400">Пока нет MVP-наград.</p>
             ) : (
               <ol className="space-y-2">
                 {mvpCounts.map((m, i) => {

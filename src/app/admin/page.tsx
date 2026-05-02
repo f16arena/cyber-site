@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -180,7 +180,7 @@ export default async function AdminHomePage() {
           </Link>
         </div>
         {recentAudit.length === 0 ? (
-          <p className="text-sm text-zinc-500">Действий ещё не было.</p>
+          <p className="text-sm text-zinc-400">Действий ещё не было.</p>
         ) : (
           <ul className="space-y-1.5 text-sm font-mono">
             {recentAudit.map((a) => (

@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +14,7 @@ export default async function AdminSettingsPage() {
 
   return (
     <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-8">
-      <h1 className="text-2xl font-black tracking-tight mb-6">Настройки</h1>
+      <h1 className="text-xl font-bold tracking-tight mb-6">Настройки</h1>
 
       <div className="space-y-6">
         <section className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">

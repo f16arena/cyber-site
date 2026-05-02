@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { TournamentCreateForm } from "./form";
@@ -31,7 +31,7 @@ export default async function NewTournamentPage({
       >
         ← Турниры
       </Link>
-      <h1 className="text-3xl font-black tracking-tight mb-6">
+      <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-6">
         Создать турнир
       </h1>
 

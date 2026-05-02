@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -40,7 +40,7 @@ export default async function AdminAuditPage() {
   return (
     <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-8">
       <div className="flex items-end justify-between mb-6">
-        <h1 className="text-2xl font-display font-black tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">
           Журнал действий
         </h1>
         <Link

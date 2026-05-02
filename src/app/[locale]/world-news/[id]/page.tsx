@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -92,7 +92,7 @@ export default async function WorldNewsDetailPage({
           </div>
 
           {item.sourceUrl && (
-            <div className="mt-8 pt-6 border-t border-zinc-800 flex items-center gap-2 text-sm text-zinc-500">
+            <div className="mt-8 pt-6 border-t border-zinc-800 flex items-center gap-2 text-sm text-zinc-400">
               <span>
                 {locale === "kk" ? "Дереккөз:" : locale === "en" ? "Source:" : "Источник:"}
               </span>

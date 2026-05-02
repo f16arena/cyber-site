@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -345,7 +345,7 @@ export default async function PlayerPublicPage({
                   </span>
                 )}
               </div>
-              <div className="text-sm text-zinc-500 font-mono mt-1">
+              <div className="text-sm text-zinc-400 font-mono mt-1">
                 Steam ID: {user.steamId}
               </div>
               {user.bio && (
@@ -682,7 +682,7 @@ export default async function PlayerPublicPage({
             Дисциплины
           </h2>
           {user.profiles.length === 0 ? (
-            <p className="text-sm text-zinc-500">Игрок ещё не добавил дисциплины.</p>
+            <p className="text-sm text-zinc-400">Игрок ещё не добавил дисциплины.</p>
           ) : (
             <div className="grid sm:grid-cols-3 gap-3">
               {user.profiles.map((profile) => {
@@ -737,7 +737,7 @@ export default async function PlayerPublicPage({
             Команды
           </h2>
           {user.teamMemberships.length === 0 ? (
-            <p className="text-sm text-zinc-500">Игрок не в команде.</p>
+            <p className="text-sm text-zinc-400">Игрок не в команде.</p>
           ) : (
             <div className="space-y-2">
               {user.teamMemberships.map((m) => (
@@ -806,7 +806,7 @@ export default async function PlayerPublicPage({
             <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">
               Похожие игроки
             </h2>
-            <p className="text-xs text-zinc-500 mb-4">
+            <p className="text-xs text-zinc-400 mb-4">
               Из того же региона{user.region ? ` (${REGION_LABEL[user.region]})` : ""},
               играют в те же игры
             </p>

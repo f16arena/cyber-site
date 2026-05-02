@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -27,7 +27,7 @@ export default async function AdminMatchesPage() {
 
   return (
     <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-8">
-      <h1 className="text-2xl font-black tracking-tight mb-6">
+      <h1 className="text-xl font-bold tracking-tight mb-6">
         Матчи ({matches.length})
       </h1>
       {matches.length === 0 ? (

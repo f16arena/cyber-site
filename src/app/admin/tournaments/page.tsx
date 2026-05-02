@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
@@ -49,7 +49,7 @@ export default async function AdminTournamentsPage() {
             <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
               // Tournaments
             </p>
-            <h1 className="text-3xl font-black tracking-tight">Турниры</h1>
+            <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Турниры</h1>
           </div>
           <Link
             href="/admin/tournaments/new"
@@ -89,7 +89,7 @@ export default async function AdminTournamentsPage() {
                         {STATUS_LABEL[t.status]}
                       </span>
                     </div>
-                    <h3 className="text-xl font-black tracking-tight">
+                    <h3 className="text-base font-bold tracking-tight">
                       {t.name}
                     </h3>
                     <div className="flex flex-wrap gap-3 mt-2 text-xs font-mono text-zinc-400">

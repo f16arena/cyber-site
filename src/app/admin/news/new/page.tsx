@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 
 import { NewsCreateForm } from "./form";
@@ -15,7 +15,7 @@ export default async function NewNewsPage() {
         >
           ← Новости
         </Link>
-        <h1 className="text-3xl font-black tracking-tight mb-8">
+        <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-8">
           Новая новость
         </h1>
         <NewsCreateForm />

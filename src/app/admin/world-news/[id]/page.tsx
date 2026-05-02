@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -29,7 +29,7 @@ export default async function AdminWorldNewsEditPage({
       >
         ← Мировые новости
       </Link>
-      <h1 className="text-2xl font-display font-black tracking-tight mb-2">
+      <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-2">
         {item.title}
       </h1>
       <p className="text-zinc-400 mb-8 text-sm font-mono">

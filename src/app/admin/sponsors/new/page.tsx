@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { SponsorForm } from "./form";
 
@@ -12,7 +12,7 @@ export default async function NewSponsorPage() {
       >
         ← Спонсоры
       </Link>
-      <h1 className="text-2xl font-black tracking-tight mb-6">
+      <h1 className="text-xl font-bold tracking-tight mb-6">
         Новый партнёр
       </h1>
       <SponsorForm />

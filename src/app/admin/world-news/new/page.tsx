@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { WorldNewsForm } from "./form";
 
@@ -12,7 +12,7 @@ export default async function NewWorldNewsPage() {
       >
         ← Мировые новости
       </Link>
-      <h1 className="text-2xl font-display font-black tracking-tight mb-6">
+      <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-6">
         Новая мировая новость
       </h1>
       <WorldNewsForm />
