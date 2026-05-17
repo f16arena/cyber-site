@@ -9,6 +9,6 @@ export const config = {
   // ВАЖНО: исключаем только реальные file extensions — иначе username/slug
   // с точкой (например serega.magomedov.1995) ломается.
   matcher: [
-    "/((?!api|admin|_next|_vercel|.*\\.(?:css|js|map|json|png|jpg|jpeg|webp|svg|ico|gif|woff|woff2|ttf|otf|mp4|webm|pdf)$).*)",
+    "/((?!api|admin|login|_next|_vercel|.*\\.(?:css|js|map|json|png|jpg|jpeg|webp|svg|ico|gif|woff|woff2|ttf|otf|mp4|webm|pdf)$).*)",
   ],
 };
