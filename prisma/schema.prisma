@@ -142,26 +142,35 @@ enum ResultClaimStatus {
 // ─── USER ────────────────────────────────────────────────
 
 model User {
-  id          String        @id @default(cuid())
-  steamId     String        @unique
-  username    String        @unique
-  avatarUrl   String?
-  email       String?       @unique
-  bio         String?
-  region      Region?
-  twitchUrl   String?
-  discordTag  String?
-  status         PlayerStatus    @default(OFFLINE)
-  isAdmin        Boolean         @default(false)
-  messagePrivacy MessagePrivacy  @default(EVERYONE)
-  emailNotifications Boolean     @default(true)
-  faceitNickname String?         @unique
-  faceitId       String?
-  dotaAccountId  String?
-  pubgNickname   String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  lastSeenAt     DateTime?
+  id                 String         @id @default(cuid())
+  steamId            String         @unique
+  username           String         @unique
+  avatarUrl          String?
+  email              String?        @unique
+  bio                String?
+  region             Region?
+  twitchUrl          String?
+  discordTag         String?
+  status             PlayerStatus   @default(OFFLINE)
+  isAdmin            Boolean        @default(false)
+  messagePrivacy     MessagePrivacy @default(EVERYONE)
+  emailNotifications Boolean        @default(true)
+  faceitNickname     String?        @unique
+  faceitId           String?
+  dotaAccountId      String?
+  pubgNickname       String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  lastSeenAt         DateTime?
+
+  // F16 HUB (CS2 matchmaking) — отдельные счётчики, не пересекаются с турнирной статой
+  hubElo           Int       @default(1000)
+  hubWins          Int       @default(0)
+  hubLosses        Int       @default(0)
+  hubMatchesPlayed Int       @default(0)
+  hubBannedUntil   DateTime?
+  hubCooldownUntil DateTime?
+  hubBanReason     String?
 
   profiles        PlayerProfile[]
   teamMemberships TeamMember[]
@@ -174,9 +183,14 @@ model User {
   authoredNews    News[]            @relation("NewsAuthor")
   notifications   Notification[]    @relation("NotificationRecipient")
   joinRequests    TeamJoinRequest[]
+  hubQueueTicket  HubQueueTicket?
+  hubLobbyPlayer  HubLobbyPlayer[]
+  hubEloHistory   HubEloHistory[]
+  hubAuditEvents  HubAuditEvent[]
 
   @@index([status])
   @@index([region])
+  @@index([hubElo])
 }
 
 model PlayerProfile {
@@ -188,7 +202,7 @@ model PlayerProfile {
   hoursPlayed Int?
   createdAt   DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, game])
   @@index([game])
@@ -240,14 +254,14 @@ model TeamJoinRequest {
 }
 
 model TeamMember {
-  id        String         @id @default(cuid())
-  teamId    String
-  userId    String
-  role      TeamMemberRole @default(PLAYER)
-  joinedAt  DateTime       @default(now())
+  id       String         @id @default(cuid())
+  teamId   String
+  userId   String
+  role     TeamMemberRole @default(PLAYER)
+  joinedAt DateTime       @default(now())
 
-  team      Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@index([userId])
@@ -266,7 +280,7 @@ model LfgPost {
   createdAt   DateTime  @default(now())
   expiresAt   DateTime?
 
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([game, isActive])
   @@index([region])
@@ -275,24 +289,24 @@ model LfgPost {
 // ─── TOURNAMENTS ─────────────────────────────────────────
 
 model Tournament {
-  id            String           @id @default(cuid())
-  name          String
-  slug          String           @unique
-  game          Game
-  format        TournamentFormat
-  status        TournamentStatus @default(DRAFT)
-  prize         BigInt           @default(0)
-  prizeCurrency String           @default("KZT")
-  maxTeams      Int              @default(16)
-  description   String?
-  rules         String?
-  bannerUrl     String?
+  id                   String           @id @default(cuid())
+  name                 String
+  slug                 String           @unique
+  game                 Game
+  format               TournamentFormat
+  status               TournamentStatus @default(DRAFT)
+  prize                BigInt           @default(0)
+  prizeCurrency        String           @default("KZT")
+  maxTeams             Int              @default(16)
+  description          String?
+  rules                String?
+  bannerUrl            String?
   registrationOpensAt  DateTime?
   registrationClosesAt DateTime?
-  startsAt      DateTime?
-  endsAt        DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  startsAt             DateTime?
+  endsAt               DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   registrations TournamentRegistration[]
   matches       Match[]
@@ -304,14 +318,14 @@ model Tournament {
 }
 
 model TournamentRegistration {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   tournamentId String
   teamId       String
   approvedAt   DateTime?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime  @default(now())
 
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  team         Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, teamId])
 }
@@ -319,45 +333,45 @@ model TournamentRegistration {
 // ─── MATCHES ─────────────────────────────────────────────
 
 enum BracketSide {
-  UPPER  // UB (winners bracket)
-  LOWER  // LB (losers bracket)
-  GROUP  // group stage
+  UPPER // UB (winners bracket)
+  LOWER // LB (losers bracket)
+  GROUP // group stage
 }
 
 model Match {
-  id             String      @id @default(cuid())
-  tournamentId   String?
-  teamAId        String?     // nullable, пока не определена в жеребьёвке
-  teamBId        String?
-  winnerId       String?
-  status         MatchStatus @default(SCHEDULED)
-  scoreA         Int         @default(0)
-  scoreB         Int         @default(0)
-  bestOf         Int         @default(1)
-  stage          String?
-  round          Int?        // 1, 2, 3... для round-robin / brackets
-  bracketSide    BracketSide?
-  bracketPosition Int?       // позиция в сетке (порядок отрисовки)
-  parentMatchAId String?     // из какого матча пришла команда A
-  parentMatchBId String?
-  map            String?
-  twitchChannel  String?
-  startsAt       DateTime?
-  startedAt      DateTime?
-  finishedAt     DateTime?
-  resultProofUrl String?
-  createdAt      DateTime    @default(now())
+  id              String       @id @default(cuid())
+  tournamentId    String?
+  teamAId         String? // nullable, пока не определена в жеребьёвке
+  teamBId         String?
+  winnerId        String?
+  status          MatchStatus  @default(SCHEDULED)
+  scoreA          Int          @default(0)
+  scoreB          Int          @default(0)
+  bestOf          Int          @default(1)
+  stage           String?
+  round           Int? // 1, 2, 3... для round-robin / brackets
+  bracketSide     BracketSide?
+  bracketPosition Int? // позиция в сетке (порядок отрисовки)
+  parentMatchAId  String? // из какого матча пришла команда A
+  parentMatchBId  String?
+  map             String?
+  twitchChannel   String?
+  startsAt        DateTime?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  resultProofUrl  String?
+  createdAt       DateTime     @default(now())
 
-  tournament     Tournament?  @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
-  teamA          Team?        @relation("MatchTeamA", fields: [teamAId], references: [id])
-  teamB          Team?        @relation("MatchTeamB", fields: [teamBId], references: [id])
-  winner         Team?        @relation("MatchWinner", fields: [winnerId], references: [id])
-  parentMatchA   Match?       @relation("ParentMatchA", fields: [parentMatchAId], references: [id], onDelete: SetNull)
-  parentMatchB   Match?       @relation("ParentMatchB", fields: [parentMatchBId], references: [id], onDelete: SetNull)
-  childrenA      Match[]      @relation("ParentMatchA")
-  childrenB      Match[]      @relation("ParentMatchB")
-  mvp            MvpAward?
-  playerStats    MatchPlayerStat[]
+  tournament   Tournament?       @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  teamA        Team?             @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamB        Team?             @relation("MatchTeamB", fields: [teamBId], references: [id])
+  winner       Team?             @relation("MatchWinner", fields: [winnerId], references: [id])
+  parentMatchA Match?            @relation("ParentMatchA", fields: [parentMatchAId], references: [id], onDelete: SetNull)
+  parentMatchB Match?            @relation("ParentMatchB", fields: [parentMatchBId], references: [id], onDelete: SetNull)
+  childrenA    Match[]           @relation("ParentMatchA")
+  childrenB    Match[]           @relation("ParentMatchB")
+  mvp          MvpAward?
+  playerStats  MatchPlayerStat[]
 
   @@index([status])
   @@index([startsAt])
@@ -367,16 +381,16 @@ model Match {
 
 // Заявка на результат матча от капитана команды
 model MatchResultClaim {
-  id        String            @id @default(cuid())
-  matchId   String
-  teamId    String              // команда того, кто заявляет
-  claimedById String            // userId капитана
-  scoreA    Int
-  scoreB    Int
-  map       String?
-  resultProofUrl String?         // ссылка на скриншот результата
-  status    ResultClaimStatus  @default(PENDING)
-  createdAt DateTime           @default(now())
+  id             String            @id @default(cuid())
+  matchId        String
+  teamId         String // команда того, кто заявляет
+  claimedById    String // userId капитана
+  scoreA         Int
+  scoreB         Int
+  map            String?
+  resultProofUrl String? // ссылка на скриншот результата
+  status         ResultClaimStatus @default(PENDING)
+  createdAt      DateTime          @default(now())
 
   @@unique([matchId, teamId])
   @@index([matchId, status])
@@ -384,31 +398,31 @@ model MatchResultClaim {
 
 // Статистика игрока в конкретном матче (HLTV-style)
 model MatchPlayerStat {
-  id              String   @id @default(cuid())
-  matchId         String
-  userId          String
-  teamId          String
+  id      String @id @default(cuid())
+  matchId String
+  userId  String
+  teamId  String
 
   // Базовые показатели (общие для всех игр)
-  kills           Int      @default(0)
-  deaths          Int      @default(0)
-  assists         Int      @default(0)
-  mvpRounds       Int      @default(0)
-  rating          Float?   // HLTV-style Rating 2.0 — рассчитывается из других метрик
+  kills     Int    @default(0)
+  deaths    Int    @default(0)
+  assists   Int    @default(0)
+  mvpRounds Int    @default(0)
+  rating    Float? // HLTV-style Rating 2.0 — рассчитывается из других метрик
 
   // Специфика игры — JSON, чтобы не плодить колонки
   // CS2: { adr, hsPct, kast, openingKills, clutches1v1, clutches1v2, utilityDamage, flashAssists }
   // DOTA2: { gpm, xpm, lastHits, denies, heroDamage, towerDamage, healing, hero }
   // PUBG: { headshotKills, longestKill, damageDealt, distanceTraveled, placement }
-  extra           Json?
+  extra Json?
 
   // Метаданные
-  game            Game
-  isMvp           Boolean  @default(false)
-  recordedById    String?  // админ, который ввёл стату
-  recordedAt      DateTime @default(now())
+  game         Game
+  isMvp        Boolean  @default(false)
+  recordedById String? // админ, который ввёл стату
+  recordedAt   DateTime @default(now())
 
-  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@unique([matchId, userId])
   @@index([userId, game])
@@ -418,9 +432,9 @@ model MatchPlayerStat {
 // Сезоны — для группировки турниров и долгосрочных лидербордов
 model Season {
   id          String   @id @default(cuid())
-  name        String   // "Spring 2026", "Summer 2026"
+  name        String // "Spring 2026", "Summer 2026"
   slug        String   @unique
-  game        Game?    // null = все игры
+  game        Game? // null = все игры
   startsAt    DateTime
   endsAt      DateTime
   isActive    Boolean  @default(true)
@@ -433,16 +447,16 @@ model Season {
 // ─── MVP & AWARDS ────────────────────────────────────────
 
 model MvpAward {
-  id           String      @id @default(cuid())
+  id           String   @id @default(cuid())
   userId       String
   tournamentId String?
-  matchId      String?     @unique
+  matchId      String?  @unique
   comment      String?
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime @default(now())
 
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
-  match        Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  match      Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
 }
 
 // ─── CHAT & FRIENDSHIPS ──────────────────────────────────
@@ -456,15 +470,15 @@ model Conversation {
 }
 
 model ChatMessage {
-  id             String       @id @default(cuid())
+  id             String    @id @default(cuid())
   conversationId String
   senderId       String
   body           String
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime  @default(now())
   readAt         DateTime?
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
 }
@@ -477,8 +491,8 @@ model Friendship {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  from      User             @relation("FriendshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
-  to        User             @relation("FriendshipTo", fields: [toId], references: [id], onDelete: Cascade)
+  from User @relation("FriendshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("FriendshipTo", fields: [toId], references: [id], onDelete: Cascade)
 
   @@unique([fromId, toId])
   @@index([toId, status])
@@ -506,14 +520,14 @@ model Sponsor {
 }
 
 model TournamentSponsor {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   tournamentId String
   sponsorId    String
-  isTitle      Boolean    @default(false)
-  createdAt    DateTime   @default(now())
+  isTitle      Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  sponsor      Sponsor    @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  sponsor    Sponsor    @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 
   @@unique([tournamentId, sponsorId])
 }
@@ -538,10 +552,10 @@ model WorldNews {
   id           String            @id @default(cuid())
   game         Game?
   category     WorldNewsCategory @default(GENERAL)
-  title        String            // на оригинальном языке
+  title        String // на оригинальном языке
   excerpt      String?
   body         String
-  sourceName   String?           // "HLTV", "Liquipedia", "Dotabuff"
+  sourceName   String? // "HLTV", "Liquipedia", "Dotabuff"
   sourceUrl    String?
   imageUrl     String?
   originalLang String            @default("en")
@@ -559,17 +573,17 @@ model WorldNews {
 // ─── NOTIFICATIONS ───────────────────────────────────────
 
 model Notification {
-  id         String           @id @default(cuid())
-  userId     String           // получатель
-  type       NotificationType
-  title      String
-  body       String?
-  link       String?          // куда вести при клике (например /matches/abc)
-  imageUrl   String?
-  readAt     DateTime?
-  createdAt  DateTime         @default(now())
+  id        String           @id @default(cuid())
+  userId    String // получатель
+  type      NotificationType
+  title     String
+  body      String?
+  link      String? // куда вести при клике (например /matches/abc)
+  imageUrl  String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
 
-  user       User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
@@ -591,7 +605,7 @@ model News {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  author      User?        @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  author User? @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([category, publishedAt])
   @@index([game, publishedAt])
@@ -614,13 +628,13 @@ model TournamentTemplate {
 }
 
 model PushSubscription {
-  id        String   @id @default(cuid())
-  userId    String
-  endpoint  String   @unique
-  p256dh    String
-  auth      String
-  userAgent String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime @default(now())
   lastUsedAt DateTime @default(now())
 
   @@index([userId])
@@ -629,10 +643,10 @@ model PushSubscription {
 model AdminActionLog {
   id        String   @id @default(cuid())
   adminId   String
-  action    String   // "DELETE_TEAM", "EDIT_SPONSOR", "GRANT_ADMIN", etc.
-  entity    String?  // "team", "sponsor", "user", "tournament"
+  action    String // "DELETE_TEAM", "EDIT_SPONSOR", "GRANT_ADMIN", etc.
+  entity    String? // "team", "sponsor", "user", "tournament"
   entityId  String?
-  metadata  Json?    // дополнительная инфа (имя, и т.п.)
+  metadata  Json? // дополнительная инфа (имя, и т.п.)
   ipAddress String?
   createdAt DateTime @default(now())
 
@@ -644,10 +658,227 @@ model EmailLog {
   id        String   @id @default(cuid())
   to        String
   subject   String
-  type      String   // "FRIEND_REQUEST", "TEAM_JOIN_REQUEST", etc.
-  status    String   // "SENT", "FAILED"
+  type      String // "FRIEND_REQUEST", "TEAM_JOIN_REQUEST", etc.
+  status    String // "SENT", "FAILED"
   error     String?
   createdAt DateTime @default(now())
 
   @@index([to, createdAt])
+}
+
+// ─── F16 HUB (CS2 matchmaking, FACEIT-like) ──────────────
+// На MVP — один общий пул, без регионов. Полностью изолировано от турнирной части.
+
+enum HubQueueStatus {
+  SEARCHING // в очереди, ищем 10 игроков
+  READY_CHECK // нашли 10, ждём accept
+  MATCHED // accept-чек пройден, переход в лобби
+  CANCELLED
+}
+
+enum HubLobbyState {
+  CAPTAIN_SELECT // капитаны определены, ожидают первого хода
+  PICKING // капитаны выбирают игроков
+  VETO // ban/pick карт
+  SERVER_ALLOCATION
+  LIVE
+  CANCELLED
+  FINISHED
+}
+
+enum HubMatchState {
+  PENDING
+  WARMUP
+  LIVE
+  FINISHED
+  CANCELLED
+}
+
+enum HubServerStatus {
+  FREE
+  RESERVED
+  LIVE
+  OFFLINE
+}
+
+enum HubVetoActionType {
+  BAN
+  PICK
+}
+
+enum HubTeam {
+  A
+  B
+}
+
+// Игрок в очереди. Один тикет на пользователя.
+model HubQueueTicket {
+  id           String         @id @default(cuid())
+  userId       String         @unique
+  status       HubQueueStatus @default(SEARCHING)
+  elo          Int // снимок ELO на момент входа
+  joinedAt     DateTime       @default(now())
+  readyCheckId String?
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readyCheck HubReadyCheck? @relation(fields: [readyCheckId], references: [id], onDelete: SetNull)
+
+  @@index([status, joinedAt])
+}
+
+// Ready-check после нахождения 10 игроков.
+model HubReadyCheck {
+  id        String   @id @default(cuid())
+  state     String // "PENDING" | "ACCEPTED" | "FAILED"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  responses HubReadyResponse[]
+  tickets   HubQueueTicket[]
+  lobby     HubLobby?
+
+  @@index([state, expiresAt])
+}
+
+model HubReadyResponse {
+  id           String    @id @default(cuid())
+  readyCheckId String
+  userId       String
+  accepted     Boolean? // null = ещё не ответил
+  respondedAt  DateTime?
+
+  readyCheck HubReadyCheck @relation(fields: [readyCheckId], references: [id], onDelete: Cascade)
+
+  @@unique([readyCheckId, userId])
+}
+
+// Лобби: 10 игроков, 2 капитана, фаза пика/вето → создание матча.
+model HubLobby {
+  id           String        @id @default(cuid())
+  readyCheckId String?       @unique
+  state        HubLobbyState @default(CAPTAIN_SELECT)
+  captainAId   String
+  captainBId   String
+  pickTurn     HubTeam       @default(A) // чей сейчас pick
+  vetoTurn     HubTeam       @default(A) // чей сейчас veto
+  selectedMap  String?
+  serverId     String?       @unique
+  matchId      String?       @unique
+  createdAt    DateTime      @default(now())
+  expiresAt    DateTime // защита от зависших лобби
+
+  readyCheck  HubReadyCheck?   @relation(fields: [readyCheckId], references: [id], onDelete: SetNull)
+  players     HubLobbyPlayer[]
+  vetoActions HubVetoAction[]
+  server      HubServer?       @relation(fields: [serverId], references: [id], onDelete: SetNull)
+  match       HubMatch?        @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([state])
+  @@index([expiresAt])
+}
+
+model HubLobbyPlayer {
+  id        String   @id @default(cuid())
+  lobbyId   String
+  userId    String
+  team      HubTeam? // null пока не подобран капитаном
+  isCaptain Boolean  @default(false)
+  pickOrder Int? // порядок выбора капитаном (1..8); у капитанов null
+
+  lobby HubLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId, team])
+}
+
+model HubVetoAction {
+  id        String            @id @default(cuid())
+  lobbyId   String
+  team      HubTeam
+  action    HubVetoActionType
+  map       String // UI-id карты ("mirage", "inferno", ...)
+  order     Int // 1..6 для BO1
+  createdAt DateTime          @default(now())
+
+  lobby HubLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, order])
+  @@index([lobbyId, order])
+}
+
+// CS2 dedicated server (на этапе MVP — может быть стабом).
+model HubServer {
+  id                 String          @id @default(cuid())
+  name               String
+  ip                 String
+  port               Int
+  rconPassword       String // в БД хранится зашифрованным (AES-GCM)
+  status             HubServerStatus @default(FREE)
+  reservedForLobbyId String?         @unique
+  notes              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  lobby   HubLobby?
+  matches HubMatch[]
+
+  @@unique([ip, port])
+  @@index([status])
+}
+
+// Матч hub — отдельно от существующего Match, у которого турнирная семантика.
+model HubMatch {
+  id             String        @id @default(cuid())
+  state          HubMatchState @default(PENDING)
+  map            String
+  serverId       String
+  teamAPlayerIds String[] // SteamID64 пятёрки A
+  teamBPlayerIds String[] // SteamID64 пятёрки B
+  scoreA         Int           @default(0)
+  scoreB         Int           @default(0)
+  winner         HubTeam?
+  matchConfig    Json // MatchZy/Get5-совместимый JSON
+  connectString  String // "connect 1.2.3.4:27015"
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  demoUrl        String?
+  createdAt      DateTime      @default(now())
+
+  server     HubServer       @relation(fields: [serverId], references: [id])
+  lobby      HubLobby?
+  eloHistory HubEloHistory[]
+
+  @@index([state])
+  @@index([createdAt])
+}
+
+model HubEloHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  matchId   String
+  delta     Int
+  before    Int
+  after     Int
+  createdAt DateTime @default(now())
+
+  user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match HubMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([matchId])
+}
+
+// Журнал событий hub для аудита и расчёта cooldown-эскалаций.
+model HubAuditEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  kind      String // QUEUE_JOIN | QUEUE_LEAVE | READY_DECLINE | READY_TIMEOUT | LOBBY_DODGE | NO_SERVER | ADMIN_BAN | ADMIN_UNBAN | MATCH_FINISH | ...
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([kind, createdAt])
 }
