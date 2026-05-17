@@ -4,14 +4,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { ensureSuperadminFromEnv } from "@/lib/admin-auth";
 import { AdminLoginForm } from "./login-form";
 
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ to?: string }>;
+  searchParams: Promise<{ to?: string; error?: string }>;
 }) {
   const sp = await searchParams;
+
+  // Авто-создание суперадмина из env (SUPERADMIN_LOGIN/PASSWORD).
+  // Идемпотентно — на каждом запросе только проверка existence.
+  await ensureSuperadminFromEnv().catch(() => undefined);
 
   // Если уже залогинен админом — сразу в админку.
   const session = await getCurrentUser();
@@ -51,6 +56,12 @@ export default async function AdminLoginPage({
             пользователей — вход через Steam с главной.
           </p>
         </div>
+
+        {sp.error === "admin_required" && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 mb-4 text-sm text-amber-200">
+            Эта страница требует прав администратора.
+          </div>
+        )}
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
           <AdminLoginForm to={sp.to} />

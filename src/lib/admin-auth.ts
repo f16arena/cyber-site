@@ -36,6 +36,60 @@ export async function verifyPassword(
   return crypto.timingSafeEqual(expected, actual);
 }
 
+/**
+ * Идемпотентно создаёт суперадмина из env-переменных SUPERADMIN_LOGIN и
+ * SUPERADMIN_PASSWORD. Если запись с таким login уже есть — НЕ перезаписывает
+ * пароль (чтобы плановая ротация env не сбрасывала пароль случайно).
+ *
+ * Использовать на проде вместо ручного npm run hub:create-admin —
+ * достаточно задать переменные в Vercel и открыть /login один раз.
+ *
+ * Возвращает: created | exists | skipped.
+ */
+export async function ensureSuperadminFromEnv(): Promise<
+  "created" | "exists" | "skipped"
+> {
+  const login = process.env.SUPERADMIN_LOGIN?.trim();
+  const password = process.env.SUPERADMIN_PASSWORD;
+  if (!login || !password) return "skipped";
+  if (!/^[a-zA-Z0-9_-]{3,32}$/.test(login)) return "skipped";
+  if (password.length < 8) return "skipped";
+
+  const existing = await prisma.adminCredential.findUnique({
+    where: { login },
+    select: { id: true },
+  });
+  if (existing) return "exists";
+
+  // Подбираем username без коллизии
+  let username = login;
+  const conflict = await prisma.user.findUnique({
+    where: { username },
+    select: { id: true },
+  });
+  if (conflict) username = `${login}_admin`;
+
+  const passwordHash = await hashPassword(password);
+  const steamId = `admin_${login}`;
+
+  try {
+    await prisma.user.create({
+      data: {
+        steamId,
+        username,
+        isAdmin: true,
+        adminCredential: { create: { login, passwordHash } },
+      },
+    });
+    return "created";
+  } catch (e) {
+    // Гонка между двумя запросами — один из них словит unique constraint
+    const msg = (e as Error).message;
+    if (msg.includes("Unique constraint")) return "exists";
+    throw e;
+  }
+}
+
 export type AdminLoginResult =
   | { ok: true; userId: string; username: string; avatarUrl: string | null }
   | { ok: false; error: "invalid_credentials" };

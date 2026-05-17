@@ -178,6 +178,17 @@ export default async function DiagnosticsPage() {
       "HUB_RCON_LIVE",
       "Если 'true' — реальный RCON. На MVP оставьте unset (стаб)."
     ),
+    {
+      label: "SUPERADMIN auto-seed",
+      ok: !!process.env.SUPERADMIN_LOGIN && !!process.env.SUPERADMIN_PASSWORD,
+      value:
+        process.env.SUPERADMIN_LOGIN && process.env.SUPERADMIN_PASSWORD
+          ? `login=${process.env.SUPERADMIN_LOGIN}`
+          : "не задан",
+      hint:
+        "Если задать SUPERADMIN_LOGIN и SUPERADMIN_PASSWORD — при открытии /login админ создастся автоматически, " +
+        "без ручного запуска CLI. Идемпотентно: если запись уже есть, пароль не перезаписывается.",
+    },
   ];
 
   return (
@@ -243,6 +254,9 @@ DATABASE_URL=postgres://...
 DIRECT_URL=postgres://...
 HUB_ENCRYPTION_KEY=<64 hex символа, для шифрования RCON>
 HUB_MATCHZY_SECRET=<random для webhook>
+# суперадмин (создаётся автоматом при первом /login):
+SUPERADMIN_LOGIN=admin
+SUPERADMIN_PASSWORD=<минимум 8 символов>
 # временно для входа без Steam:
 # ALLOW_DEV_LOGIN=true
 # DEV_LOGIN_TOKEN=<random>`}
