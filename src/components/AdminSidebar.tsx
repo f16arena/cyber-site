@@ -84,7 +84,10 @@ export function AdminSidebar({
     {
       title: "F16 Hub (CS2 MM)",
       items: [
+        { href: "/admin/hub/queue", label: "Очередь", icon: "⏳" },
+        { href: "/admin/hub/lobbies", label: "Лобби", icon: "🎯" },
         { href: "/admin/hub/matches", label: "Матчи", icon: "⚔" },
+        { href: "/admin/hub/players", label: "Игроки", icon: "👤" },
         { href: "/admin/hub/servers", label: "Серверы", icon: "🖥" },
       ],
     },

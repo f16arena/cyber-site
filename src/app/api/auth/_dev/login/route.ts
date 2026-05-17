@@ -2,26 +2,33 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 
+export function isDevLoginAllowed(): boolean {
+  // Локальный dev — всегда разрешено.
+  if (process.env.NODE_ENV !== "production") return true;
+  // Явное разрешение в production (включая Vercel preview) — флаг ALLOW_DEV_LOGIN.
+  if (process.env.ALLOW_DEV_LOGIN === "true") return true;
+  return false;
+}
+
 /**
- * DEV-ONLY вход без Steam. Полностью отключён в production.
+ * DEV-ONLY вход без Steam.
  *
- * Защита: NODE_ENV !== "production". Этого достаточно, потому что dev-сервер
- * слушает на localhost и не виден снаружи.
+ * Доступен когда:
+ *   - NODE_ENV !== "production" (локальный dev), либо
+ *   - ALLOW_DEV_LOGIN === "true" (явное включение, например на Vercel preview).
  *
- * Опционально: если задан env DEV_LOGIN_TOKEN — он также проверяется (можно
- * пускать кого-то на свою dev-машину по сети безопасно).
+ * Если ALLOW_DEV_LOGIN включён, **обязательно** задайте DEV_LOGIN_TOKEN —
+ * без него endpoint в production-окружении вернёт 503, чтобы не дать всем
+ * залогиниться админами одной ссылкой.
  *
  * Параметры:
+ *  - token:    обязателен если задан DEV_LOGIN_TOKEN
  *  - username: имя нового/существующего пользователя (default: dev_admin)
  *  - admin:    "0" чтобы НЕ выдавать isAdmin (default: выдаётся)
  *  - to:       куда редирект после логина (default: /admin)
- *
- * Использование:
- *   http://localhost:3000/api/auth/_dev/login
- *   http://localhost:3000/api/auth/_dev/login?username=tester&admin=0&to=/ru/hub
  */
 export async function GET(request: Request) {
-  if (process.env.NODE_ENV === "production") {
+  if (!isDevLoginAllowed()) {
     return NextResponse.json(
       { error: "disabled_in_production" },
       { status: 403 }
@@ -29,9 +36,20 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-
-  // Опциональная защита: если токен задан в env, требуем его в query.
   const expected = process.env.DEV_LOGIN_TOKEN;
+
+  // В production-окружении (включая preview через ALLOW_DEV_LOGIN) токен обязателен.
+  if (process.env.NODE_ENV === "production" && !expected) {
+    return NextResponse.json(
+      {
+        error: "token_required_in_production",
+        hint: "Set DEV_LOGIN_TOKEN env to a long random string",
+      },
+      { status: 503 }
+    );
+  }
+
+  // Если токен задан в env — требуем его всегда.
   if (expected) {
     const provided = url.searchParams.get("token");
     if (provided !== expected) {

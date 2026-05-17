@@ -314,7 +314,7 @@ export default async function HubDashboardPage({
             <span className="text-emerald-400">✓</span> Этап 7 — Результат + ELO
           </li>
           <li>
-            <span className="text-zinc-500">○</span> Этап 8 — Админ-панель hub
+            <span className="text-emerald-400">✓</span> Этап 8 — Админ-панель hub
           </li>
         </ul>
       </section>
