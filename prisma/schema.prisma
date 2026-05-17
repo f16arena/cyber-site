@@ -187,6 +187,7 @@ model User {
   hubLobbyPlayer  HubLobbyPlayer[]
   hubEloHistory   HubEloHistory[]
   hubAuditEvents  HubAuditEvent[]
+  adminCredential AdminCredential?
 
   @@index([status])
   @@index([region])
@@ -664,6 +665,21 @@ model EmailLog {
   createdAt DateTime @default(now())
 
   @@index([to, createdAt])
+}
+
+// ─── ADMIN LOGIN (отдельный от Steam) ────────────────────
+// Учётка суперадмина клиента — вход по login/password, независимо от Steam.
+
+model AdminCredential {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  login        String   @unique
+  passwordHash String           // scrypt: <saltB64>:<hashB64>
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── F16 HUB (CS2 matchmaking, FACEIT-like) ──────────────

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 /** Проверяет права админа по БД (свежо, не из сессии). */
 export async function requireAdmin() {
   const sessionUser = await getCurrentUser();
-  if (!sessionUser) redirect("/api/auth/steam");
+  if (!sessionUser) redirect("/login");
 
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
@@ -13,7 +13,7 @@ export async function requireAdmin() {
   });
 
   if (!user || !user.isAdmin) {
-    redirect("/?error=admin_required");
+    redirect("/login?error=admin_required");
   }
   return user;
 }

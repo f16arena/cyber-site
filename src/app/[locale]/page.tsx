@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { Countdown } from "@/components/Countdown";
 import { getRecentActivity, activityIcon } from "@/lib/activity-feed";
+import { AuthErrorBanner } from "@/components/AuthErrorBanner";
 import type { Game } from "@prisma/client";
 
 const games = [
@@ -76,10 +77,17 @@ function formatMatchTime(date: Date | null) {
 
 export default async function Home({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{
+    auth_error?: string;
+    reason?: string;
+    detail?: string;
+  }>;
 }) {
   const { locale } = await params;
+  const sp = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("Home");
 
@@ -196,6 +204,11 @@ export default async function Home({
 
   return (
     <>
+      <AuthErrorBanner
+        authError={sp.auth_error}
+        reason={sp.reason}
+        detail={sp.detail}
+      />
       {/* TICKER */}
       {liveMatches.length > 0 && (
         <div className="bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-rose-600/30 border-b border-violet-500/20">

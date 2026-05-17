@@ -9,7 +9,8 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts",
-    "hub:grant-admin": "tsx prisma/grant-admin.ts"
+    "hub:grant-admin": "tsx prisma/grant-admin.ts",
+    "hub:create-admin": "tsx prisma/create-admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

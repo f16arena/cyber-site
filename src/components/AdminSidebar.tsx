@@ -89,6 +89,7 @@ export function AdminSidebar({
         { href: "/admin/hub/matches", label: "Матчи", icon: "⚔" },
         { href: "/admin/hub/players", label: "Игроки", icon: "👤" },
         { href: "/admin/hub/servers", label: "Серверы", icon: "🖥" },
+        { href: "/admin/hub/diagnostics", label: "Диагностика", icon: "⚕" },
       ],
     },
     {
