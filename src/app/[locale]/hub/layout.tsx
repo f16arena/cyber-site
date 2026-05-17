@@ -69,7 +69,7 @@ export default async function HubLayout({
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between text-xs text-zinc-500 font-mono">
           <span>© 2026 F16 HUB · CS2 MATCHMAKING</span>
           <span className="uppercase tracking-wider">
-            MVP · ETAPE 3
+            MVP · ETAPE 4
           </span>
         </div>
       </footer>

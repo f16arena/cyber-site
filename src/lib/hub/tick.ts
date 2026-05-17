@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { expireReadyCheck, tryFinalize } from "@/lib/hub/ready-check";
 import { pickPlayer } from "@/lib/hub/lobby";
+import { applyVetoBan } from "@/lib/hub/veto";
+import { HUB_MAP_POOL } from "@/lib/hub/maps";
 
 /**
  * Единый "тик" обслуживания hub. Вызывается из SSE-стримов на каждом цикле,
@@ -95,6 +97,46 @@ export async function runTick(): Promise<void> {
       if (!available) continue;
 
       await pickPlayer(lobby.id, currentCaptainId, available.userId).catch(
+        () => undefined
+      );
+    }
+  }
+
+  // 5. Bot auto-veto: если vetoTurn-капитан — бот, банит первую доступную карту.
+  //    По одной операции за тик — UI плавно играет последовательность банов.
+  const vetoLobbies = await prisma.hubLobby.findMany({
+    where: { state: "VETO" },
+    select: {
+      id: true,
+      vetoTurn: true,
+      captainAId: true,
+      captainBId: true,
+      vetoActions: { select: { map: true } },
+    },
+  });
+
+  if (vetoLobbies.length > 0) {
+    const vetoCaptainIds = vetoLobbies.flatMap((l) => [
+      l.captainAId,
+      l.captainBId,
+    ]);
+    const vetoCaptains = await prisma.user.findMany({
+      where: { id: { in: vetoCaptainIds } },
+      select: { id: true, steamId: true },
+    });
+    const vetoSteamById = new Map(vetoCaptains.map((c) => [c.id, c.steamId]));
+
+    for (const lobby of vetoLobbies) {
+      const currentCaptainId =
+        lobby.vetoTurn === "A" ? lobby.captainAId : lobby.captainBId;
+      const steamId = vetoSteamById.get(currentCaptainId) ?? "";
+      if (!steamId.startsWith("bot_")) continue;
+
+      const bannedSet = new Set(lobby.vetoActions.map((a) => a.map));
+      const firstAvailable = HUB_MAP_POOL.find((m) => !bannedSet.has(m.id));
+      if (!firstAvailable) continue;
+
+      await applyVetoBan(lobby.id, currentCaptainId, firstAvailable.id).catch(
         () => undefined
       );
     }

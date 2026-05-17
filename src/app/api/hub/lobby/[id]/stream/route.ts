@@ -51,11 +51,10 @@ export async function GET(
     },
     isTerminal: (snap) => {
       const s = snap as { state?: string };
-      // Закрываем стрим, когда фаза пика завершена — клиент перейдёт
-      // на veto/match/dashboard в зависимости от состояния
+      // Не закрываем при VETO — фаза проходит в той же странице.
+      // Закрываем только когда матч начался / лобби завершено / отменено,
+      // чтобы клиент сделал router.push на match/dashboard.
       return (
-        s.state === "VETO" ||
-        s.state === "SERVER_ALLOCATION" ||
         s.state === "LIVE" ||
         s.state === "FINISHED" ||
         s.state === "CANCELLED"

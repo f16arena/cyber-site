@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { HUB_MAP_POOL } from "@/lib/hub/maps";
 
 /** Сколько живёт лобби максимум (защита от зависших). */
 export const LOBBY_TTL_MS = 15 * 60 * 1000;
@@ -24,6 +25,11 @@ export type LobbySnapshot = {
   teamB: PlayerView[];
   available: PlayerView[];
   nextPickOrder: number; // 1..8, или > 8 когда уже не PICKING
+  // VETO phase data
+  vetoTurn: "A" | "B";
+  bannedMaps: { map: string; team: "A" | "B"; order: number }[];
+  remainingMaps: string[];
+  selectedMap: string | null;
 };
 
 export type PlayerView = {
@@ -257,6 +263,8 @@ export async function getLobbySnapshot(
       id: true,
       state: true,
       pickTurn: true,
+      vetoTurn: true,
+      selectedMap: true,
       captainAId: true,
       captainBId: true,
       matchId: true,
@@ -267,6 +275,10 @@ export async function getLobbySnapshot(
           isCaptain: true,
           pickOrder: true,
         },
+      },
+      vetoActions: {
+        select: { map: true, team: true, order: true },
+        orderBy: { order: "asc" },
       },
     },
   });
@@ -327,6 +339,17 @@ export async function getLobbySnapshot(
     0
   );
 
+  // Veto state
+  const bannedMaps = lobby.vetoActions.map((a) => ({
+    map: a.map,
+    team: a.team as "A" | "B",
+    order: a.order,
+  }));
+  const bannedSet = new Set(bannedMaps.map((b) => b.map));
+  const remainingMaps = HUB_MAP_POOL.filter((m) => !bannedSet.has(m.id)).map(
+    (m) => m.id
+  );
+
   return {
     id: lobby.id,
     state: lobby.state as LobbySnapshot["state"],
@@ -338,5 +361,9 @@ export async function getLobbySnapshot(
     teamB: teamPlayers("B"),
     available,
     nextPickOrder: maxPickOrder + 1,
+    vetoTurn: lobby.vetoTurn as "A" | "B",
+    bannedMaps,
+    remainingMaps,
+    selectedMap: lobby.selectedMap,
   };
 }

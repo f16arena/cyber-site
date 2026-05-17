@@ -300,7 +300,7 @@ export default async function HubDashboardPage({
             <span className="text-emerald-400">✓</span> Этап 3 — Лобби + капитаны + пик
           </li>
           <li>
-            <span className="text-zinc-500">○</span> Этап 4 — Map veto (BO1)
+            <span className="text-emerald-400">✓</span> Этап 4 — Map veto (BO1)
           </li>
           <li>
             <span className="text-zinc-500">○</span> Этап 5 — Выделение сервера +

@@ -31,7 +31,31 @@ type Snapshot = {
   teamB: Player[];
   available: Player[];
   nextPickOrder: number;
+  vetoTurn: "A" | "B";
+  bannedMaps: { map: string; team: "A" | "B"; order: number }[];
+  remainingMaps: string[];
+  selectedMap: string | null;
 };
+
+const MAP_DISPLAY: Record<string, string> = {
+  mirage: "Mirage",
+  inferno: "Inferno",
+  nuke: "Nuke",
+  ancient: "Ancient",
+  anubis: "Anubis",
+  vertigo: "Vertigo",
+  dust2: "Dust 2",
+};
+
+const MAP_POOL_IDS = [
+  "mirage",
+  "inferno",
+  "nuke",
+  "ancient",
+  "anubis",
+  "vertigo",
+  "dust2",
+] as const;
 
 function PlayerCard({
   player,
@@ -135,14 +159,7 @@ export function LobbyScreen({
         const data = JSON.parse((ev as MessageEvent).data) as Snapshot;
         setSnap(data);
 
-        // Завершение фазы пика → переход на следующую страницу.
-        if (data.state === "VETO") {
-          // Этап 4 ещё не реализован — пока возвращаем на дашборд с инфо.
-          // На этапе 4 здесь будет router.push(`/${locale}/hub/lobby/${data.id}/veto`)
-          setTimeout(() => router.push(`/${locale}/hub`), 2000);
-          es.close();
-          return;
-        }
+        // VETO — остаёмся на той же странице, тот же стрим продолжит обновлять snapshot.
         if (data.state === "LIVE" && data.matchId) {
           router.push(`/${locale}/hub/match/${data.matchId}`);
           es.close();
@@ -176,7 +193,9 @@ export function LobbyScreen({
     );
   }, [snap, meUserId]);
 
-  const myTurn = iAmCaptain && snap?.pickTurn === myTeam;
+  const myPickTurn = iAmCaptain && snap?.pickTurn === myTeam;
+  const myVetoTurn = iAmCaptain && snap?.vetoTurn === myTeam;
+  const [banning, setBanning] = useState<string | null>(null);
 
   const onPick = async (pickedUserId: string) => {
     if (!snap || picking) return;
@@ -199,6 +218,27 @@ export function LobbyScreen({
     }
   };
 
+  const onBan = async (mapId: string) => {
+    if (!snap || banning) return;
+    setBanning(mapId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/hub/lobby/${lobbyId}/veto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ map: mapId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data?.error ?? "Ошибка бана");
+      }
+    } catch {
+      setError("Сетевая ошибка");
+    } finally {
+      setBanning(null);
+    }
+  };
+
   if (!snap) {
     return (
       <div className="mx-auto max-w-5xl px-6 py-20 text-center text-zinc-500 font-mono text-sm">
@@ -209,9 +249,12 @@ export function LobbyScreen({
 
   const inPickingPhase =
     snap.state === "PICKING" || snap.state === "CAPTAIN_SELECT";
+  const inVetoPhase = snap.state === "VETO";
   const turnLabel = snap.pickTurn === "A" ? "Капитан A" : "Капитан B";
   const turnCaptainName =
     snap.pickTurn === "A" ? snap.captainA.username : snap.captainB.username;
+  const vetoCaptainName =
+    snap.vetoTurn === "A" ? snap.captainA.username : snap.captainB.username;
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
@@ -250,13 +293,46 @@ export function LobbyScreen({
               </span>{" "}
               <span className="text-zinc-400">— {turnCaptainName}</span>
             </div>
-            {myTurn && (
+            {myPickTurn && (
               <div className="text-[10px] font-mono text-emerald-400 mt-1 animate-pulse">
                 ВАШ ХОД — выберите игрока
               </div>
             )}
           </div>
         )}
+        {inVetoPhase && (
+          <div className="flex flex-col items-end">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+              Сейчас банит
+            </div>
+            <div className="text-lg font-bold">
+              <span
+                className={
+                  snap.vetoTurn === "A" ? "text-orange-300" : "text-rose-300"
+                }
+              >
+                {snap.vetoTurn === "A" ? "Капитан A" : "Капитан B"}
+              </span>{" "}
+              <span className="text-zinc-400">— {vetoCaptainName}</span>
+            </div>
+            {myVetoTurn && (
+              <div className="text-[10px] font-mono text-emerald-400 mt-1 animate-pulse">
+                ВАШ ХОД — забаньте карту
+              </div>
+            )}
+          </div>
+        )}
+        {(snap.state === "SERVER_ALLOCATION" || snap.state === "LIVE") &&
+          snap.selectedMap && (
+            <div className="flex flex-col items-end">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                Выбранная карта
+              </div>
+              <div className="text-lg font-bold text-emerald-300">
+                {MAP_DISPLAY[snap.selectedMap] ?? snap.selectedMap}
+              </div>
+            </div>
+          )}
       </div>
 
       {/* 3 колонки: Team A | Available | Team B */}
@@ -313,7 +389,7 @@ export function LobbyScreen({
                   key={p.userId}
                   player={p}
                   variant="available"
-                  pickable={myTurn}
+                  pickable={myPickTurn}
                   busy={picking === p.userId}
                   onPick={() => onPick(p.userId)}
                 />
@@ -354,13 +430,103 @@ export function LobbyScreen({
         </div>
       </div>
 
-      {snap.state === "VETO" && (
-        <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-center">
-          <div className="text-sm font-bold text-emerald-300">
-            Пик завершён — переход к выбору карт
+      {inVetoPhase && (
+        <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-mono uppercase tracking-widest text-zinc-400">
+              Map Veto · BO1
+            </h2>
+            <span className="text-[10px] font-mono text-zinc-500">
+              {snap.bannedMaps.length} / 6 банов
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-5">
+            {MAP_POOL_IDS.map((mapId) => {
+              const ban = snap.bannedMaps.find((b) => b.map === mapId);
+              const isSelected = snap.selectedMap === mapId;
+              const isBanned = !!ban;
+              const clickable = myVetoTurn && !isBanned && !isSelected;
+              return (
+                <button
+                  key={mapId}
+                  type="button"
+                  disabled={!clickable || banning !== null}
+                  onClick={clickable ? () => onBan(mapId) : undefined}
+                  className={`relative rounded-lg p-3 text-center transition-all overflow-hidden ${
+                    isSelected
+                      ? "border-2 border-emerald-500/60 bg-emerald-500/15"
+                      : isBanned
+                      ? "border border-zinc-800 bg-zinc-950/60 opacity-50"
+                      : clickable
+                      ? "border border-zinc-700 bg-zinc-900 hover:border-orange-500 hover:bg-orange-500/10 cursor-pointer"
+                      : "border border-zinc-800 bg-zinc-900/40"
+                  } ${banning === mapId ? "animate-pulse" : ""}`}
+                >
+                  {isBanned && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-0.5 bg-rose-500 rotate-[-15deg] absolute" />
+                    </div>
+                  )}
+                  <div
+                    className={`text-sm font-bold ${
+                      isSelected
+                        ? "text-emerald-300"
+                        : isBanned
+                        ? "text-zinc-600 line-through"
+                        : "text-zinc-200"
+                    }`}
+                  >
+                    {MAP_DISPLAY[mapId]}
+                  </div>
+                  {isBanned && (
+                    <div
+                      className={`text-[9px] font-mono mt-1 ${
+                        ban.team === "A" ? "text-orange-400" : "text-rose-400"
+                      }`}
+                    >
+                      BAN · {ban.team} · #{ban.order}
+                    </div>
+                  )}
+                  {isSelected && (
+                    <div className="text-[9px] font-mono mt-1 text-emerald-400 font-bold">
+                      ВЫБРАНА
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {snap.bannedMaps.length > 0 && (
+            <div className="border-t border-zinc-800 pt-3">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
+                История банов
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {snap.bannedMaps.map((b) => (
+                  <span
+                    key={b.order}
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                      b.team === "A"
+                        ? "border-orange-500/30 text-orange-300 bg-orange-500/10"
+                        : "border-rose-500/30 text-rose-300 bg-rose-500/10"
+                    }`}
+                  >
+                    #{b.order} · {b.team} · {MAP_DISPLAY[b.map] ?? b.map}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {snap.state === "SERVER_ALLOCATION" && (
+        <div className="mt-6 rounded-lg border border-orange-500/30 bg-orange-500/10 px-5 py-4 text-center">
+          <div className="text-sm font-bold text-orange-300">
+            Карта выбрана — выделяем CS2 сервер...
           </div>
           <div className="text-xs font-mono text-zinc-400 mt-1">
-            Map veto будет реализован на этапе 4. Возвращаем на дашборд...
+            Реализуется на этапе 5. Сейчас лобби остановится в этом состоянии.
           </div>
         </div>
       )}
