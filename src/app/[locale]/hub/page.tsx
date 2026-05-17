@@ -303,14 +303,15 @@ export default async function HubDashboardPage({
             <span className="text-emerald-400">✓</span> Этап 4 — Map veto (BO1)
           </li>
           <li>
-            <span className="text-zinc-500">○</span> Этап 5 — Выделение сервера +
+            <span className="text-emerald-400">✓</span> Этап 5 — Выделение сервера +
             MatchZy config
           </li>
           <li>
             <span className="text-zinc-500">○</span> Этап 6 — Реальный CS2 + RCON
+            (отложен до боевого сервера)
           </li>
           <li>
-            <span className="text-zinc-500">○</span> Этап 7 — Результат + ELO
+            <span className="text-emerald-400">✓</span> Этап 7 — Результат + ELO
           </li>
           <li>
             <span className="text-zinc-500">○</span> Этап 8 — Админ-панель hub

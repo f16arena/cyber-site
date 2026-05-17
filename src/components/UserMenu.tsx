@@ -9,13 +9,25 @@ export async function UserMenu() {
   const t = await getTranslations("Nav");
 
   if (!user) {
+    const isDev = process.env.NODE_ENV !== "production";
     return (
-      <Link
-        href="/api/auth/steam"
-        className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all whitespace-nowrap"
-      >
-        {t("loginSteam")}
-      </Link>
+      <div className="flex items-center gap-2">
+        {isDev && (
+          <Link
+            href="/api/auth/_dev/login?username=dev_admin&to=/admin"
+            title="Dev only — войти без Steam как admin"
+            className="text-xs px-3 h-9 inline-flex items-center font-mono font-bold rounded border border-amber-500/40 text-amber-300 hover:bg-amber-500/10 transition-all whitespace-nowrap"
+          >
+            DEV LOGIN
+          </Link>
+        )}
+        <Link
+          href="/api/auth/steam"
+          className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all whitespace-nowrap"
+        >
+          {t("loginSteam")}
+        </Link>
+      </div>
     );
   }
 

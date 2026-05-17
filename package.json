@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "hub:grant-admin": "tsx prisma/grant-admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

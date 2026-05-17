@@ -3,6 +3,7 @@ import { expireReadyCheck, tryFinalize } from "@/lib/hub/ready-check";
 import { pickPlayer } from "@/lib/hub/lobby";
 import { applyVetoBan } from "@/lib/hub/veto";
 import { HUB_MAP_POOL } from "@/lib/hub/maps";
+import { allocateServer } from "@/lib/hub/server-alloc";
 
 /**
  * Единый "тик" обслуживания hub. Вызывается из SSE-стримов на каждом цикле,
@@ -140,5 +141,17 @@ export async function runTick(): Promise<void> {
         () => undefined
       );
     }
+  }
+
+  // 6. Server allocation: для лобби в SERVER_ALLOCATION захватываем сервер.
+  //    Идемпотентно (внутри allocateServer есть проверка matchId).
+  const allocatingLobbies = await prisma.hubLobby.findMany({
+    where: { state: "SERVER_ALLOCATION", matchId: null },
+    select: { id: true },
+  });
+  for (const lobby of allocatingLobbies) {
+    await allocateServer(lobby.id).catch((e) => {
+      console.error("[hub:tick] allocateServer failed:", e);
+    });
   }
 }
