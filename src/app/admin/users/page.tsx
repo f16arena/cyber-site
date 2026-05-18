@@ -1,10 +1,12 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-
 import { toggleAdmin } from "../actions";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 export default async function AdminUsersPage() {
   const me = await requireAdmin();
@@ -18,75 +20,78 @@ export default async function AdminUsersPage() {
   });
 
   return (
-    <>
-      
-      <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-12">
-        <Link
-          href="/admin"
-          className="text-xs font-mono text-zinc-500 hover:text-violet-300 inline-flex items-center gap-1 mb-6"
-        >
-          ← Админка
-        </Link>
-        <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight mb-6">
-          Игроки ({users.length})
-        </h1>
+    <PageContainer maxWidth="default" className="py-6">
+      <Link
+        href="/admin"
+        className="text-xs font-mono text-text-muted hover:text-brand-yellow inline-flex items-center gap-1 mb-3"
+      >
+        ← Админка
+      </Link>
+      <h1 className="text-xl font-bold tracking-tight mb-5">
+        Игроки <span className="text-text-muted font-mono">· {users.length}</span>
+      </h1>
 
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800">
-          {users.map((u) => (
-            <div
-              key={u.id}
-              className="flex items-center gap-3 p-4 hover:bg-zinc-800/30 transition-colors"
-            >
-              {u.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={u.avatarUrl}
-                  alt={u.username}
-                  className="w-10 h-10 rounded border border-zinc-700"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded bg-violet-500/20" />
-              )}
-              <div className="flex-1 min-w-0">
+      <div className="rounded border border-border-default bg-bg-panel divide-y divide-border-default">
+        {users.map((u) => (
+          <div
+            key={u.id}
+            className="flex items-center gap-3 px-3 py-2.5 hover:bg-bg-elevated transition-colors"
+          >
+            {u.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={u.avatarUrl}
+                alt={u.username}
+                className="w-9 h-9 border border-border-default"
+              />
+            ) : (
+              <div className="w-9 h-9 bg-bg-elevated border border-border-default flex items-center justify-center text-sm font-bold text-text-secondary">
+                {u.username[0].toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Link
                   href={`/players/${encodeURIComponent(u.username)}`}
-                  className="font-bold hover:text-violet-200"
+                  className="font-semibold text-text-primary hover:text-brand-yellow text-[13px]"
                 >
                   {u.username}
                 </Link>
                 {u.isAdmin && (
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 ml-2">
+                  <Badge variant="yellow" size="sm">
                     ADMIN
-                  </span>
+                  </Badge>
                 )}
-                <div className="text-xs font-mono text-zinc-500 mt-0.5">
-                  Steam: {u.steamId} · Команд:{" "}
-                  {u._count.teamMemberships} · MVP: {u._count.mvpAwards}
-                </div>
+                {u.emailVerifiedAt && (
+                  <Badge variant="win" size="sm">
+                    email ✓
+                  </Badge>
+                )}
               </div>
-              <span className="text-[10px] font-mono text-zinc-500">
-                {new Date(u.createdAt).toLocaleDateString("ru-RU")}
-              </span>
-              {u.id !== me.id && (
-                <form action={toggleAdmin}>
-                  <input type="hidden" name="userId" value={u.id} />
-                  <button
-                    type="submit"
-                    className={`text-xs font-mono px-3 h-8 rounded border transition-all ${
-                      u.isAdmin
-                        ? "border-rose-500/30 hover:bg-rose-500/10 text-rose-300"
-                        : "border-zinc-700 hover:border-amber-400 hover:bg-amber-500/10"
-                    }`}
-                  >
-                    {u.isAdmin ? "Снять админа" : "Сделать админом"}
-                  </button>
-                </form>
-              )}
+              <div className="text-[10px] font-mono text-text-muted mt-0.5">
+                Steam: {u.steamId} · Команд: {u._count.teamMemberships} · MVP:{" "}
+                {u._count.mvpAwards}
+              </div>
             </div>
-          ))}
-        </div>
-      </main>
-      
-    </>
+            <span className="text-[10px] font-mono text-text-muted hidden sm:inline shrink-0">
+              {new Date(u.createdAt).toLocaleDateString("ru-RU")}
+            </span>
+            {u.id !== me.id && (
+              <form action={toggleAdmin}>
+                <input type="hidden" name="userId" value={u.id} />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant={u.isAdmin ? "ghost" : "secondary"}
+                  className={u.isAdmin ? "text-rose-300 hover:text-rose-200" : ""}
+                >
+                  {u.isAdmin ? "Снять админа" : "Сделать админом"}
+                </Button>
+              </form>
+            )}
+          </div>
+        ))}
+      </div>
+    </PageContainer>
   );
 }
