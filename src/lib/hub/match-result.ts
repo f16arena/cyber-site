@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { computeTeamElo } from "@/lib/hub/elo";
+import { notifyMatchFinished } from "@/lib/hub/notify";
+import { displayNameFor } from "@/lib/hub/maps";
 
 export type FinishMatchResult =
   | { ok: true; deltaA: number; deltaB: number }
@@ -31,7 +33,7 @@ export async function finishMatch(
   if (winner === "A" && scoreA <= scoreB) return { ok: false, error: "invalid_score" };
   if (winner === "B" && scoreB <= scoreA) return { ok: false, error: "invalid_score" };
 
-  return prisma.$transaction(
+  const result = await prisma.$transaction(
     async (tx) => {
       const match = await tx.hubMatch.findUnique({
         where: { id: matchId },
@@ -158,10 +160,64 @@ export async function finishMatch(
         ok: true as const,
         deltaA: outcome.deltaA,
         deltaB: outcome.deltaB,
+        teamAUsernames: teamA.map((u) =>
+          users.find((x) => x.id === u.id)?.steamId ?? ""
+        ),
+        teamBUsernames: teamB.map((u) =>
+          users.find((x) => x.id === u.id)?.steamId ?? ""
+        ),
+        map: match.lobby ? undefined : undefined,
+        mapId: undefined as string | undefined,
       };
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
+
+  if (!result.ok) return result;
+
+  // Получаем имена и карту для notify (вне транзакции)
+  const matchData = await prisma.hubMatch
+    .findUnique({
+      where: { id: matchId },
+      select: {
+        map: true,
+        teamAPlayerIds: true,
+        teamBPlayerIds: true,
+      },
+    })
+    .catch(() => null);
+
+  if (matchData) {
+    const allSteamIds = [
+      ...matchData.teamAPlayerIds,
+      ...matchData.teamBPlayerIds,
+    ];
+    const usersForNotify = await prisma.user.findMany({
+      where: { steamId: { in: allSteamIds } },
+      select: { steamId: true, username: true },
+    });
+    const usernameBySteam = new Map(
+      usersForNotify.map((u) => [u.steamId, u.username])
+    );
+
+    await notifyMatchFinished({
+      matchId,
+      map: displayNameFor(matchData.map),
+      winner,
+      scoreA,
+      scoreB,
+      teamA: matchData.teamAPlayerIds.map(
+        (sid) => usernameBySteam.get(sid) ?? sid
+      ),
+      teamB: matchData.teamBPlayerIds.map(
+        (sid) => usernameBySteam.get(sid) ?? sid
+      ),
+      deltaA: result.deltaA,
+      deltaB: result.deltaB,
+    }).catch((e) => console.error("[hub:notify] finish failed:", e));
+  }
+
+  return { ok: true, deltaA: result.deltaA, deltaB: result.deltaB };
 }
 
 export type CancelMatchResult =

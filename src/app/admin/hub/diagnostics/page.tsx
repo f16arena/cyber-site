@@ -178,6 +178,21 @@ export default async function DiagnosticsPage() {
       "HUB_RCON_LIVE",
       "Если 'true' — реальный RCON. На MVP оставьте unset (стаб)."
     ),
+    envFlag(
+      "DISCORD_WEBHOOK_URL",
+      "DISCORD_WEBHOOK_URL",
+      "Webhook URL канала. При задании — отправка нотификаций о матчах в Discord."
+    ),
+    envFlag(
+      "TELEGRAM_BOT_TOKEN",
+      "TELEGRAM_BOT_TOKEN",
+      "Token бота от @BotFather. Нужен вместе с TELEGRAM_CHAT_ID."
+    ),
+    envFlag(
+      "TELEGRAM_CHAT_ID",
+      "TELEGRAM_CHAT_ID",
+      "ID чата, куда бот шлёт сообщения. Получить у @userinfobot или /getUpdates."
+    ),
     {
       label: "SUPERADMIN auto-seed",
       ok: !!process.env.SUPERADMIN_LOGIN && !!process.env.SUPERADMIN_PASSWORD,
@@ -257,6 +272,10 @@ HUB_MATCHZY_SECRET=<random для webhook>
 # суперадмин (создаётся автоматом при первом /login):
 SUPERADMIN_LOGIN=admin
 SUPERADMIN_PASSWORD=<минимум 8 символов>
+# нотификации (опционально):
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/.../...
+TELEGRAM_BOT_TOKEN=<bot token>
+TELEGRAM_CHAT_ID=<chat id>
 # временно для входа без Steam:
 # ALLOW_DEV_LOGIN=true
 # DEV_LOGIN_TOKEN=<random>`}

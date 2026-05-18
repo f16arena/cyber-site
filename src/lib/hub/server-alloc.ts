@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import { buildMatchConfig } from "@/lib/hub/matchzy-config";
 import { decryptSecret } from "@/lib/hub/crypto";
 import { loadMatch } from "@/lib/hub/rcon";
+import { notifyMatchStarted } from "@/lib/hub/notify";
+import { displayNameFor } from "@/lib/hub/maps";
 
 export type AllocateResult =
   | { ok: true; matchId: string; connectString: string; serverId: string }
@@ -168,6 +170,9 @@ export async function allocateServer(lobbyId: string): Promise<AllocateResult> {
         serverIp: server.ip,
         serverPort: server.port,
         serverName: server.name,
+        map: lobby.selectedMap,
+        teamANames: teamAPlayers.map((p) => p.username),
+        teamBNames: teamBPlayers.map((p) => p.username),
       };
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
@@ -191,6 +196,15 @@ export async function allocateServer(lobbyId: string): Promise<AllocateResult> {
   }).catch((e) => {
     console.error("[hub:rcon] loadMatch failed:", e);
   });
+
+  // Discord / Telegram нотификации (no-op если env пустой).
+  await notifyMatchStarted({
+    matchId: allocation.matchId,
+    map: displayNameFor(allocation.map),
+    connectString: allocation.connectString,
+    teamA: allocation.teamANames,
+    teamB: allocation.teamBNames,
+  }).catch((e) => console.error("[hub:notify] start failed:", e));
 
   return {
     ok: true,
