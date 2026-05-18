@@ -218,10 +218,31 @@ model Team {
   wonMatches    Match[]                  @relation("MatchWinner")
   registrations TournamentRegistration[]
   joinRequests  TeamJoinRequest[]
+  inviteTokens  TeamInviteToken[]
 
   @@unique([name, game])
   @@index([game])
   @@index([rating])
+}
+
+// Капитан создаёт invite-токен и шлёт ссылку игроку. По этой ссылке
+// игрок попадает на /teams/join/[token] → серверная функция проверяет
+// валидность и добавляет в состав.
+model TeamInviteToken {
+  id          String    @id @default(cuid())
+  teamId      String
+  token       String    @unique
+  createdById String
+  expiresAt   DateTime?
+  maxUses     Int?
+  usedCount   Int       @default(0)
+  isRevoked   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([token])
 }
 
 model TeamJoinRequest {

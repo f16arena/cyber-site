@@ -7,6 +7,8 @@ export type SessionData = {
   username?: string;
   avatarUrl?: string;
   isAdmin?: boolean;
+  /** Если выставлен — после успешного Steam-логина callback редиректит на этот path. */
+  pendingRedirect?: string;
 };
 
 export const sessionOptions: SessionOptions = {

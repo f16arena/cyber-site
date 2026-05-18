@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
@@ -358,6 +359,149 @@ export async function approveJoinRequest(formData: FormData) {
 
   revalidatePath(`/teams/${req.team.tag}/edit`);
   revalidatePath(`/teams/${req.team.tag}`);
+}
+
+/* ─── Invite tokens ─────────────────────────────────────── */
+
+function generateRandomToken(): string {
+  return crypto.randomBytes(18).toString("base64url");
+}
+
+export async function generateTeamInviteToken(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const teamId = formData.get("teamId") as string | null;
+  if (!teamId) return;
+
+  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  if (!team || team.captainId !== user.id) return;
+
+  const expiresInDays = parseInt(
+    (formData.get("expiresInDays") as string | null) ?? "7",
+    10
+  );
+  const maxUsesRaw = (formData.get("maxUses") as string | null) ?? "";
+  const maxUses = maxUsesRaw === "" ? null : parseInt(maxUsesRaw, 10);
+
+  const expiresAt =
+    Number.isFinite(expiresInDays) && expiresInDays > 0
+      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+      : null;
+
+  await prisma.teamInviteToken.create({
+    data: {
+      teamId,
+      token: generateRandomToken(),
+      createdById: user.id,
+      expiresAt,
+      maxUses: maxUses && maxUses > 0 ? maxUses : null,
+    },
+  });
+
+  revalidatePath(`/teams/${team.tag}/edit`);
+}
+
+export async function revokeTeamInviteToken(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const tokenId = formData.get("tokenId") as string | null;
+  if (!tokenId) return;
+
+  const token = await prisma.teamInviteToken.findUnique({
+    where: { id: tokenId },
+    include: { team: true },
+  });
+  if (!token || token.team.captainId !== user.id) return;
+
+  await prisma.teamInviteToken.update({
+    where: { id: tokenId },
+    data: { isRevoked: true },
+  });
+
+  revalidatePath(`/teams/${token.team.tag}/edit`);
+}
+
+export type AcceptInviteResult =
+  | { ok: true; teamTag: string }
+  | {
+      ok: false;
+      error:
+        | "not_found"
+        | "revoked"
+        | "expired"
+        | "exhausted"
+        | "already_member"
+        | "in_other_team"
+        | "team_full"
+        | "not_authenticated";
+    };
+
+/** Принять invite-токен. Возвращает результат; вызывается из server-action или server-component. */
+export async function acceptTeamInviteByToken(
+  token: string
+): Promise<AcceptInviteResult> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "not_authenticated" };
+
+  const invite = await prisma.teamInviteToken.findUnique({
+    where: { token },
+    include: { team: true },
+  });
+  if (!invite) return { ok: false, error: "not_found" };
+  if (invite.isRevoked) return { ok: false, error: "revoked" };
+  if (invite.expiresAt && invite.expiresAt < new Date()) {
+    return { ok: false, error: "expired" };
+  }
+  if (invite.maxUses !== null && invite.usedCount >= invite.maxUses) {
+    return { ok: false, error: "exhausted" };
+  }
+
+  // Уже в команде?
+  const existing = await prisma.teamMember.findFirst({
+    where: { userId: user.id, teamId: invite.teamId },
+  });
+  if (existing) return { ok: true, teamTag: invite.team.tag };
+
+  // В другой команде по этой игре?
+  const conflict = await prisma.teamMember.findFirst({
+    where: { userId: user.id, team: { game: invite.team.game } },
+  });
+  if (conflict) return { ok: false, error: "in_other_team" };
+
+  // Состав укомплектован?
+  const currentMembers = await prisma.teamMember.findMany({
+    where: { teamId: invite.teamId },
+    select: { role: true },
+  });
+  if (currentMembers.length >= maxRoster(invite.team.game)) {
+    return { ok: false, error: "team_full" };
+  }
+  const role = nextMemberRole(currentMembers, invite.team.game) ?? "SUBSTITUTE";
+
+  await prisma.$transaction([
+    prisma.teamMember.create({
+      data: { teamId: invite.teamId, userId: user.id, role },
+    }),
+    prisma.teamInviteToken.update({
+      where: { id: invite.id },
+      data: { usedCount: { increment: 1 } },
+    }),
+  ]);
+
+  await notify({
+    userId: invite.team.captainId,
+    type: "TEAM_REQUEST_ACCEPTED",
+    title: `${user.username ?? "Игрок"} принял инвайт в ${invite.team.name}`,
+    link: `/teams/${invite.team.tag}`,
+  });
+
+  revalidatePath(`/teams/${invite.team.tag}`);
+  revalidatePath(`/teams/${invite.team.tag}/edit`);
+  revalidatePath("/profile");
+
+  return { ok: true, teamTag: invite.team.tag };
 }
 
 export async function declineJoinRequest(formData: FormData) {
