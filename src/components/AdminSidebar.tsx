@@ -82,15 +82,9 @@ export function AdminSidebar({
       ],
     },
     {
-      title: "F16 Hub (CS2 MM)",
+      title: "Серверы CS2",
       items: [
-        { href: "/admin/hub/queue", label: "Очередь", icon: "⏳" },
-        { href: "/admin/hub/lobbies", label: "Лобби", icon: "🎯" },
-        { href: "/admin/hub/matches", label: "Матчи", icon: "⚔" },
-        { href: "/admin/hub/players", label: "Игроки", icon: "👤" },
-        { href: "/admin/hub/servers", label: "Серверы", icon: "🖥" },
-        { href: "/admin/hub/audit", label: "Журнал", icon: "📋" },
-        { href: "/admin/hub/diagnostics", label: "Диагностика", icon: "⚕" },
+        { href: "/admin/servers", label: "Игровые серверы", icon: "🖥" },
       ],
     },
     {

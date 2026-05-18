@@ -9,7 +9,6 @@ export async function SiteHeader() {
   const t = await getTranslations("Nav");
 
   const navLinks = [
-    { href: "/hub", label: "F16 HUB" },
     { href: "/tournaments", label: t("tournaments") },
     { href: "/matches", label: t("matches") },
     { href: "/teams", label: t("teams") },
@@ -20,42 +19,31 @@ export async function SiteHeader() {
   ];
 
   return (
-    <header className="border-b border-violet-500/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-20">
-      <div className="mx-auto max-w-7xl flex items-center justify-between px-6 h-16">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center font-black text-sm clip-corner group-hover:scale-110 transition-transform">
-            E
+    <header className="sticky top-0 z-20 border-b border-border-default bg-bg-base/95 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 flex items-center justify-between h-12">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <div className="w-7 h-7 rounded bg-cyan-500 flex items-center justify-center font-bold text-sm text-slate-950">
+            F
           </div>
-          <span className="font-black text-lg tracking-tight">
-            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-              ESPORTS
-            </span>
-            <span className="text-zinc-500 font-mono">.kz</span>
+          <span className="font-bold text-base tracking-tight">
+            <span className="text-text-primary">F16</span>
+            <span className="text-cyan-400 ml-1">ARENA</span>
           </span>
         </Link>
-        <nav className="hidden lg:flex gap-5 text-sm font-medium items-center">
-          {navLinks.map((link) =>
-            link.href === "/hub" ? (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="font-black tracking-tight bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent hover:from-orange-300 hover:to-rose-300 transition-all"
-                title="CS2 матчмейкинг"
-              >
-                {link.label}
-              </Link>
-            ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-zinc-400 hover:text-violet-300 transition-colors"
-              >
-                {link.label}
-              </Link>
-            )
-          )}
+
+        <nav className="hidden lg:flex gap-1 text-sm font-medium items-center ml-6 flex-1">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="px-3 h-12 inline-flex items-center text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
+
+        <div className="flex items-center gap-2 shrink-0">
           <GlobalSearch />
           <LanguageSwitcher />
           <UserMenu />
@@ -69,58 +57,38 @@ export async function SiteHeader() {
 export async function SiteFooter() {
   const t = await getTranslations("Footer");
   return (
-    <footer className="border-t border-violet-500/10 mt-auto bg-zinc-950/80">
-      <div className="mx-auto max-w-7xl px-6 py-10">
+    <footer className="mt-auto border-t border-border-default bg-bg-base">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-8">
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-violet-400 mb-3">
-              Платформа
-            </p>
-            <ul className="space-y-1.5 text-sm">
-              <li><Link href="/tournaments" className="text-zinc-400 hover:text-violet-300">Турниры</Link></li>
-              <li><Link href="/matches" className="text-zinc-400 hover:text-violet-300">Матчи</Link></li>
-              <li><Link href="/teams" className="text-zinc-400 hover:text-violet-300">Команды</Link></li>
-              <li><Link href="/players" className="text-zinc-400 hover:text-violet-300">Игроки</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-violet-400 mb-3">
-              Сообщество
-            </p>
-            <ul className="space-y-1.5 text-sm">
-              <li><Link href="/leaderboard" className="text-zinc-400 hover:text-violet-300">Лидерборды</Link></li>
-              <li><Link href="/hall-of-fame" className="text-zinc-400 hover:text-violet-300">Зал славы</Link></li>
-              <li><Link href="/compare" className="text-zinc-400 hover:text-violet-300">Сравнить игроков</Link></li>
-              <li><Link href="/news" className="text-zinc-400 hover:text-violet-300">Новости</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-violet-400 mb-3">
-              Партнёрам
-            </p>
-            <ul className="space-y-1.5 text-sm">
-              <li><Link href="/sponsors" className="text-zinc-400 hover:text-violet-300">Для брендов</Link></li>
-              <li><Link href="/stats" className="text-zinc-400 hover:text-violet-300">Открытая статистика</Link></li>
-              <li><Link href="/world-news" className="text-zinc-400 hover:text-violet-300">Мировые новости</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-violet-400 mb-3">
-              Аккаунт
-            </p>
-            <ul className="space-y-1.5 text-sm">
-              <li><Link href="/profile" className="text-zinc-400 hover:text-violet-300">Профиль</Link></li>
-              <li><Link href="/messages" className="text-zinc-400 hover:text-violet-300">Сообщения</Link></li>
-              <li><Link href="/friends" className="text-zinc-400 hover:text-violet-300">Друзья</Link></li>
-            </ul>
-          </div>
+          <FooterColumn title="Платформа">
+            <FooterLink href="/tournaments">Турниры</FooterLink>
+            <FooterLink href="/matches">Матчи</FooterLink>
+            <FooterLink href="/teams">Команды</FooterLink>
+            <FooterLink href="/players">Игроки</FooterLink>
+          </FooterColumn>
+          <FooterColumn title="Сообщество">
+            <FooterLink href="/leaderboard">Лидерборды</FooterLink>
+            <FooterLink href="/hall-of-fame">Зал славы</FooterLink>
+            <FooterLink href="/compare">Сравнить игроков</FooterLink>
+            <FooterLink href="/news">Новости</FooterLink>
+          </FooterColumn>
+          <FooterColumn title="Партнёрам">
+            <FooterLink href="/sponsors">Для брендов</FooterLink>
+            <FooterLink href="/stats">Открытая статистика</FooterLink>
+            <FooterLink href="/world-news">Мировые новости</FooterLink>
+          </FooterColumn>
+          <FooterColumn title="Аккаунт">
+            <FooterLink href="/profile">Профиль</FooterLink>
+            <FooterLink href="/messages">Сообщения</FooterLink>
+            <FooterLink href="/friends">Друзья</FooterLink>
+          </FooterColumn>
         </div>
-        <div className="pt-6 border-t border-zinc-800/60 flex flex-col sm:flex-row justify-between gap-3 text-xs text-zinc-500">
+        <div className="pt-6 border-t border-border-default flex flex-col sm:flex-row justify-between gap-3 text-xs text-text-muted">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center font-bold text-[10px]">
-              E
+            <div className="w-5 h-5 rounded bg-cyan-500 flex items-center justify-center font-bold text-[10px] text-slate-950">
+              F
             </div>
-            <span className="font-mono">© 2026 ESPORTS.KZ</span>
+            <span className="font-mono">© 2026 F16 ARENA</span>
           </div>
           <span className="font-mono uppercase tracking-wider">
             {t("tagline")}
@@ -128,5 +96,38 @@ export async function SiteFooter() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-text-muted mb-3">
+        {title}
+      </p>
+      <ul className="space-y-1.5 text-sm">{children}</ul>
+    </div>
+  );
+}
+
+function FooterLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link href={href} className="text-text-secondary hover:text-cyan-300">
+        {children}
+      </Link>
+    </li>
   );
 }

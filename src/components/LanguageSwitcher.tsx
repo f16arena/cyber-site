@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTransition } from "react";
 
 const LOCALES = [
-  { code: "ru", flag: "🇷🇺", label: "RU" },
-  { code: "kk", flag: "🇰🇿", label: "KZ" },
-  { code: "en", flag: "🇬🇧", label: "EN" },
+  { code: "ru", label: "RU" },
+  { code: "kk", label: "KZ" },
+  { code: "en", label: "EN" },
 ] as const;
 
 export function LanguageSwitcher() {
@@ -24,16 +24,16 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="flex gap-0.5 border border-zinc-800 rounded overflow-hidden">
+    <div className="hidden sm:flex gap-0.5 border border-border-default rounded overflow-hidden">
       {LOCALES.map((l) => (
         <button
           key={l.code}
           onClick={() => switchLocale(l.code)}
           disabled={pending}
-          className={`px-2 py-1 text-[10px] font-mono font-bold transition-colors ${
+          className={`px-2 h-8 text-[10px] font-mono font-bold transition-colors ${
             currentLocale === l.code
-              ? "bg-violet-500/20 text-violet-200"
-              : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50"
+              ? "bg-cyan-500/15 text-cyan-300"
+              : "text-text-muted hover:text-text-primary hover:bg-bg-elevated"
           }`}
           title={l.label}
         >

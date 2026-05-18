@@ -41,7 +41,10 @@ export function GlobalSearch() {
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -66,7 +69,7 @@ export function GlobalSearch() {
     results.players.length + results.teams.length + results.tournaments.length;
 
   return (
-    <div ref={containerRef} className="relative hidden md:block w-64">
+    <div ref={containerRef} className="relative hidden md:block w-60">
       <input
         type="text"
         value={q}
@@ -76,19 +79,24 @@ export function GlobalSearch() {
         }}
         onFocus={() => setOpen(true)}
         placeholder={t("search")}
-        className="w-full bg-zinc-900/60 border border-zinc-800 rounded h-9 pl-9 pr-3 text-sm font-mono focus:outline-none focus:border-violet-400/60 transition-colors"
+        className="w-full bg-bg-panel border border-border-default rounded h-8 pl-8 pr-3 text-sm focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-text-muted"
       />
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm pointer-events-none">
+      <span
+        aria-hidden
+        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none"
+      >
         🔍
       </span>
 
       {open && q.length >= 2 && (
-        <div className="absolute top-full mt-2 left-0 right-0 rounded-lg border border-zinc-800 bg-zinc-950/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <div className="absolute top-full mt-2 left-0 right-0 rounded border border-border-default bg-bg-panel shadow-2xl overflow-hidden z-30">
           {loading && (
-            <div className="p-4 text-xs font-mono text-zinc-500">Поиск...</div>
+            <div className="p-3 text-xs font-mono text-text-muted">
+              Поиск...
+            </div>
           )}
           {!loading && total === 0 && (
-            <div className="p-4 text-xs font-mono text-zinc-500">
+            <div className="p-3 text-xs font-mono text-text-muted">
               {t("searchNoResults")}
             </div>
           )}
@@ -99,7 +107,7 @@ export function GlobalSearch() {
                   key={p.username}
                   href={`/players/${encodeURIComponent(p.username)}`}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-violet-500/10 text-sm"
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-bg-elevated text-sm"
                 >
                   {p.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -109,7 +117,7 @@ export function GlobalSearch() {
                       className="w-6 h-6 rounded"
                     />
                   ) : (
-                    <div className="w-6 h-6 rounded bg-violet-500/20" />
+                    <div className="w-6 h-6 rounded bg-bg-elevated" />
                   )}
                   <span>{p.username}</span>
                 </Link>
@@ -118,35 +126,37 @@ export function GlobalSearch() {
           )}
           {!loading && results.teams.length > 0 && (
             <Section title={t("searchSectionTeams")}>
-              {results.teams.map((t) => (
+              {results.teams.map((team) => (
                 <Link
-                  key={t.tag}
-                  href={`/teams/${t.tag}`}
+                  key={team.tag}
+                  href={`/teams/${team.tag}`}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-violet-500/10 text-sm"
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-bg-elevated text-sm"
                 >
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-zinc-900/40 border-zinc-700">
-                    {t.game}
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-bg-panel border-border-default text-text-muted">
+                    {team.game}
                   </span>
-                  <span className="font-medium">{t.name}</span>
-                  <span className="text-xs font-mono text-zinc-500">[{t.tag}]</span>
+                  <span className="font-medium">{team.name}</span>
+                  <span className="text-xs font-mono text-text-muted">
+                    [{team.tag}]
+                  </span>
                 </Link>
               ))}
             </Section>
           )}
           {!loading && results.tournaments.length > 0 && (
             <Section title={t("searchSectionTournaments")}>
-              {results.tournaments.map((t) => (
+              {results.tournaments.map((tn) => (
                 <Link
-                  key={t.slug}
-                  href={`/tournaments/${t.slug}`}
+                  key={tn.slug}
+                  href={`/tournaments/${tn.slug}`}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-violet-500/10 text-sm"
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-bg-elevated text-sm"
                 >
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-zinc-900/40 border-zinc-700">
-                    {t.game}
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-bg-panel border-border-default text-text-muted">
+                    {tn.game}
                   </span>
-                  <span className="font-medium">{t.name}</span>
+                  <span className="font-medium">{tn.name}</span>
                 </Link>
               ))}
             </Section>
@@ -165,8 +175,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-zinc-800/50 last:border-b-0">
-      <div className="px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-violet-400 bg-zinc-900/50">
+    <div className="border-b border-border-default last:border-b-0">
+      <div className="px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-cyan-400 bg-bg-base">
         {title}
       </div>
       <div>{children}</div>

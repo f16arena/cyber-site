@@ -23,17 +23,15 @@ export default async function AdminLayout({
   return (
     <>
       {/* Top bar */}
-      <header className="border-b border-violet-500/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-30">
-        <div className="mx-auto max-w-[1600px] flex items-center justify-between px-6 h-14">
+      <header className="border-b border-border-default bg-bg-base/95 backdrop-blur-sm sticky top-0 z-30">
+        <div className="mx-auto max-w-[1600px] flex items-center justify-between px-6 h-12">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center font-black text-xs clip-corner">
-              E
+            <div className="w-7 h-7 rounded bg-cyan-500 flex items-center justify-center font-bold text-sm text-slate-950">
+              F
             </div>
-            <span className="font-black text-base tracking-tight">
-              <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                ESPORTS
-              </span>
-              <span className="text-zinc-500 font-mono">.kz</span>
+            <span className="font-bold text-base tracking-tight">
+              <span className="text-text-primary">F16</span>
+              <span className="text-cyan-400 ml-1">ARENA</span>
             </span>
             <span className="ml-3 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               SUPERADMIN
@@ -42,7 +40,7 @@ export default async function AdminLayout({
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="text-xs font-mono text-zinc-500 hover:text-violet-300"
+              className="text-xs font-mono text-text-muted hover:text-cyan-300"
             >
               ← На сайт
             </Link>

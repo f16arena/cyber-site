@@ -28,7 +28,8 @@ export function MobileMenu({
     };
   }, [open]);
 
-  const stripLocale = (p: string) => p.replace(/^\/(ru|kk|en)(?=\/|$)/, "") || "/";
+  const stripLocale = (p: string) =>
+    p.replace(/^\/(ru|kk|en)(?=\/|$)/, "") || "/";
   const currentPath = stripLocale(pathname || "/");
 
   return (
@@ -36,10 +37,17 @@ export function MobileMenu({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="lg:hidden text-zinc-300 hover:text-violet-300 px-2 h-9 inline-flex items-center"
+        className="lg:hidden text-text-secondary hover:text-cyan-300 px-2 h-8 inline-flex items-center"
         aria-label="Меню"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <line x1="4" y1="6" x2="20" y2="6" />
           <line x1="4" y1="12" x2="20" y2="12" />
           <line x1="4" y1="18" x2="20" y2="18" />
@@ -47,28 +55,30 @@ export function MobileMenu({
       </button>
 
       <div
-        className={`fixed inset-0 z-50 lg:hidden ${open ? "" : "pointer-events-none"}`}
+        className={`fixed inset-0 z-50 lg:hidden ${
+          open ? "" : "pointer-events-none"
+        }`}
         aria-hidden={!open}
       >
         <div
-          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-200 ${
+          className={`absolute inset-0 bg-bg-base/80 backdrop-blur-sm transition-opacity duration-200 ${
             open ? "opacity-100" : "opacity-0"
           }`}
           onClick={() => setOpen(false)}
         />
         <nav
-          className={`absolute top-0 right-0 bottom-0 w-72 max-w-[85vw] bg-zinc-950 border-l border-violet-500/20 p-6 flex flex-col gap-1 overflow-y-auto transition-transform duration-300 ease-out ${
+          className={`absolute top-0 right-0 bottom-0 w-72 max-w-[85vw] bg-bg-panel border-l border-border-default p-6 flex flex-col gap-1 overflow-y-auto transition-transform duration-300 ease-out ${
             open ? "translate-x-0" : "translate-x-full"
           }`}
         >
           <div className="flex items-center justify-between mb-5">
-            <span className="text-xs font-mono uppercase tracking-widest text-violet-400">
-              // Меню
+            <span className="text-xs font-mono uppercase tracking-widest text-text-muted">
+              Меню
             </span>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-zinc-400 hover:text-rose-300 text-2xl leading-none w-8 h-8 inline-flex items-center justify-center"
+              className="text-text-muted hover:text-rose-300 text-xl leading-none w-8 h-8 inline-flex items-center justify-center"
               aria-label="Закрыть"
             >
               ✕
@@ -83,10 +93,10 @@ export function MobileMenu({
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className={`px-3 py-3 rounded text-base font-medium border transition-colors ${
+                className={`px-3 py-2.5 rounded text-sm font-medium transition-colors ${
                   active
-                    ? "bg-violet-500/15 text-violet-200 border-violet-500/40"
-                    : "text-zinc-200 hover:bg-violet-500/10 hover:text-violet-300 border-transparent hover:border-violet-500/30"
+                    ? "bg-cyan-500/15 text-cyan-300 border-l-2 border-cyan-400"
+                    : "text-text-secondary hover:bg-bg-elevated hover:text-text-primary border-l-2 border-transparent"
                 }`}
               >
                 {l.label}
@@ -94,9 +104,9 @@ export function MobileMenu({
             );
           })}
 
-          <div className="mt-auto pt-6 border-t border-zinc-800/60">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">
-              esports.kz
+          <div className="mt-auto pt-6 border-t border-border-default">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-text-muted">
+              F16 Arena
             </p>
           </div>
         </nav>

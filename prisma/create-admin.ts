@@ -2,7 +2,7 @@
  * Создать суперадмина (отдельно от Steam).
  *
  * Использование:
- *   npm run hub:create-admin -- <login> <password>
+ *   npm run admin:create -- <login> <password>
  *
  * Создаёт:
  *   - User(steamId="admin_<login>", username=<login>, isAdmin=true)

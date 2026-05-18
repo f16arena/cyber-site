@@ -3,7 +3,7 @@
  *
  * Использование:
  *   npx tsx prisma/grant-admin.ts <username-or-steamId>
- *   npm run hub:grant-admin -- <username-or-steamId>
+ *   npm run admin:grant -- <username-or-steamId>
  *
  * Работает с production-БД (читает DATABASE_URL из .env) — будьте осторожны.
  */

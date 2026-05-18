@@ -16,14 +16,14 @@ export async function UserMenu() {
           <Link
             href="/api/auth/_dev/login?username=dev_admin&to=/admin"
             title="Dev only — войти без Steam как admin"
-            className="text-xs px-3 h-9 inline-flex items-center font-mono font-bold rounded border border-amber-500/40 text-amber-300 hover:bg-amber-500/10 transition-all whitespace-nowrap"
+            className="text-xs px-3 h-8 inline-flex items-center font-mono font-bold rounded border border-amber-500/40 text-amber-300 hover:bg-amber-500/10 whitespace-nowrap transition-colors"
           >
             DEV LOGIN
           </Link>
         )}
         <Link
           href="/api/auth/steam"
-          className="text-sm px-4 h-9 inline-flex items-center font-medium rounded border border-violet-500/30 hover:border-violet-400 hover:bg-violet-500/10 transition-all whitespace-nowrap"
+          className="text-sm px-4 h-8 inline-flex items-center font-medium rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 whitespace-nowrap transition-colors"
         >
           {t("loginSteam")}
         </Link>
@@ -31,7 +31,6 @@ export async function UserMenu() {
     );
   }
 
-  // Бейджи: входящие friend requests, непрочитанные сообщения, isAdmin из БД
   const [pendingFriendRequests, unreadMessages, dbUser] = await Promise.all([
     prisma.friendship.count({
       where: { toId: user.id, status: "PENDING" },
@@ -52,7 +51,7 @@ export async function UserMenu() {
     }),
   ]);
 
-  // Синкаем isAdmin в сессию если в БД повысили
+  // Sync isAdmin in session if DB has it
   if (dbUser?.isAdmin && !user.isAdmin) {
     const session = await getSession();
     session.isAdmin = true;
@@ -60,28 +59,28 @@ export async function UserMenu() {
   }
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2">
+    <div className="flex items-center gap-1 sm:gap-1.5">
       <NotificationsBell />
       <Link
         href="/friends"
-        className="relative text-sm font-mono text-zinc-400 hover:text-violet-300 transition-colors px-2"
+        className="relative text-sm text-text-secondary hover:text-cyan-300 transition-colors px-2 h-8 inline-flex items-center"
         title="Друзья"
       >
         👥
         {pendingFriendRequests > 0 && (
-          <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-rose-500 text-white rounded-full px-1.5 py-0.5">
+          <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold bg-rose-500 text-white rounded-full px-1 py-0 min-w-[16px] text-center">
             {pendingFriendRequests}
           </span>
         )}
       </Link>
       <Link
         href="/messages"
-        className="relative text-sm font-mono text-zinc-400 hover:text-violet-300 transition-colors px-2"
+        className="relative text-sm text-text-secondary hover:text-cyan-300 transition-colors px-2 h-8 inline-flex items-center"
         title="Сообщения"
       >
         💬
         {unreadMessages > 0 && (
-          <span className="absolute -top-1 -right-1 text-[9px] font-bold bg-rose-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+          <span className="absolute -top-0.5 -right-0.5 text-[9px] font-bold bg-rose-500 text-white rounded-full px-1 py-0 min-w-[16px] text-center">
             {unreadMessages > 99 ? "99+" : unreadMessages}
           </span>
         )}
@@ -89,7 +88,7 @@ export async function UserMenu() {
       {dbUser?.isAdmin && (
         <Link
           href="/admin"
-          className="text-[10px] font-mono font-bold px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+          className="text-[10px] font-mono font-bold px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"
           title="Админка"
         >
           ADMIN
@@ -101,19 +100,19 @@ export async function UserMenu() {
           <img
             src={user.avatarUrl}
             alt={user.username || "avatar"}
-            className="w-8 h-8 rounded border border-violet-500/30 group-hover:border-violet-400 transition-colors"
+            className="w-7 h-7 rounded border border-border-default group-hover:border-cyan-500/60 transition-colors"
           />
         ) : (
-          <div className="w-8 h-8 rounded bg-violet-500/20 border border-violet-500/30" />
+          <div className="w-7 h-7 rounded bg-bg-elevated border border-border-default" />
         )}
-        <span className="text-sm font-medium hidden lg:inline group-hover:text-violet-300 transition-colors">
+        <span className="text-sm font-medium hidden lg:inline text-text-secondary group-hover:text-cyan-300 transition-colors">
           {user.username}
         </span>
       </Link>
       <form action="/api/auth/logout" method="POST">
         <button
           type="submit"
-          className="text-xs font-mono text-zinc-500 hover:text-rose-300 transition-colors px-1"
+          className="text-xs text-text-muted hover:text-rose-300 transition-colors px-1.5 h-8"
           title="Выйти"
         >
           ✕

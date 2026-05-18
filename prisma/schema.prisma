@@ -163,15 +163,6 @@ model User {
   updatedAt          DateTime       @updatedAt
   lastSeenAt         DateTime?
 
-  // F16 HUB (CS2 matchmaking) — отдельные счётчики, не пересекаются с турнирной статой
-  hubElo           Int       @default(1000)
-  hubWins          Int       @default(0)
-  hubLosses        Int       @default(0)
-  hubMatchesPlayed Int       @default(0)
-  hubBannedUntil   DateTime?
-  hubCooldownUntil DateTime?
-  hubBanReason     String?
-
   profiles        PlayerProfile[]
   teamMemberships TeamMember[]
   captainOf       Team[]            @relation("TeamCaptain")
@@ -183,18 +174,10 @@ model User {
   authoredNews    News[]            @relation("NewsAuthor")
   notifications   Notification[]    @relation("NotificationRecipient")
   joinRequests    TeamJoinRequest[]
-  hubQueueTicket  HubQueueTicket?
-  hubLobbyPlayer  HubLobbyPlayer[]
-  hubEloHistory   HubEloHistory[]
-  hubAuditEvents  HubAuditEvent[]
-  hubPartyLed     HubParty?         @relation("HubPartyLeader")
-  hubPartyMember  HubPartyMember?   @relation("HubPartyMember")
-  hubPartyInvites HubPartyInvite[]  @relation("HubPartyInvitee")
   adminCredential AdminCredential?
 
   @@index([status])
   @@index([region])
-  @@index([hubElo])
 }
 
 model PlayerProfile {
@@ -685,280 +668,34 @@ model AdminCredential {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ─── F16 HUB (CS2 matchmaking, FACEIT-like) ──────────────
-// На MVP — один общий пул, без регионов. Полностью изолировано от турнирной части.
+// ─── GAME SERVERS (CS2 dedicated, управляются из админки сайта) ─────
+// CS2 dedicated server, поднятый дома (Windows 11) и доступный через
+// Cloudflare Tunnel для RCON-команд от сайта.
+// Поле reservedForMatchId связывается с турнирным Match.id (без FK,
+// чтобы избежать каскадных удалений и реляционных циклов).
 
-enum HubQueueStatus {
-  SEARCHING // в очереди, ищем нужное число игроков
-  READY_CHECK // нашли всех, ждём accept
-  MATCHED // accept-чек пройден, переход в лобби
-  CANCELLED
-}
-
-enum HubGameMode {
-  SOLO // 1v1 (2 игрока, без капитанов и пика)
-  DUO // 2v2 (4 игрока, без пика — авто-разбивка по ELO)
-  FIVE // 5v5 (10 игроков, капитаны, пик)
-}
-
-enum HubLobbyState {
-  CAPTAIN_SELECT // капитаны определены, ожидают первого хода
-  PICKING // капитаны выбирают игроков
-  VETO // ban/pick карт
-  SERVER_ALLOCATION
-  LIVE
-  CANCELLED
-  FINISHED
-}
-
-enum HubMatchState {
-  PENDING
-  WARMUP
-  LIVE
-  FINISHED
-  CANCELLED
-}
-
-enum HubServerStatus {
+enum ServerStatus {
   FREE
   RESERVED
   LIVE
   OFFLINE
 }
 
-enum HubVetoActionType {
-  BAN
-  PICK
-}
-
-enum HubTeam {
-  A
-  B
-}
-
-// Игрок в очереди. Один тикет на пользователя.
-model HubQueueTicket {
-  id           String         @id @default(cuid())
-  userId       String         @unique
-  partyId      String?
-  mode         HubGameMode    @default(FIVE)
-  status       HubQueueStatus @default(SEARCHING)
-  elo          Int // снимок ELO на момент входа (соло — свой; party — средний)
-  partySize    Int            @default(1) // 1..5; сколько мест занимает в очереди
-  joinedAt     DateTime       @default(now())
-  readyCheckId String?
-
-  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  readyCheck HubReadyCheck? @relation(fields: [readyCheckId], references: [id], onDelete: SetNull)
-  party      HubParty?      @relation(fields: [partyId], references: [id], onDelete: SetNull)
-
-  @@index([status, joinedAt])
-}
-
-// Party (группа друзей до 5 человек, играющих вместе).
-model HubParty {
-  id        String   @id @default(cuid())
-  leaderId  String   @unique // один user может быть лидером только одной party
-  createdAt DateTime @default(now())
-
-  leader  User             @relation("HubPartyLeader", fields: [leaderId], references: [id], onDelete: Cascade)
-  members HubPartyMember[]
-  invites HubPartyInvite[]
-  tickets HubQueueTicket[]
-}
-
-model HubPartyMember {
-  id       String   @id @default(cuid())
-  partyId  String
-  userId   String   @unique
-  joinedAt DateTime @default(now())
-
-  party HubParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  user  User     @relation("HubPartyMember", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([partyId])
-}
-
-enum HubPartyInviteStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
-  CANCELLED
-}
-
-model HubPartyInvite {
-  id            String               @id @default(cuid())
-  partyId       String
-  invitedUserId String
-  status        HubPartyInviteStatus @default(PENDING)
-  createdAt     DateTime             @default(now())
-  respondedAt   DateTime?
-
-  party       HubParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  invitedUser User     @relation("HubPartyInvitee", fields: [invitedUserId], references: [id], onDelete: Cascade)
-
-  @@unique([partyId, invitedUserId])
-  @@index([invitedUserId, status])
-}
-
-// Ready-check после нахождения 10 игроков.
-model HubReadyCheck {
-  id        String   @id @default(cuid())
-  state     String // "PENDING" | "ACCEPTED" | "FAILED"
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  responses HubReadyResponse[]
-  tickets   HubQueueTicket[]
-  lobby     HubLobby?
-
-  @@index([state, expiresAt])
-}
-
-model HubReadyResponse {
-  id           String    @id @default(cuid())
-  readyCheckId String
-  userId       String
-  accepted     Boolean? // null = ещё не ответил
-  respondedAt  DateTime?
-
-  readyCheck HubReadyCheck @relation(fields: [readyCheckId], references: [id], onDelete: Cascade)
-
-  @@unique([readyCheckId, userId])
-}
-
-// Лобби: 2/4/10 игроков, опционально капитаны, фаза пика/вето → создание матча.
-model HubLobby {
-  id           String        @id @default(cuid())
-  readyCheckId String?       @unique
-  mode         HubGameMode   @default(FIVE)
-  state        HubLobbyState @default(CAPTAIN_SELECT)
-  captainAId   String
-  captainBId   String
-  pickTurn     HubTeam       @default(A) // чей сейчас pick
-  vetoTurn     HubTeam       @default(A) // чей сейчас veto
-  selectedMap  String?
-  serverId     String?       @unique
-  matchId      String?       @unique
-  createdAt    DateTime      @default(now())
-  expiresAt    DateTime // защита от зависших лобби
-
-  readyCheck  HubReadyCheck?   @relation(fields: [readyCheckId], references: [id], onDelete: SetNull)
-  players     HubLobbyPlayer[]
-  vetoActions HubVetoAction[]
-  server      HubServer?       @relation(fields: [serverId], references: [id], onDelete: SetNull)
-  match       HubMatch?        @relation(fields: [matchId], references: [id], onDelete: SetNull)
-
-  @@index([state])
-  @@index([expiresAt])
-}
-
-model HubLobbyPlayer {
-  id        String   @id @default(cuid())
-  lobbyId   String
-  userId    String
-  team      HubTeam? // null пока не подобран капитаном
-  isCaptain Boolean  @default(false)
-  pickOrder Int? // порядок выбора капитаном (1..8); у капитанов null
-
-  lobby HubLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
-  user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([lobbyId, userId])
-  @@index([lobbyId, team])
-}
-
-model HubVetoAction {
-  id        String            @id @default(cuid())
-  lobbyId   String
-  team      HubTeam
-  action    HubVetoActionType
-  map       String // UI-id карты ("mirage", "inferno", ...)
-  order     Int // 1..6 для BO1
-  createdAt DateTime          @default(now())
-
-  lobby HubLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
-
-  @@unique([lobbyId, order])
-  @@index([lobbyId, order])
-}
-
-// CS2 dedicated server (на этапе MVP — может быть стабом).
-model HubServer {
-  id                 String          @id @default(cuid())
+model GameServer {
+  id                 String       @id @default(cuid())
   name               String
+  // LAN-IP в комп-клубе (для connect-строки игрокам).
   ip                 String
   port               Int
-  rconPassword       String // в БД хранится зашифрованным (AES-GCM)
-  status             HubServerStatus @default(FREE)
-  // Если true — на сервере стоит CounterStrikeSharp + WeaponPaints плагин,
-  // и игрокам применяются их выбранные скины. По умолчанию обычный сервер.
-  allowSkins         Boolean         @default(false)
-  reservedForLobbyId String?         @unique
+  // RCON хранится зашифрованным (AES-GCM), см. lib/server/crypto.ts
+  rconPassword       String
+  rconPort           Int          @default(27015)
+  status             ServerStatus @default(FREE)
+  reservedForMatchId String?      @unique
   notes              String?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-
-  lobby   HubLobby?
-  matches HubMatch[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   @@unique([ip, port])
   @@index([status])
-}
-
-// Матч hub — отдельно от существующего Match, у которого турнирная семантика.
-model HubMatch {
-  id             String        @id @default(cuid())
-  mode           HubGameMode   @default(FIVE)
-  state          HubMatchState @default(PENDING)
-  map            String
-  serverId       String
-  teamAPlayerIds String[] // SteamID64 пятёрки A
-  teamBPlayerIds String[] // SteamID64 пятёрки B
-  scoreA         Int           @default(0)
-  scoreB         Int           @default(0)
-  winner         HubTeam?
-  matchConfig    Json // MatchZy/Get5-совместимый JSON
-  connectString  String // "connect 1.2.3.4:27015"
-  startedAt      DateTime?
-  finishedAt     DateTime?
-  demoUrl        String?
-  createdAt      DateTime      @default(now())
-
-  server     HubServer       @relation(fields: [serverId], references: [id])
-  lobby      HubLobby?
-  eloHistory HubEloHistory[]
-
-  @@index([state])
-  @@index([createdAt])
-}
-
-model HubEloHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  matchId   String
-  delta     Int
-  before    Int
-  after     Int
-  createdAt DateTime @default(now())
-
-  user  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  match HubMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@index([matchId])
-}
-
-// Журнал событий hub для аудита и расчёта cooldown-эскалаций.
-model HubAuditEvent {
-  id        String   @id @default(cuid())
-  userId    String?
-  kind      String // QUEUE_JOIN | QUEUE_LEAVE | READY_DECLINE | READY_TIMEOUT | LOBBY_DODGE | NO_SERVER | ADMIN_BAN | ADMIN_UNBAN | MATCH_FINISH | ...
-  payload   Json?
-  createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId, createdAt])
-  @@index([kind, createdAt])
 }

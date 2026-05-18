@@ -41,7 +41,7 @@ export async function verifyPassword(
  * SUPERADMIN_PASSWORD. Если запись с таким login уже есть — НЕ перезаписывает
  * пароль (чтобы плановая ротация env не сбрасывала пароль случайно).
  *
- * Использовать на проде вместо ручного npm run hub:create-admin —
+ * Использовать на проде вместо ручного npm run admin:create —
  * достаточно задать переменные в Vercel и открыть /login один раз.
  *
  * Возвращает: created | exists | skipped.

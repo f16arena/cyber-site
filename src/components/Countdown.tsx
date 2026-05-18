@@ -37,7 +37,7 @@ export function Countdown({
   if (compact) {
     if (parts.days > 0) {
       return (
-        <span className="font-mono text-xs text-violet-200">
+        <span className="font-mono text-xs text-cyan-300">
           {parts.days}д {parts.hours}ч
         </span>
       );
@@ -63,12 +63,12 @@ export function Countdown({
       {cells.map((c) => (
         <div
           key={c.label}
-          className="rounded border border-violet-500/30 bg-zinc-950/60 p-2 text-center"
+          className="rounded border border-border-default bg-bg-elevated p-2 text-center"
         >
-          <div className="text-2xl font-black font-mono text-violet-200">
+          <div className="text-xl font-bold font-mono text-cyan-300 tabular-nums">
             {String(c.value).padStart(2, "0")}
           </div>
-          <div className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 mt-0.5">
+          <div className="text-[9px] font-mono uppercase tracking-wider text-text-muted mt-0.5">
             {c.label}
           </div>
         </div>
