@@ -24,6 +24,20 @@ const VALID_FORMATS: TournamentFormat[] = [
 
 // ─── TOURNAMENTS ────────────────────────────────────────
 
+const DEFAULT_CS2_MAP_POOL = [
+  "mirage",
+  "inferno",
+  "nuke",
+  "ancient",
+  "anubis",
+  "vertigo",
+  "dust2",
+];
+
+const DEFAULT_BO_SCHEDULE = { default: 1, playoff: 3, final: 5 };
+
+const VALID_VETO_PRESETS = ["AUTO", "FACEIT_BO1", "PGL_BO3", "PGL_BO5"];
+
 export async function createTournament(
   _prev: ActionState,
   formData: FormData
@@ -36,9 +50,42 @@ export async function createTournament(
   const format = formData.get("format") as string | null;
   const prizeKzt = parseInt((formData.get("prize") as string | null) || "0", 10);
   const maxTeams = parseInt((formData.get("maxTeams") as string | null) || "16", 10);
+  const minTeams = parseInt((formData.get("minTeams") as string | null) || "4", 10);
   const description = ((formData.get("description") as string | null) || "").trim();
+  const rulesMarkdown = ((formData.get("rulesMarkdown") as string | null) || "").trim();
   const startsAtRaw = formData.get("startsAt") as string | null;
   const regCloseRaw = formData.get("registrationClosesAt") as string | null;
+
+  // Состав
+  const rosterSize = parseInt(
+    (formData.get("rosterSize") as string | null) || "5",
+    10
+  );
+  const substitutesAllowed = parseInt(
+    (formData.get("substitutesAllowed") as string | null) || "2",
+    10
+  );
+  const allowSubstitutions =
+    (formData.get("allowSubstitutions") as string | null) !== null;
+
+  // Управление регистрацией
+  const autoApproveTeams =
+    (formData.get("autoApproveTeams") as string | null) !== null;
+
+  // Veto preset
+  const vetoPresetRaw = (formData.get("vetoPreset") as string | null) || "AUTO";
+  const vetoPreset = VALID_VETO_PRESETS.includes(vetoPresetRaw)
+    ? vetoPresetRaw
+    : "AUTO";
+
+  // Map pool — массив id из формы (multi-select checkboxes)
+  const mapPoolEntries = formData.getAll("mapPool") as string[];
+  const mapPool =
+    mapPoolEntries.length > 0
+      ? mapPoolEntries
+      : game === "CS2"
+      ? DEFAULT_CS2_MAP_POOL
+      : [];
 
   if (name.length < 3 || name.length > 80) return { error: "Название: 3–80 символов" };
   if (!slug.match(/^[a-z0-9-]{3,40}$/))
@@ -48,6 +95,10 @@ export async function createTournament(
     return { error: "Выбери формат" };
   if (!Number.isFinite(prizeKzt) || prizeKzt < 0) return { error: "Призовой ≥ 0" };
   if (![4, 8, 16].includes(maxTeams)) return { error: "Команд: 4, 8 или 16" };
+  if (minTeams < 2 || minTeams > maxTeams) return { error: "minTeams должно быть 2..maxTeams" };
+  if (rosterSize < 1 || rosterSize > 10) return { error: "rosterSize: 1..10" };
+  if (substitutesAllowed < 0 || substitutesAllowed > 5)
+    return { error: "substitutesAllowed: 0..5" };
 
   const exists = await prisma.tournament.findUnique({ where: { slug } });
   if (exists) return { error: "Slug уже занят" };
@@ -61,10 +112,19 @@ export async function createTournament(
       prize: BigInt(prizeKzt) * BigInt(100), // KZT → тиыны
       prizeCurrency: "KZT",
       maxTeams,
+      minTeams,
       description: description || null,
+      rulesMarkdown: rulesMarkdown || null,
       status: "REGISTRATION_OPEN",
       startsAt: startsAtRaw ? new Date(startsAtRaw) : null,
       registrationClosesAt: regCloseRaw ? new Date(regCloseRaw) : null,
+      rosterSize,
+      substitutesAllowed,
+      allowSubstitutions,
+      autoApproveTeams,
+      vetoPreset,
+      mapPool,
+      bestOfSchedule: DEFAULT_BO_SCHEDULE,
     },
   });
 
@@ -82,6 +142,198 @@ export async function createTournament(
   revalidatePath("/admin/tournaments");
   revalidatePath("/tournaments");
   redirect("/admin/tournaments");
+}
+
+/**
+ * Captain submits team registration to a tournament with a chosen roster.
+ * Returns plain values via redirect query params (since server actions can't return values
+ * after redirect). On success → redirect to tournament page.
+ */
+export async function submitTournamentRegistration(formData: FormData) {
+  "use server";
+  const { getCurrentUser } = await import("@/lib/session");
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/api/auth/steam");
+  }
+
+  const tournamentId = formData.get("tournamentId") as string | null;
+  const teamId = formData.get("teamId") as string | null;
+  const userIds = formData.getAll("userId") as string[];
+  if (!tournamentId || !teamId || userIds.length === 0) return;
+
+  const [tournament, team] = await Promise.all([
+    prisma.tournament.findUnique({ where: { id: tournamentId } }),
+    prisma.team.findUnique({
+      where: { id: teamId },
+      include: { members: { select: { userId: true } } },
+    }),
+  ]);
+  if (!tournament || !team) return;
+  if (team.captainId !== user.id) return;
+  if (team.game !== tournament.game) return;
+  if (tournament.status !== "REGISTRATION_OPEN") return;
+
+  // Все выбранные игроки должны быть в составе команды
+  const memberIds = new Set(team.members.map((m) => m.userId));
+  const validUserIds = userIds.filter((id) => memberIds.has(id));
+  if (validUserIds.length < tournament.rosterSize) return;
+
+  // Капитан должен быть в стартовом ростере
+  if (!validUserIds.includes(user.id)) return;
+
+  const maxTotal = tournament.rosterSize + tournament.substitutesAllowed;
+  const finalIds = validUserIds.slice(0, maxTotal);
+
+  // Уже зарегистрированы?
+  const existing = await prisma.tournamentRegistration.findUnique({
+    where: { tournamentId_teamId: { tournamentId, teamId } },
+  });
+  if (existing) {
+    redirect(`/tournaments/${tournament.slug}`);
+  }
+
+  const approvedAt = tournament.autoApproveTeams ? new Date() : null;
+
+  await prisma.$transaction([
+    prisma.tournamentRegistration.create({
+      data: { tournamentId, teamId, approvedAt },
+    }),
+    ...finalIds.map((userId, idx) =>
+      prisma.tournamentRoster.create({
+        data: {
+          tournamentId,
+          teamId,
+          userId,
+          isMain: idx < tournament.rosterSize,
+          isCaptain: userId === user.id,
+        },
+      })
+    ),
+  ]);
+
+  // Уведомляем админов о новой заявке (если не auto-approve)
+  if (!approvedAt) {
+    const admins = await prisma.user.findMany({
+      where: { isAdmin: true },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      await notify({
+        userId: admin.id,
+        type: "TEAM_JOIN_REQUEST",
+        title: `Заявка на турнир: ${team.name}`,
+        body: tournament.name,
+        link: `/admin/tournaments/${tournament.id}/registrations`,
+      });
+    }
+  } else {
+    // Auto-approved — сразу шлём капитану
+    await notify({
+      userId: team.captainId,
+      type: "TOURNAMENT_REGISTERED",
+      title: `${team.name} зарегистрирована в турнире`,
+      body: tournament.name,
+      link: `/tournaments/${tournament.slug}`,
+    });
+  }
+
+  revalidatePath(`/tournaments/${tournament.slug}`);
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  redirect(`/tournaments/${tournament.slug}`);
+}
+
+export async function approveTournamentRegistration(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const registrationId = formData.get("registrationId") as string | null;
+  if (!registrationId) return;
+
+  const reg = await prisma.tournamentRegistration.findUnique({
+    where: { id: registrationId },
+    include: {
+      team: { select: { name: true, captainId: true } },
+      tournament: { select: { name: true, slug: true } },
+    },
+  });
+  if (!reg || reg.approvedAt) return;
+
+  await prisma.tournamentRegistration.update({
+    where: { id: registrationId },
+    data: { approvedAt: new Date() },
+  });
+
+  await notify({
+    userId: reg.team.captainId,
+    type: "TOURNAMENT_REGISTERED",
+    title: `${reg.team.name} принята в турнир`,
+    body: reg.tournament.name,
+    link: `/tournaments/${reg.tournament.slug}`,
+  });
+
+  revalidatePath(`/admin/tournaments/${reg.tournamentId}/registrations`);
+  revalidatePath(`/admin/tournaments/${reg.tournamentId}`);
+  revalidatePath(`/tournaments/${reg.tournament.slug}`);
+}
+
+export async function rejectTournamentRegistration(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const registrationId = formData.get("registrationId") as string | null;
+  if (!registrationId) return;
+
+  const reg = await prisma.tournamentRegistration.findUnique({
+    where: { id: registrationId },
+    include: {
+      team: { select: { name: true, captainId: true } },
+      tournament: { select: { name: true, slug: true } },
+    },
+  });
+  if (!reg) return;
+
+  // Удаляем регистрацию + ростер. Капитан сможет подать снова при желании.
+  await prisma.$transaction([
+    prisma.tournamentRoster.deleteMany({
+      where: { tournamentId: reg.tournamentId, teamId: reg.teamId },
+    }),
+    prisma.tournamentRegistration.delete({
+      where: { id: registrationId },
+    }),
+  ]);
+
+  await notify({
+    userId: reg.team.captainId,
+    type: "TEAM_REQUEST_DECLINED",
+    title: `Заявка ${reg.team.name} в ${reg.tournament.name} отклонена`,
+    link: `/tournaments/${reg.tournament.slug}`,
+  });
+
+  revalidatePath(`/admin/tournaments/${reg.tournamentId}/registrations`);
+  revalidatePath(`/admin/tournaments/${reg.tournamentId}`);
+  revalidatePath(`/tournaments/${reg.tournament.slug}`);
+}
+
+export async function setTournamentStatus(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const tournamentId = formData.get("tournamentId") as string | null;
+  const status = formData.get("status") as string | null;
+  if (!tournamentId || !status) return;
+  const valid = [
+    "DRAFT",
+    "REGISTRATION_OPEN",
+    "REGISTRATION_CLOSED",
+    "ONGOING",
+    "COMPLETED",
+    "CANCELLED",
+  ] as const;
+  if (!valid.includes(status as (typeof valid)[number])) return;
+  const tournament = await prisma.tournament.update({
+    where: { id: tournamentId },
+    data: { status: status as (typeof valid)[number] },
+  });
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  revalidatePath(`/tournaments/${tournament.slug}`);
 }
 
 export async function registerTeam(formData: FormData) {

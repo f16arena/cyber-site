@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createTournament, type ActionState } from "../../actions";
+import { Button } from "@/components/ui/Button";
 
 const initialState: ActionState = {};
 
@@ -13,149 +14,279 @@ type Defaults = {
   description?: string;
 };
 
-export function TournamentCreateForm({
-  defaults,
-}: {
-  defaults?: Defaults;
-}) {
+const DEFAULT_CS2_MAPS = [
+  { id: "mirage", label: "Mirage" },
+  { id: "inferno", label: "Inferno" },
+  { id: "nuke", label: "Nuke" },
+  { id: "ancient", label: "Ancient" },
+  { id: "anubis", label: "Anubis" },
+  { id: "vertigo", label: "Vertigo" },
+  { id: "dust2", label: "Dust 2" },
+];
+
+const inputCls =
+  "w-full bg-bg-elevated border border-border-default rounded-sm h-9 px-3 text-[13px] text-text-primary focus:outline-none focus:border-brand-yellow transition-colors";
+
+const labelCls =
+  "text-[10px] font-mono uppercase tracking-wider text-text-muted";
+
+export function TournamentCreateForm({ defaults }: { defaults?: Defaults }) {
   const [state, action, pending] = useActionState(createTournament, initialState);
+  const [game, setGame] = useState(defaults?.game ?? "");
 
   return (
     <form action={action} encType="multipart/form-data" className="space-y-5">
       {state.error && (
-        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 p-4 text-sm">
+        <div className="rounded-sm border border-rose-500/40 bg-rose-500/10 text-rose-300 p-3 text-[13px]">
           {state.error}
         </div>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Название" full>
-          <input
-            name="name"
-            required
-            minLength={3}
-            maxLength={80}
-            className={inputCls}
-            placeholder="Esports.kz Spring Open 2026"
+      <Section title="Основное">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Название" full>
+            <input
+              name="name"
+              required
+              minLength={3}
+              maxLength={80}
+              className={inputCls}
+              placeholder="F16 Spring Cup 2026"
+            />
+          </Field>
+          <Field label="Slug">
+            <input
+              name="slug"
+              required
+              pattern="[a-z0-9-]{3,40}"
+              className={`${inputCls} lowercase`}
+              placeholder="spring-cup-2026"
+            />
+          </Field>
+          <Field label="Игра">
+            <select
+              name="game"
+              required
+              value={game}
+              onChange={(e) => setGame(e.target.value)}
+              className={inputCls}
+            >
+              <option value="" disabled>
+                — выбери —
+              </option>
+              <option value="CS2">Counter-Strike 2</option>
+              <option value="DOTA2">Dota 2</option>
+              <option value="PUBG">PUBG</option>
+            </select>
+          </Field>
+          <Field label="Формат">
+            <select
+              name="format"
+              required
+              defaultValue={defaults?.format ?? "SINGLE_ELIMINATION"}
+              className={inputCls}
+            >
+              <option value="SINGLE_ELIMINATION">Single Elimination</option>
+              <option value="DOUBLE_ELIMINATION">Double Elimination</option>
+              <option value="ROUND_ROBIN">Round Robin</option>
+              <option value="BATTLE_ROYALE_SERIES">Battle Royale Series</option>
+            </select>
+          </Field>
+          <Field label="Призовой фонд (₸)">
+            <input
+              name="prize"
+              type="number"
+              min={0}
+              step={10000}
+              defaultValue={defaults?.prize ?? 0}
+              className={inputCls}
+              placeholder="500000"
+            />
+          </Field>
+        </div>
+      </Section>
+
+      <Section title="Команды и ростер">
+        <div className="grid sm:grid-cols-4 gap-4">
+          <Field label="Макс команд">
+            <select
+              name="maxTeams"
+              required
+              defaultValue={String(defaults?.maxTeams ?? 8)}
+              className={inputCls}
+            >
+              <option value="4">4</option>
+              <option value="8">8</option>
+              <option value="16">16</option>
+            </select>
+          </Field>
+          <Field label="Мин команд">
+            <select name="minTeams" defaultValue="4" className={inputCls}>
+              <option value="2">2</option>
+              <option value="4">4</option>
+              <option value="6">6</option>
+              <option value="8">8</option>
+            </select>
+          </Field>
+          <Field label="Размер состава">
+            <input
+              name="rosterSize"
+              type="number"
+              min={1}
+              max={10}
+              defaultValue={5}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Запасных">
+            <input
+              name="substitutesAllowed"
+              type="number"
+              min={0}
+              max={5}
+              defaultValue={2}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+        <div className="flex gap-6 mt-3 flex-wrap">
+          <CheckboxField
+            name="autoApproveTeams"
+            label="Авто-приём команд"
+            hint="без ручного апрува"
           />
-        </Field>
-
-        <Field label="Slug (для URL)">
-          <input
-            name="slug"
-            required
-            pattern="[a-z0-9-]{3,40}"
-            className={`${inputCls} lowercase`}
-            placeholder="spring-open-2026"
+          <CheckboxField
+            name="allowSubstitutions"
+            label="Разрешить замены"
+            hint="между матчами"
+            defaultChecked
           />
-        </Field>
+        </div>
+      </Section>
 
-        <Field label="Игра">
-          <select name="game" required defaultValue={defaults?.game ?? ""} className={inputCls}>
-            <option value="" disabled>
-              — выбери —
-            </option>
-            <option value="CS2">Counter-Strike 2</option>
-            <option value="DOTA2">Dota 2</option>
-            <option value="PUBG">PUBG</option>
-          </select>
-        </Field>
+      <Section title="Расписание">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Закрытие регистрации">
+            <input
+              name="registrationClosesAt"
+              type="datetime-local"
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Старт турнира">
+            <input
+              name="startsAt"
+              type="datetime-local"
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </Section>
 
-        <Field label="Формат">
-          <select
-            name="format"
-            required
-            defaultValue={defaults?.format ?? "DOUBLE_ELIMINATION"}
-            className={inputCls}
-          >
-            <option value="DOUBLE_ELIMINATION">Double Elimination</option>
-            <option value="SINGLE_ELIMINATION">Single Elimination</option>
-            <option value="ROUND_ROBIN">Round Robin (групповой)</option>
-            <option value="BATTLE_ROYALE_SERIES">Battle Royale Series</option>
-          </select>
-        </Field>
+      {game === "CS2" && (
+        <Section title="CS2: veto + map pool">
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            <Field label="Veto preset" full>
+              <select
+                name="vetoPreset"
+                defaultValue="AUTO"
+                className={inputCls}
+              >
+                <option value="AUTO">
+                  AUTO (BO1 → FACEIT, BO3 → PGL, BO5 → PGL расш.)
+                </option>
+                <option value="FACEIT_BO1">FACEIT BO1 (6 банов)</option>
+                <option value="PGL_BO3">PGL BO3 (ban-ban-pick-pick-ban-ban-decider)</option>
+                <option value="PGL_BO5">PGL BO5</option>
+              </select>
+            </Field>
+          </div>
+          <div className={labelCls + " mb-2"}>Map pool</div>
+          <div className="flex flex-wrap gap-2">
+            {DEFAULT_CS2_MAPS.map((m) => (
+              <label
+                key={m.id}
+                className="flex items-center gap-1.5 rounded-sm border border-border-default bg-bg-elevated px-2 py-1.5 text-[12px] cursor-pointer hover:bg-bg-base"
+              >
+                <input
+                  type="checkbox"
+                  name="mapPool"
+                  value={m.id}
+                  defaultChecked
+                  className="accent-brand-yellow"
+                />
+                {m.label}
+              </label>
+            ))}
+          </div>
+        </Section>
+      )}
 
-        <Field label="Команд (4 / 8 / 16)">
-          <select name="maxTeams" required defaultValue={String(defaults?.maxTeams ?? 8)} className={inputCls}>
-            <option value="4">4</option>
-            <option value="8">8</option>
-            <option value="16">16</option>
-          </select>
-        </Field>
+      <Section title="Описание и правила">
+        <div className="space-y-3">
+          <Field label="Краткое описание">
+            <textarea
+              name="description"
+              rows={3}
+              maxLength={500}
+              defaultValue={defaults?.description ?? ""}
+              placeholder="Что за турнир, формат, призовой, для кого..."
+              className={`${inputCls} h-auto py-2 resize-none`}
+            />
+          </Field>
+          <Field label="Правила (markdown)">
+            <textarea
+              name="rulesMarkdown"
+              rows={8}
+              maxLength={5000}
+              placeholder="## Регламент турнира..."
+              className={`${inputCls} h-auto py-2 resize-none font-mono text-[12px]`}
+            />
+          </Field>
+          <Field label="Баннер">
+            <input
+              type="file"
+              name="banner"
+              accept="image/png,image/jpeg,image/webp"
+              className="text-[12px] text-text-secondary file:mr-3 file:rounded-sm file:border-0 file:bg-bg-elevated file:text-text-primary file:px-3 file:py-1.5 file:font-mono file:text-[11px] file:uppercase file:tracking-wide hover:file:bg-bg-base file:cursor-pointer"
+            />
+            <span className="text-[11px] text-text-muted">
+              PNG/JPG/WebP до 1 МБ. Лучше 16:9.
+            </span>
+          </Field>
+        </div>
+      </Section>
 
-        <Field label="Призовой фонд (₸)">
-          <input
-            name="prize"
-            type="number"
-            min={0}
-            step={10000}
-            defaultValue={defaults?.prize ?? 0}
-            className={inputCls}
-            placeholder="500000"
-          />
-        </Field>
-
-        <Field label="Регистрация закрывается">
-          <input
-            name="registrationClosesAt"
-            type="datetime-local"
-            className={inputCls}
-          />
-        </Field>
-
-        <Field label="Старт турнира">
-          <input
-            name="startsAt"
-            type="datetime-local"
-            className={inputCls}
-          />
-        </Field>
-
-        <Field label="Описание / правила" full>
-          <textarea
-            name="description"
-            rows={6}
-            maxLength={2000}
-            defaultValue={defaults?.description ?? ""}
-            placeholder="Формат, правила, требования к составу..."
-            className={`${inputCls} resize-none`}
-          />
-        </Field>
-
-        <Field label="Баннер турнира (необязательно)" full>
-          <input
-            type="file"
-            name="banner"
-            accept="image/png,image/jpeg,image/webp"
-            className="text-sm text-zinc-300 file:mr-3 file:rounded file:border-0 file:bg-violet-500/15 file:text-violet-200 file:px-3 file:py-2 file:font-mono file:text-xs file:uppercase file:tracking-wider hover:file:bg-violet-500/25 file:cursor-pointer"
-          />
-          <span className="text-[11px] text-zinc-500 font-mono">
-            PNG/JPG/WebP до 1 МБ. Лучше 16:9 (1920×1080).
-          </span>
-        </Field>
-      </div>
-
-      <div className="flex gap-3 pt-4 border-t border-zinc-800">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center justify-center h-12 px-8 rounded font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 disabled:opacity-50 transition-all clip-corner"
-        >
+      <div className="flex gap-2 pt-4 border-t border-border-default">
+        <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Создание..." : "Создать турнир"}
-        </button>
-        <a
-          href="/admin/tournaments"
-          className="inline-flex items-center justify-center h-12 px-8 rounded font-bold text-sm uppercase tracking-wider border border-zinc-700 hover:border-zinc-500 transition-all clip-corner"
-        >
-          Отмена
+        </Button>
+        <a href="/admin/tournaments">
+          <Button type="button" variant="secondary" size="lg">
+            Отмена
+          </Button>
         </a>
       </div>
     </form>
   );
 }
 
-const inputCls =
-  "w-full bg-zinc-900/60 border border-zinc-700 rounded h-11 px-4 text-sm focus:outline-none focus:border-violet-400 transition-colors";
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded border border-border-default bg-bg-panel p-4">
+      <h3 className="text-[10px] font-mono uppercase tracking-widest text-brand-yellow mb-3">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
 
 function Field({
   label,
@@ -167,11 +298,36 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className={`flex flex-col gap-1.5 ${full ? "sm:col-span-2" : ""}`}>
-      <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-        {label}
-      </span>
+    <label className={`flex flex-col gap-1 ${full ? "sm:col-span-2" : ""}`}>
+      <span className={labelCls}>{label}</span>
       {children}
+    </label>
+  );
+}
+
+function CheckboxField({
+  name,
+  label,
+  hint,
+  defaultChecked = false,
+}: {
+  name: string;
+  label: string;
+  hint?: string;
+  defaultChecked?: boolean;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[12px] cursor-pointer">
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={defaultChecked}
+        className="accent-brand-yellow"
+      />
+      <span className="text-text-primary">{label}</span>
+      {hint && (
+        <span className="text-[11px] text-text-muted">— {hint}</span>
+      )}
     </label>
   );
 }
