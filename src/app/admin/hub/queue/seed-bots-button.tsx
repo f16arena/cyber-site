@@ -14,7 +14,7 @@ export function SeedBotsButton() {
     setInfo(null);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/hub/_dev/fill-bots", { method: "POST" });
+        const res = await fetch("/api/hub/admin/seed-bots", { method: "POST" });
         const data = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
           created?: string[];

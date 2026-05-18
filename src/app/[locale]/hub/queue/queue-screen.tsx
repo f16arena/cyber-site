@@ -97,7 +97,7 @@ export function QueueScreen({
 
   // dev only
   const fillBots = async () => {
-    await fetch("/api/hub/_dev/fill-bots", { method: "POST" }).catch(() => undefined);
+    await fetch("/api/hub/admin/seed-bots", { method: "POST" }).catch(() => undefined);
   };
 
   const queueCount = snap?.queueCount ?? 1;
