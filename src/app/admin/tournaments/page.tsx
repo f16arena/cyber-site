@@ -1,119 +1,120 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
+import { PageContainer, PageHeader } from "@/components/layout/PageContainer";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import type { TournamentStatus } from "@prisma/client";
 
-
-const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL: Record<TournamentStatus, string> = {
   DRAFT: "Черновик",
   REGISTRATION_OPEN: "Регистрация",
-  REGISTRATION_CLOSED: "Регистрация закрыта",
+  REGISTRATION_CLOSED: "Закрыта",
   ONGOING: "Идёт",
   COMPLETED: "Завершён",
   CANCELLED: "Отменён",
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  DRAFT: "bg-zinc-700/30 text-zinc-300",
-  REGISTRATION_OPEN: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  REGISTRATION_CLOSED: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  ONGOING: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-  COMPLETED: "bg-violet-500/15 text-violet-300 border-violet-500/30",
-  CANCELLED: "bg-zinc-700/30 text-zinc-500",
-};
+function statusVariant(s: TournamentStatus) {
+  switch (s) {
+    case "ONGOING":
+      return "live" as const;
+    case "REGISTRATION_OPEN":
+      return "win" as const;
+    case "REGISTRATION_CLOSED":
+      return "upcoming" as const;
+    case "COMPLETED":
+      return "finished" as const;
+    default:
+      return "default" as const;
+  }
+}
 
 export default async function AdminTournamentsPage() {
   await requireAdmin();
 
   const tournaments = await prisma.tournament.findMany({
     include: {
-      _count: { select: { registrations: true, matches: true } },
+      _count: {
+        select: { registrations: true, matches: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <>
-      
-      <main className="flex-1 mx-auto max-w-7xl w-full px-6 py-12">
-        <Link
-          href="/admin"
-          className="text-xs font-mono text-zinc-500 hover:text-violet-300 inline-flex items-center gap-1 mb-6"
-        >
-          ← Админка
-        </Link>
+    <PageContainer maxWidth="wide" className="py-6">
+      <Link
+        href="/admin"
+        className="text-xs font-mono text-text-muted hover:text-brand-yellow inline-flex items-center gap-1 mb-3"
+      >
+        ← Админка
+      </Link>
 
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-          <div>
-            <p className="text-violet-400 font-mono text-xs uppercase tracking-widest mb-2">
-              // Tournaments
-            </p>
-            <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Турниры</h1>
-          </div>
-          <Link
-            href="/admin/tournaments/new"
-            className="inline-flex items-center justify-center h-11 px-6 rounded font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 transition-all clip-corner"
-          >
-            + Новый турнир
+      <PageHeader
+        title="Турниры"
+        actions={
+          <Link href="/admin/tournaments/new">
+            <Button size="md">+ Новый турнир</Button>
           </Link>
-        </div>
+        }
+      />
 
-        {tournaments.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-800 p-16 text-center text-zinc-500">
-            <p className="mb-4 text-lg">Турниров ещё нет.</p>
-            <Link
-              href="/admin/tournaments/new"
-              className="text-violet-300 hover:text-violet-200 font-mono"
-            >
-              Создать первый турнир →
+      {tournaments.length === 0 ? (
+        <EmptyState
+          title="Турниров ещё нет"
+          description="Создай первый турнир и начни принимать заявки от команд."
+          action={
+            <Link href="/admin/tournaments/new">
+              <Button size="md">Создать турнир</Button>
             </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {tournaments.map((t) => (
-              <Link
-                key={t.id}
-                href={`/admin/tournaments/${t.id}`}
-                className="block rounded-lg border border-zinc-800 hover:border-violet-500/40 bg-zinc-900/40 hover:bg-zinc-900/70 transition-all p-5"
-              >
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap mb-1">
-                      <span className="text-[10px] font-mono font-bold px-2 py-1 rounded border bg-zinc-900/40 border-zinc-700">
-                        {t.game}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono font-bold px-2 py-1 rounded border ${STATUS_COLOR[t.status]}`}
-                      >
-                        {STATUS_LABEL[t.status]}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold tracking-tight">
-                      {t.name}
-                    </h3>
-                    <div className="flex flex-wrap gap-3 mt-2 text-xs font-mono text-zinc-400">
-                      <span>{t.format}</span>
-                      <span>
-                        🏆 ₸{" "}
-                        {(Number(t.prize) / 100).toLocaleString("ru-RU")}
-                      </span>
-                      <span>
-                        {t._count.registrations}/{t.maxTeams} команд
-                      </span>
-                      <span>{t._count.matches} матчей</span>
-                    </div>
+          }
+        />
+      ) : (
+        <div className="space-y-2">
+          {tournaments.map((t) => (
+            <Link
+              key={t.id}
+              href={`/admin/tournaments/${t.id}`}
+              className="block rounded border border-border-default bg-bg-panel hover:border-brand-yellow/40 hover:bg-bg-elevated transition-colors p-4"
+            >
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <Badge variant="yellow" size="sm">
+                      {t.game}
+                    </Badge>
+                    <Badge variant={statusVariant(t.status)} size="sm">
+                      {STATUS_LABEL[t.status]}
+                    </Badge>
+                    <span className="text-[11px] font-mono text-text-muted">
+                      {t.format}
+                    </span>
                   </div>
-                  <div className="text-violet-300 text-sm font-mono">
-                    Управлять →
+                  <h3 className="text-base font-bold tracking-tight text-text-primary">
+                    {t.name}
+                  </h3>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] font-mono text-text-muted tabular-nums">
+                    <span>
+                      ₸ {(Number(t.prize) / 100).toLocaleString("ru-RU")}
+                    </span>
+                    <span>
+                      {t._count.registrations}/{t.maxTeams} команд
+                    </span>
+                    <span>{t._count.matches} матчей</span>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </main>
-      
-    </>
+                <span className="text-[11px] font-mono text-brand-yellow">
+                  Управлять »
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </PageContainer>
   );
 }
