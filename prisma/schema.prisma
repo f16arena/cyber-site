@@ -147,6 +147,7 @@ model User {
   username           String         @unique
   avatarUrl          String?
   email              String?        @unique
+  emailVerifiedAt    DateTime?
   bio                String?
   region             Region?
   twitchUrl          String?
@@ -162,6 +163,8 @@ model User {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   lastSeenAt         DateTime?
+
+  emailVerifications EmailVerification[]
 
   profiles        PlayerProfile[]
   teamMemberships TeamMember[]
@@ -743,6 +746,25 @@ model EmailLog {
   createdAt DateTime @default(now())
 
   @@index([to, createdAt])
+}
+
+// ─── EMAIL VERIFICATION ──────────────────────────────────
+// Soft-verify: email-подтверждение опционально. Когда подтверждён,
+// User.emailVerifiedAt выставляется. Используется для уведомлений и
+// в будущем для входа без Steam (если понадобится).
+model EmailVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  email     String   // тот email на который послан токен (может отличаться от User.email если ещё не подтвердили)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }
 
 // ─── ADMIN LOGIN (отдельный от Steam) ────────────────────

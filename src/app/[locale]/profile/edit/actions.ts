@@ -1,10 +1,12 @@
 "use server";
 
+import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser, getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { uploadImage, deleteImage } from "@/lib/storage";
+import { emailVerifyAddress } from "@/lib/email";
 import type { Game, Region } from "@prisma/client";
 
 export type ProfileFormState = {
@@ -239,4 +241,93 @@ export async function resetAvatarToSteam(): Promise<ProfileFormState> {
   } catch (e) {
     return { error: `Ошибка: ${(e as Error).message}` };
   }
+}
+
+/* ─── Email verification ─────────────────────────────── */
+
+const EMAIL_VERIFY_RATE_PER_HOUR = 3;
+
+function generateEmailToken(): string {
+  return crypto.randomBytes(24).toString("base64url");
+}
+
+/**
+ * Сохранить email (если изменился) и отправить письмо с verify-токеном.
+ * Если email уже выставлен и подтверждён — просто переотправляет verify
+ * для того же адреса. Если новый — обновляет User.email и сбрасывает
+ * emailVerifiedAt.
+ */
+export async function requestEmailVerification(
+  _prev: ProfileFormState,
+  formData: FormData
+): Promise<ProfileFormState> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Не авторизован" };
+
+  const emailRaw = (formData.get("email") as string | null) ?? "";
+  const email = emailRaw.trim().toLowerCase();
+  if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    return { error: "Неверный формат email" };
+  }
+
+  // Email уже у другого юзера?
+  const conflict = await prisma.user.findFirst({
+    where: { email, NOT: { id: user.id } },
+    select: { id: true },
+  });
+  if (conflict) return { error: "Этот email уже используется" };
+
+  // Анти-спам: не больше N запросов в час
+  const recentCount = await prisma.emailVerification.count({
+    where: {
+      userId: user.id,
+      createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+    },
+  });
+  if (recentCount >= EMAIL_VERIFY_RATE_PER_HOUR) {
+    return {
+      error: `Слишком часто. Попробуй через час (макс ${EMAIL_VERIFY_RATE_PER_HOUR}/час).`,
+    };
+  }
+
+  // Если изменился email — обновим User.email + сбросим verified-flag
+  const me = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { email: true, emailVerifiedAt: true, username: true },
+  });
+  if (!me) return { error: "Пользователь не найден" };
+
+  if (me.email !== email) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { email, emailVerifiedAt: null },
+    });
+  }
+
+  // Сгенерируем токен (живёт 24 часа)
+  const token = generateEmailToken();
+  await prisma.emailVerification.create({
+    data: {
+      userId: user.id,
+      email,
+      token,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    },
+  });
+
+  const siteUrl =
+    process.env.SITE_URL || "https://cyber-site-five.vercel.app";
+  const verifyUrl = `${siteUrl}/verify-email/${encodeURIComponent(token)}`;
+
+  const sent = await emailVerifyAddress(email, me.username, verifyUrl);
+  if (!sent) {
+    return {
+      error:
+        "Email-сервис недоступен (RESEND_API_KEY не задан?). Попробуй позже.",
+    };
+  }
+
+  revalidatePath("/profile");
+  revalidatePath("/profile/edit");
+  return { ok: true };
 }

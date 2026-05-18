@@ -9,6 +9,7 @@ import { ImageUploader } from "@/components/ImageUploader";
 import { PushManager } from "@/components/PushManager";
 import { ProfileEditForm } from "./form";
 import { uploadAvatar, resetAvatarToSteam } from "./actions";
+import { EmailVerifySection } from "./email-verify-section";
 
 const navLinks = [
   { href: "/tournaments", label: "Турниры" },
@@ -87,6 +88,11 @@ export default async function ProfileEditPage() {
             и MVP-наградах прямо в браузере или на смартфоне.
           </p>
         </section>
+
+        <EmailVerifySection
+          currentEmail={user.email}
+          emailVerifiedAt={user.emailVerifiedAt}
+        />
 
         <section className="mb-8 rounded-lg border border-zinc-800 bg-zinc-900/40 p-5">
           <h2 className="text-xs font-mono uppercase tracking-widest text-violet-400 mb-3">

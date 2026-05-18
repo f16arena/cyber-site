@@ -78,29 +78,30 @@ export async function sendEmail(args: SendArgs): Promise<boolean> {
   }
 }
 
-/** Базовый шаблон с фирменным брендингом */
+/** Базовый шаблон с фирменным брендингом (F16 ARENA, HLTV-палитра). */
 function wrapTemplate(content: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <style>
-  body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #07070a; color: #ededed; margin: 0; padding: 24px; }
-  .container { max-width: 600px; margin: 0 auto; background: #18181b; border-radius: 12px; overflow: hidden; border: 1px solid #27272a; }
-  .header { padding: 20px 24px; background: linear-gradient(135deg, #7c3aed, #c026d3); }
-  .logo { color: white; font-weight: 900; font-size: 18px; letter-spacing: -0.5px; }
-  .content { padding: 24px; line-height: 1.6; }
-  h1 { font-size: 22px; margin: 0 0 16px; color: #f4f4f5; }
-  p { color: #d4d4d8; margin: 0 0 12px; }
-  a.btn { display: inline-block; margin-top: 16px; padding: 10px 20px; background: linear-gradient(135deg, #8b5cf6, #d946ef); color: white !important; text-decoration: none; border-radius: 8px; font-weight: bold; }
-  .footer { padding: 16px 24px; font-size: 11px; color: #71717a; text-align: center; border-top: 1px solid #27272a; }
+  body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background: #1c1c1c; color: #d9d9d9; margin: 0; padding: 24px; }
+  .container { max-width: 600px; margin: 0 auto; background: #232323; overflow: hidden; border: 1px solid #2e2e2e; }
+  .header { padding: 16px 24px; background: #ffd42a; }
+  .logo { color: #161616; font-weight: 800; font-size: 16px; letter-spacing: -0.3px; }
+  .logo .arena { color: #161616; }
+  .content { padding: 24px; line-height: 1.5; }
+  h1 { font-size: 18px; margin: 0 0 12px; color: #d9d9d9; }
+  p { color: #d9d9d9; margin: 0 0 10px; font-size: 14px; }
+  a.btn { display: inline-block; margin-top: 14px; padding: 9px 18px; background: #ffd42a; color: #161616 !important; text-decoration: none; font-weight: bold; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+  .footer { padding: 14px 24px; font-size: 11px; color: #6e6e6e; text-align: center; border-top: 1px solid #2e2e2e; }
 </style>
 </head>
 <body>
   <div class="container">
-    <div class="header"><div class="logo">ESPORTS.KZ</div></div>
+    <div class="header"><div class="logo">F16 <span class="arena">ARENA</span></div></div>
     <div class="content">${content}</div>
-    <div class="footer">© 2026 Esports.kz · Если уведомления не нужны — отключи в /profile/edit</div>
+    <div class="footer">© 2026 F16 Arena · Уведомления отключаются в /profile/edit</div>
   </div>
 </body>
 </html>`;
@@ -233,6 +234,30 @@ export async function emailSponsorInquiry(
       <a class="btn" href="${SITE_URL}/admin/inquiries">Открыть в админке</a>
     `),
     text: `Новая заявка от ${inquiry.companyName} (${inquiry.contactName}, ${inquiry.email}). ${SITE_URL}/admin/inquiries`,
+  });
+}
+
+export async function emailVerifyAddress(
+  toEmail: string,
+  username: string,
+  verifyUrl: string
+) {
+  return sendEmail({
+    to: toEmail,
+    subject: `Подтверди email на F16 Arena`,
+    type: "VERIFY_EMAIL",
+    html: wrapTemplate(`
+      <h1>Подтверждение email</h1>
+      <p>Привет, <strong>${username}</strong>!</p>
+      <p>Подтверди свой email чтобы получать уведомления о турнирах,
+      приглашениях в команду и результатах матчей.</p>
+      <a class="btn" href="${verifyUrl}">Подтвердить email</a>
+      <p style="margin-top:16px; font-size:12px; color:#6e6e6e;">
+        Ссылка действительна 24 часа. Если ты не запрашивал подтверждение —
+        просто проигнорируй письмо.
+      </p>
+    `),
+    text: `Подтверди email на F16 Arena: ${verifyUrl}`,
   });
 }
 
