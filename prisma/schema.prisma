@@ -404,13 +404,22 @@ model Match {
   bracketPosition Int? // позиция в сетке (порядок отрисовки)
   parentMatchAId  String? // из какого матча пришла команда A
   parentMatchBId  String?
-  map             String?
+  map             String? // выбранная карта (после veto для BO1)
   twitchChannel   String?
   startsAt        DateTime?
   startedAt       DateTime?
   finishedAt      DateTime?
   resultProofUrl  String?
   createdAt       DateTime     @default(now())
+
+  // F16 ARENA: связь с CS2-сервером (Phase 8) + connect-строка для игроков
+  serverId        String?
+  connectString   String?
+  // Veto / pick&ban (Phase 6)
+  vetoStartedAt   DateTime?
+  vetoEndsAt      DateTime?
+  // Сыгранные карты в BO3/BO5: [{map, scoreA, scoreB, winner, demoUrl}]
+  mapsPlayed      Json?
 
   tournament   Tournament?       @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
   teamA        Team?             @relation("MatchTeamA", fields: [teamAId], references: [id])
@@ -422,11 +431,31 @@ model Match {
   childrenB    Match[]           @relation("ParentMatchB")
   mvp          MvpAward?
   playerStats  MatchPlayerStat[]
+  vetoActions  MatchVetoAction[]
 
   @@index([status])
   @@index([startsAt])
   @@index([tournamentId, round])
   @@index([tournamentId, bracketSide, bracketPosition])
+}
+
+// Pick / Ban карт перед матчем. Order — порядок действий (1, 2, 3, ...).
+// Финальный набор: для BO1 — последняя оставшаяся карта = decider;
+// для BO3/BO5 — выбранные pick'и + decider в правильном порядке.
+model MatchVetoAction {
+  id        String   @id @default(cuid())
+  matchId   String
+  team      String   // "A" | "B"
+  action    String   // "BAN" | "PICK" | "DECIDER"
+  map       String   // id карты ("mirage", "inferno", ...)
+  order     Int      // 1..N по последовательности
+  decidedBy String?  // userId капитана, который сделал выбор (или null для AUTO/системы)
+  createdAt DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, order])
+  @@index([matchId])
 }
 
 // Заявка на результат матча от капитана команды
