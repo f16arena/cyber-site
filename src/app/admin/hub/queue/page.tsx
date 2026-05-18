@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { KickButton } from "./kick-button";
+import { SeedBotsButton } from "./seed-bots-button";
 
 function waitTime(d: Date) {
   const diff = (Date.now() - d.getTime()) / 1000;
@@ -61,7 +62,7 @@ export default async function AdminHubQueuePage() {
         </p>
       </header>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         <span className="text-xs font-mono px-3 h-9 inline-flex items-center rounded border border-orange-500/40 bg-orange-500/10 text-orange-300">
           В поиске: {counts.searching}
         </span>
@@ -71,6 +72,9 @@ export default async function AdminHubQueuePage() {
         <span className="text-xs font-mono px-3 h-9 inline-flex items-center rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
           Matched: {counts.matched}
         </span>
+        <div className="ml-auto">
+          <SeedBotsButton />
+        </div>
       </div>
 
       {tickets.length === 0 ? (
