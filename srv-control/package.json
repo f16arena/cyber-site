@@ -1,0 +1,21 @@
+{
+  "name": "f16-srv-control",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Home-side bridge between F16 Arena (Vercel) and CS2 dedicated server + MatchZy",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "rcon-srcds": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.0.0"
+  }
+}
