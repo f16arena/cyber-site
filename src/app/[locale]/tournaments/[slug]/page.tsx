@@ -410,11 +410,19 @@ export default async function TournamentDetailPage({
             </section>
           )}
 
-          {/* Tabs: Bracket | Stats */}
+          {/* Tabs: Bracket | Standings (for RR) | Stats */}
           <div className="flex gap-1 border-b border-border-default mb-3">
             <span className="px-3 h-9 inline-flex items-center text-[12px] font-medium uppercase tracking-wide border-b-2 border-brand-yellow text-text-primary">
-              Bracket
+              {tournament.format === "ROUND_ROBIN" ? "Расписание" : "Bracket"}
             </span>
+            {tournament.format === "ROUND_ROBIN" && (
+              <Link
+                href={`/tournaments/${tournament.slug}/standings`}
+                className="px-3 h-9 inline-flex items-center text-[12px] font-medium uppercase tracking-wide border-b-2 -mb-px border-transparent text-text-secondary hover:text-text-primary"
+              >
+                Таблица
+              </Link>
+            )}
             <Link
               href={`/tournaments/${tournament.slug}/stats`}
               className="px-3 h-9 inline-flex items-center text-[12px] font-medium uppercase tracking-wide border-b-2 -mb-px border-transparent text-text-secondary hover:text-text-primary"

@@ -8,7 +8,7 @@
  */
 
 export type BracketMatchSeed = {
-  side: "UPPER" | "LOWER" | "GRAND_FINAL";
+  side: "UPPER" | "LOWER" | "GROUP" | "GRAND_FINAL";
   round: number;        // 1, 2, 3...
   position: number;     // позиция в раунде (для отрисовки сверху-вниз)
   teamAId: string | null;
@@ -207,6 +207,58 @@ export function generateDoubleElimination(
     parentMatchBKey: `LB${lbRounds}-1`,
     key: "GF-1",
   });
+
+  return matches;
+}
+
+/**
+ * Round Robin (групповой) — каждый играет с каждым по одному разу.
+ * Использует rotation method (Berger tables): фиксируем команду 1,
+ * остальные ротейтятся.
+ *
+ * Для N команд: N-1 раундов, N/2 матчей в каждом (если N чётное;
+ * если нечётное — добавляется BYE).
+ *
+ * side=GROUP, round=номер раунда, position=индекс матча в раунде.
+ */
+export function generateRoundRobin(teamIdsRaw: string[]): BracketMatchSeed[] {
+  if (teamIdsRaw.length < 2) return [];
+
+  // Если N нечётное — добавляем фиктивный slot (BYE)
+  const teams: (string | null)[] = [...teamIdsRaw];
+  if (teams.length % 2 !== 0) teams.push(null);
+  const n = teams.length;
+  const rounds = n - 1;
+  const half = n / 2;
+
+  const matches: BracketMatchSeed[] = [];
+
+  // rotation: индекс 0 фиксирован, остальные циклически сдвигаются
+  const idx: number[] = Array.from({ length: n }, (_, i) => i);
+
+  for (let r = 1; r <= rounds; r++) {
+    for (let i = 0; i < half; i++) {
+      const aIdx = idx[i];
+      const bIdx = idx[n - 1 - i];
+      const a = teams[aIdx];
+      const b = teams[bIdx];
+      // BYE-матчи пропускаем
+      if (a === null || b === null) continue;
+      matches.push({
+        side: "GROUP",
+        round: r,
+        position: i + 1,
+        teamAId: a,
+        teamBId: b,
+        key: `RR-R${r}-${i + 1}`,
+      });
+    }
+    // rotate (фиксируем idx[0], остальные циклически)
+    const fixed = idx[0];
+    const rest = idx.slice(1);
+    rest.unshift(rest.pop()!); // last → front
+    idx.splice(0, idx.length, fixed, ...rest);
+  }
 
   return matches;
 }

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import {
   generateDoubleElimination,
   generateSingleElimination,
+  generateRoundRobin,
   shuffle,
 } from "@/lib/bracket";
 import { uploadImage, deleteImage } from "@/lib/storage";
@@ -404,8 +405,10 @@ export async function generateBracket(formData: FormData) {
     seeds = generateSingleElimination(teamIds);
   } else if (tournament.format === "DOUBLE_ELIMINATION") {
     seeds = generateDoubleElimination(teamIds);
+  } else if (tournament.format === "ROUND_ROBIN") {
+    seeds = generateRoundRobin(teamIds);
   } else {
-    // ROUND_ROBIN, BATTLE_ROYALE_SERIES — пока не реализованы
+    // BATTLE_ROYALE_SERIES — пока не реализован
     return;
   }
 
@@ -415,7 +418,12 @@ export async function generateBracket(formData: FormData) {
   // Первый проход: создаём матчи без parent-ссылок (foreign keys нужны существующие ID)
   // Сортируем так, чтобы родители были раньше детей
   const sortedSeeds = [...seeds].sort((a, b) => {
-    const order = { UPPER: 0, LOWER: 1, GRAND_FINAL: 2 };
+    const order: Record<string, number> = {
+      UPPER: 0,
+      LOWER: 1,
+      GROUP: 2,
+      GRAND_FINAL: 3,
+    };
     if (a.side !== b.side) return order[a.side] - order[b.side];
     return a.round - b.round || a.position - b.position;
   });
@@ -429,16 +437,19 @@ export async function generateBracket(formData: FormData) {
       : null;
 
     const isSE = tournament.format === "SINGLE_ELIMINATION";
+    const isRR = tournament.format === "ROUND_ROBIN";
     const stage =
       seed.side === "GRAND_FINAL"
         ? "Grand Final"
-        : isSE
+        : isRR
           ? `Round ${seed.round}`
-          : seed.side === "UPPER"
-            ? `UB Round ${seed.round}`
-            : `LB Round ${seed.round}`;
+          : isSE
+            ? `Round ${seed.round}`
+            : seed.side === "UPPER"
+              ? `UB Round ${seed.round}`
+              : `LB Round ${seed.round}`;
 
-    // BO-схема: для SE по умолчанию BO1, финал BO3. Для DE — BO3 везде, GF BO5.
+    // BO-схема: SE — BO1, финал BO3. DE — BO3 везде, GF BO5. RR — BO1.
     const isFinal =
       tournament.format === "SINGLE_ELIMINATION" &&
       seed.round === Math.log2(Math.max(2, nextPowerOfTwo(seeds.length / 2 || 1)));
@@ -447,8 +458,20 @@ export async function generateBracket(formData: FormData) {
       bestOf = 5;
     } else if (tournament.format === "SINGLE_ELIMINATION") {
       bestOf = isFinal ? 3 : 1;
+    } else if (tournament.format === "ROUND_ROBIN") {
+      bestOf = 1;
     } else {
       bestOf = 3;
+    }
+
+    // Маппинг side в Prisma enum (BracketSide: UPPER | LOWER | GROUP)
+    let bracketSide: "UPPER" | "LOWER" | "GROUP";
+    if (seed.side === "GRAND_FINAL") {
+      bracketSide = "UPPER";
+    } else if (seed.side === "GROUP") {
+      bracketSide = "GROUP";
+    } else {
+      bracketSide = seed.side;
     }
 
     const created = await prisma.match.create({
@@ -456,7 +479,7 @@ export async function generateBracket(formData: FormData) {
         tournamentId,
         teamAId: seed.teamAId,
         teamBId: seed.teamBId,
-        bracketSide: seed.side === "GRAND_FINAL" ? "UPPER" : seed.side,
+        bracketSide,
         round: seed.round,
         bracketPosition: seed.position,
         parentMatchAId: parentAId,
