@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { displayNameFor } from "@/lib/hub/maps";
 import { getQueueSnapshot } from "@/lib/hub/queue";
 import { FindMatchButton } from "./find-match-button";
+import { LevelBadge } from "@/components/hub/LevelBadge";
+import { levelProgress, levelFor } from "@/lib/hub/level";
 
 function formatRelative(date: Date) {
   const diff = (Date.now() - date.getTime()) / 1000;
@@ -149,12 +151,41 @@ export default async function HubDashboardPage({
             <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400 mb-1">
               CS2 Игрок
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight truncate">
-              {user.username}
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight truncate flex items-center gap-3">
+              <span className="truncate">{user.username}</span>
+              <LevelBadge elo={user.hubElo} size="md" />
             </h1>
             <div className="text-xs font-mono text-zinc-500 mt-1">
               SteamID64: {user.steamId}
             </div>
+            {(() => {
+              const lvl = levelFor(user.hubElo);
+              const { progress, toNext } = levelProgress(user.hubElo);
+              if (toNext === null) {
+                return (
+                  <div className="text-[11px] font-mono text-amber-300 mt-1.5">
+                    Максимальный уровень
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-2">
+                  <div className="h-1 w-full max-w-xs rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full ${lvl.bgClass} ${lvl.borderClass.replace("border-", "bg-")}`}
+                      style={{
+                        width: `${Math.round(progress * 100)}%`,
+                        background:
+                          "linear-gradient(90deg, #f97316 0%, #f43f5e 100%)",
+                      }}
+                    />
+                  </div>
+                  <div className="text-[10px] font-mono text-zinc-500 mt-1">
+                    {toNext} ELO до lvl {lvl.level + 1}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

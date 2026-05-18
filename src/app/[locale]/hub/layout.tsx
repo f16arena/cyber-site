@@ -42,6 +42,12 @@ export default async function HubLayout({
               >
                 Очередь
               </Link>
+              <Link
+                href={`/${locale}/hub/leaderboard`}
+                className="text-zinc-400 hover:text-orange-300 transition-colors"
+              >
+                Лидерборд
+              </Link>
               <span
                 className="text-zinc-600 cursor-not-allowed"
                 title="Скоро — этап 7"
