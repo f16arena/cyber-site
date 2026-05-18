@@ -5,6 +5,7 @@ import { decryptSecret } from "@/lib/hub/crypto";
 import { loadMatch } from "@/lib/hub/rcon";
 import { notifyMatchStarted } from "@/lib/hub/notify";
 import { displayNameFor } from "@/lib/hub/maps";
+import { log } from "@/lib/hub/log";
 
 export type AllocateResult =
   | { ok: true; matchId: string; connectString: string; serverId: string }
@@ -221,7 +222,7 @@ export async function allocateServer(
     },
     config: allocation.config,
   }).catch((e) => {
-    console.error("[hub:rcon] loadMatch failed:", e);
+    log.error("rcon", "loadMatch failed", e);
   });
 
   // Discord / Telegram нотификации (no-op если env пустой).
@@ -231,7 +232,7 @@ export async function allocateServer(
     connectString: allocation.connectString,
     teamA: allocation.teamANames,
     teamB: allocation.teamBNames,
-  }).catch((e) => console.error("[hub:notify] start failed:", e));
+  }).catch((e) => log.error("notify", "start failed", e));
 
   return {
     ok: true,

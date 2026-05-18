@@ -116,6 +116,20 @@ export default async function AdminHubMatchesPage() {
                   <span>
                     A: {m.teamAPlayerIds.length} / B: {m.teamBPlayerIds.length}
                   </span>
+                  <Link
+                    href={`/ru/hub/spectate/${m.id}`}
+                    target="_blank"
+                    className="text-violet-400 hover:text-violet-300"
+                  >
+                    👁 Spectate
+                  </Link>
+                  <Link
+                    href={`/overlay/hub/${m.id}`}
+                    target="_blank"
+                    className="text-orange-400 hover:text-orange-300"
+                  >
+                    📺 OBS overlay
+                  </Link>
                 </div>
 
                 {isActive && (

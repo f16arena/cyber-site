@@ -4,6 +4,7 @@ import { pickPlayer } from "@/lib/hub/lobby";
 import { applyVetoBan } from "@/lib/hub/veto";
 import { HUB_MAP_POOL } from "@/lib/hub/maps";
 import { allocateServer } from "@/lib/hub/server-alloc";
+import { log } from "@/lib/hub/log";
 
 /**
  * Единый "тик" обслуживания hub. Вызывается из SSE-стримов на каждом цикле,
@@ -151,7 +152,7 @@ export async function runTick(): Promise<void> {
   });
   for (const lobby of allocatingLobbies) {
     await allocateServer(lobby.id).catch((e) => {
-      console.error("[hub:tick] allocateServer failed:", e);
+      log.error("tick", "allocateServer failed", e);
     });
   }
 }

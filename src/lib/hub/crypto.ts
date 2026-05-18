@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { log } from "@/lib/hub/log";
 
 /**
  * Шифрование секретов (RCON-паролей серверов) в БД.
@@ -31,8 +32,9 @@ export function encryptSecret(plaintext: string): string {
   const key = getKey();
   if (!key) {
     if (process.env.NODE_ENV === "production" && !warnedAboutMissingKey) {
-      console.warn(
-        "[hub:crypto] HUB_ENCRYPTION_KEY is not set — RCON passwords are stored in plain text. Set the env (64 hex chars) to enable encryption."
+      log.warn(
+        "crypto",
+        "HUB_ENCRYPTION_KEY is not set — RCON passwords are stored in plain text. Set the env (64 hex chars) to enable encryption."
       );
       warnedAboutMissingKey = true;
     }

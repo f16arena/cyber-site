@@ -14,6 +14,8 @@
  *   notifyMatchFinished({ matchId, winner, scoreA, scoreB })
  */
 
+import { log } from "@/lib/hub/log";
+
 type DiscordEmbed = {
   title?: string;
   description?: string;
@@ -35,10 +37,10 @@ async function sendDiscord(payload: {
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      console.error("[hub:notify:discord] HTTP", res.status, await res.text());
+      log.error("notify:discord", `HTTP ${res.status}`, await res.text());
     }
   } catch (e) {
-    console.error("[hub:notify:discord] failed:", (e as Error).message);
+    log.error("notify:discord", "failed", (e as Error).message);
   }
 }
 
@@ -59,10 +61,10 @@ async function sendTelegram(text: string) {
       }),
     });
     if (!res.ok) {
-      console.error("[hub:notify:telegram] HTTP", res.status, await res.text());
+      log.error("notify:telegram", `HTTP ${res.status}`, await res.text());
     }
   } catch (e) {
-    console.error("[hub:notify:telegram] failed:", (e as Error).message);
+    log.error("notify:telegram", "failed", (e as Error).message);
   }
 }
 

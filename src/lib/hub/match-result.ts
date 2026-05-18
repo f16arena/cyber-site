@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { computeTeamElo } from "@/lib/hub/elo";
 import { notifyMatchFinished } from "@/lib/hub/notify";
 import { displayNameFor } from "@/lib/hub/maps";
+import { log } from "@/lib/hub/log";
 
 export type FinishMatchResult =
   | { ok: true; deltaA: number; deltaB: number }
@@ -214,7 +215,7 @@ export async function finishMatch(
       ),
       deltaA: result.deltaA,
       deltaB: result.deltaB,
-    }).catch((e) => console.error("[hub:notify] finish failed:", e));
+    }).catch((e) => log.error("notify", "finish failed", e));
   }
 
   return { ok: true, deltaA: result.deltaA, deltaB: result.deltaB };

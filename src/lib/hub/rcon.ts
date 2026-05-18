@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/hub/crypto";
 import type { MatchZyConfig } from "@/lib/hub/matchzy-config";
+import { log } from "@/lib/hub/log";
 
 /**
  * RCON-клиент для CS2 dedicated server.
@@ -30,8 +31,9 @@ export async function loadMatch(input: LoadMatchInput): Promise<{ ok: true }> {
   const live = process.env.HUB_RCON_LIVE === "true";
 
   if (!live) {
-    console.log(
-      `[hub:rcon:stub] would send matchzy_loadmatch to ${input.server.ip}:${input.server.port} for match ${input.matchId}`
+    log.info(
+      "rcon:stub",
+      `would send matchzy_loadmatch to ${input.server.ip}:${input.server.port} for match ${input.matchId}`
     );
     await prisma.hubAuditEvent.create({
       data: {
