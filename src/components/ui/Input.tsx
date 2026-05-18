@@ -32,22 +32,22 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-xs font-medium text-text-secondary"
+            className="text-[11px] font-medium uppercase tracking-wide text-text-secondary"
           >
             {label}
           </label>
         )}
         <div
           className={cn(
-            "relative flex items-center rounded border bg-bg-elevated transition-colors",
+            "relative flex items-center rounded-sm border bg-bg-elevated transition-colors",
             error
               ? "border-rose-500/60 focus-within:border-rose-400"
-              : "border-border-default focus-within:border-cyan-500",
+              : "border-border-default focus-within:border-brand-yellow",
             disabled && "opacity-60 cursor-not-allowed"
           )}
         >
           {startIcon && (
-            <span className="pl-2.5 text-text-muted flex items-center">
+            <span className="pl-2 text-text-muted flex items-center">
               {startIcon}
             </span>
           )}
@@ -56,25 +56,25 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             disabled={disabled}
             className={cn(
-              "flex-1 h-9 px-3 bg-transparent text-sm text-text-primary",
+              "flex-1 h-8 px-2.5 bg-transparent text-[13px] text-text-primary",
               "placeholder:text-text-muted",
               "focus:outline-none disabled:cursor-not-allowed",
-              startIcon ? "pl-2" : "",
-              endIcon ? "pr-2" : "",
+              startIcon ? "pl-1.5" : "",
+              endIcon ? "pr-1.5" : "",
               className
             )}
             {...rest}
           />
           {endIcon && (
-            <span className="pr-2.5 text-text-muted flex items-center">
+            <span className="pr-2 text-text-muted flex items-center">
               {endIcon}
             </span>
           )}
         </div>
         {error ? (
-          <p className="text-xs text-rose-400 mt-0.5">{error}</p>
+          <p className="text-[11px] text-rose-400">{error}</p>
         ) : hint ? (
-          <p className="text-xs text-text-muted mt-0.5">{hint}</p>
+          <p className="text-[11px] text-text-muted">{hint}</p>
         ) : null}
       </div>
     );

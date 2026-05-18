@@ -32,7 +32,7 @@ export function LanguageSwitcher() {
           disabled={pending}
           className={`px-2 h-8 text-[10px] font-mono font-bold transition-colors ${
             currentLocale === l.code
-              ? "bg-cyan-500/15 text-cyan-300"
+              ? "bg-brand-yellow/15 text-brand-yellow"
               : "text-text-muted hover:text-text-primary hover:bg-bg-elevated"
           }`}
           title={l.label}

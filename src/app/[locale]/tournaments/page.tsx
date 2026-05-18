@@ -95,7 +95,7 @@ export default async function TournamentsPage({
                   href={href}
                   className={`px-3 h-8 inline-flex items-center text-sm rounded border transition-colors ${
                     active
-                      ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/40"
+                      ? "bg-brand-yellow/15 text-brand-yellow border-brand-yellow/40"
                       : "border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary"
                   }`}
                 >
@@ -116,17 +116,17 @@ export default async function TournamentsPage({
                 <Link
                   key={t.id}
                   href={`/tournaments/${t.slug}`}
-                  className="group rounded border border-border-default bg-bg-panel hover:border-cyan-500/40 hover:bg-bg-elevated transition-colors p-4"
+                  className="group rounded border border-border-default bg-bg-panel hover:border-brand-yellow/40 hover:bg-bg-elevated transition-colors p-4"
                 >
                   <div className="flex items-center gap-2 flex-wrap mb-2.5">
-                    <Badge variant="cyan" size="sm">
+                    <Badge variant="yellow" size="sm">
                       {t.game}
                     </Badge>
                     <Badge variant={statusVariant(t.status)} size="sm">
                       {STATUS_LABEL[t.status]}
                     </Badge>
                   </div>
-                  <h3 className="text-base font-bold tracking-tight text-text-primary group-hover:text-cyan-300 transition-colors leading-snug">
+                  <h3 className="text-base font-bold tracking-tight text-text-primary group-hover:text-brand-yellow transition-colors leading-snug">
                     {t.name}
                   </h3>
                   <div className="text-[11px] font-mono text-text-muted mt-1">

@@ -108,7 +108,7 @@ export default async function TeamsPage({
               name="q"
               defaultValue={q}
               placeholder="Поиск по названию или тегу"
-              className="flex-1 min-w-[220px] bg-bg-panel border border-border-default rounded h-9 px-3 text-sm focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-text-muted"
+              className="flex-1 min-w-[220px] bg-bg-panel border border-border-default rounded h-9 px-3 text-sm focus:outline-none focus:border-brand-yellow transition-colors placeholder:text-text-muted"
             />
             {validGame && (
               <input
@@ -157,7 +157,7 @@ export default async function TeamsPage({
                   href={href}
                   className={`px-3 h-8 inline-flex items-center text-sm rounded border transition-colors ${
                     active
-                      ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/40"
+                      ? "bg-brand-yellow/15 text-brand-yellow border-brand-yellow/40"
                       : "border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary"
                   }`}
                 >
@@ -217,17 +217,17 @@ export default async function TeamsPage({
                 <Link
                   key={team.id}
                   href={`/teams/${team.tag}`}
-                  className="group rounded border border-border-default bg-bg-panel hover:border-cyan-500/40 hover:bg-bg-elevated transition-colors p-4"
+                  className="group rounded border border-border-default bg-bg-panel hover:border-brand-yellow/40 hover:bg-bg-elevated transition-colors p-4"
                 >
                   <div className="flex items-center justify-between mb-2.5">
-                    <Badge variant="cyan" size="sm">
+                    <Badge variant="yellow" size="sm">
                       {team.game}
                     </Badge>
                     <span className="text-xs font-mono text-text-muted">
                       [{team.tag}]
                     </span>
                   </div>
-                  <h3 className="text-base font-bold tracking-tight text-text-primary group-hover:text-cyan-300 transition-colors">
+                  <h3 className="text-base font-bold tracking-tight text-text-primary group-hover:text-brand-yellow transition-colors">
                     {team.name}
                   </h3>
                   {team.region && (

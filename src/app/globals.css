@@ -1,137 +1,186 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────
-   F16 Arena — HLTV-modern design system
+   F16 Arena — Strict HLTV clone
+   Палитра и плотность максимально близкие к hltv.org.
    ────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces */
-  --bg-base:     #0a0e14;  /* главный фон страницы */
-  --bg-panel:    #11161d;  /* карточки, секции */
-  --bg-elevated: #1a212b;  /* hover, модалки, выделение */
-  --bg-row-alt:  rgba(17, 22, 29, 0.5); /* zebra-полосы таблиц */
+  /* Surfaces — HLTV использует тёмно-серый, не slate. */
+  --bg-base:     #1c1c1c;
+  --bg-panel:    #232323;
+  --bg-elevated: #2a2a2a;
+  --bg-row-alt:  #1f1f1f;
 
-  /* Borders */
-  --border-default: #1f2937;  /* slate-800 */
-  --border-strong:  #374151;  /* slate-700 */
-  --border-accent:  #0891b2;  /* cyan-600 — focus, primary edges */
+  /* Borders — почти невидимые, как у HLTV */
+  --border-default: #2e2e2e;
+  --border-strong:  #3a3a3a;
 
   /* Text */
-  --text-primary:   #e5e7eb;  /* gray-200 — основной */
-  --text-secondary: #9ca3af;  /* gray-400 — meta */
-  --text-muted:     #6b7280;  /* gray-500 — timestamps, labels */
+  --text-primary:   #d9d9d9;
+  --text-secondary: #a0a0a0;
+  --text-muted:     #6e6e6e;
+  --text-on-yellow: #161616;  /* почти-чёрный на жёлтом баннере */
 
-  /* Brand */
-  --brand-cyan:  #22d3ee;     /* primary акцент: линки, primary-кнопки */
-  --brand-amber: #fbbf24;     /* ratings, top performers, выделение */
+  /* HLTV signature: жёлтый акцент для featured/live-блоков */
+  --brand-yellow: #ffd42a;
+  --brand-yellow-hover: #ffdb4f;
 
-  /* Status */
-  --status-live:     #ef4444; /* LIVE blink */
-  --status-win:      #10b981; /* эмеральд */
-  --status-loss:     #ef4444; /* розовый */
-  --status-upcoming: #f59e0b; /* амбер */
-  --status-finished: #6b7280; /* серый */
+  /* Линки — приглушённый сине-серый, как у HLTV */
+  --brand-blue:        #5b8cb8;
+  --brand-blue-hover:  #7aa6cf;
+
+  /* Статусы */
+  --status-live:        #cc4444;
+  --status-live-bg:     rgba(204, 68, 68, 0.12);
+  --status-live-border: rgba(204, 68, 68, 0.4);
+  --status-win:         #5ba853;
+  --status-loss:        #c44a4a;
+  --status-upcoming:    #d4a83b;
+  --status-finished:    #6e6e6e;
 }
 
 @theme inline {
-  /* Регистрируем surfaces/text как Tailwind utilities:
-     bg-bg-base, text-text-primary, border-border-default и т.д. */
+  /* Регистрируем токены как Tailwind утилиты */
   --color-bg-base:        var(--bg-base);
   --color-bg-panel:       var(--bg-panel);
   --color-bg-elevated:    var(--bg-elevated);
+  --color-bg-row-alt:     var(--bg-row-alt);
   --color-border-default: var(--border-default);
   --color-border-strong:  var(--border-strong);
-  --color-border-accent:  var(--border-accent);
   --color-text-primary:   var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted:     var(--text-muted);
-  --color-brand-cyan:     var(--brand-cyan);
-  --color-brand-amber:    var(--brand-amber);
+  --color-text-on-yellow: var(--text-on-yellow);
+  --color-brand-yellow:        var(--brand-yellow);
+  --color-brand-yellow-hover:  var(--brand-yellow-hover);
+  --color-brand-blue:          var(--brand-blue);
+  --color-brand-blue-hover:    var(--brand-blue-hover);
   --color-status-live:    var(--status-live);
   --color-status-win:     var(--status-win);
   --color-status-loss:    var(--status-loss);
+  --color-status-upcoming:var(--status-upcoming);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
 
-/* ── Базовая типографика ──────────────────────────────── */
+/* ── База ──────────────────────────────────────────────── */
 
 html,
 body {
   background: var(--bg-base);
   color: var(--text-primary);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
 }
 
 body {
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  /* HLTV-density: 14px по умолчанию */
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: var(--font-sans), Arial, Helvetica, system-ui, sans-serif;
+  /* HLTV-density: 12.5–13px body */
+  font-size: 13px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  letter-spacing: -0.011em;
-  line-height: 1.2;
+  letter-spacing: -0.005em;
+  line-height: 1.22;
   font-weight: 700;
+  color: var(--text-primary);
+}
+
+a {
+  color: var(--brand-blue);
+}
+a:hover {
+  color: var(--brand-blue-hover);
 }
 
 .font-mono,
 [class*="font-mono"] {
   font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace !important;
-  font-feature-settings: "tnum", "ss01";
+  font-feature-settings: "tnum";
 }
 
-/* Все числа в табличных контекстах — tabular-nums */
 .tabular,
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Focus ring */
 *:focus-visible {
-  outline: 2px solid var(--brand-cyan);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 2px solid var(--brand-yellow);
+  outline-offset: 1px;
+  border-radius: 2px;
 }
 
-/* Плавные transitions */
 button,
 a,
 [role="button"],
 input,
 select,
 textarea {
-  transition-property: background-color, border-color, color, transform, box-shadow, opacity;
-  transition-duration: 150ms;
+  transition-property: background-color, border-color, color, opacity;
+  transition-duration: 120ms;
   transition-timing-function: ease-out;
 }
 
-/* ── Анимации ──────────────────────────────────────────── */
+/* ── HLTV-стиль утилиты ───────────────────────────────── */
 
+/* Жёлтый featured-баннер (полноширинный) */
+.hltv-featured {
+  background: var(--brand-yellow);
+  color: var(--text-on-yellow);
+}
+.hltv-featured a {
+  color: var(--text-on-yellow);
+}
+
+/* Плотная row-таблица матчей */
+.match-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  border-bottom: 1px solid var(--border-default);
+}
+.match-row:last-child {
+  border-bottom: none;
+}
+.match-row.live {
+  background: var(--status-live-bg);
+  border-left: 2px solid var(--status-live);
+}
+
+/* Live dot — мигающая точка */
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50% { opacity: 0.35; }
 }
-
 .live-dot {
   display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 7px;
+  height: 7px;
   border-radius: 9999px;
   background: var(--status-live);
-  animation: live-pulse 1.4s ease-in-out infinite;
+  animation: live-pulse 1.2s ease-in-out infinite;
 }
 
+/* Стрелка для CTA в жёлтом баннере */
+.cta-arrow::after {
+  content: "▶";
+  margin-left: 6px;
+  font-size: 0.8em;
+  vertical-align: 1px;
+}
+
+/* Ticker (live-полоса) */
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-
 .ticker-track {
   animation: ticker-scroll 60s linear infinite;
   width: max-content;
@@ -141,52 +190,34 @@ textarea {
 }
 
 @keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-
 .animate-in-toast {
   animation: toast-in 180ms ease-out;
 }
 
 /* ── Скроллбар ─────────────────────────────────────────── */
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--bg-panel);
-}
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
   border-radius: 8px;
-  border: 2px solid var(--bg-panel);
+  border: 2px solid var(--bg-base);
   background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-cyan);
-  background-clip: content-box;
-}
+::-webkit-scrollbar-thumb:hover { background: var(--brand-yellow); background-clip: content-box; }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.3);
-  color: white;
+  background: var(--brand-yellow);
+  color: var(--text-on-yellow);
 }
 
-/* ── Legacy utility classes (для постепенного перехода) ──
-   Используются на старых страницах. Будут удалены вместе с
-   их редизайном в Phase 2. */
+/* ── Legacy утилиты (для не редизайненных страниц) ──── */
 
-.clip-corner   { border-radius: 8px; }
-.card-soft     { border-radius: 12px; transition: all 220ms ease-out; }
-.card-soft:hover { transform: translateY(-1px); box-shadow: 0 8px 30px -10px rgba(34, 211, 238, 0.3); }
-.glow-violet   { /* deprecated, no-op */ }
-.text-glow     { /* deprecated, no-op */ }
+.clip-corner   { border-radius: 2px; }
+.card-soft     { border-radius: 4px; }
+.glow-violet   { }
+.text-glow     { }
 .scan-line::after { display: none; }

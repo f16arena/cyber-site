@@ -4,19 +4,17 @@ import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
-import { Countdown } from "@/components/Countdown";
 import { getRecentActivity, activityIcon } from "@/lib/activity-feed";
 import { AuthErrorBanner } from "@/components/AuthErrorBanner";
-import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 function formatRelativeTime(date: Date) {
   const diff = (Date.now() - date.getTime()) / 1000;
   if (diff < 60) return "только что";
-  if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}ч назад`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}ч`;
   if (diff < 86400 * 2) return "вчера";
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} дн назад`;
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} дн`;
   return date.toLocaleDateString("ru-RU");
 }
 
@@ -27,14 +25,13 @@ function formatMatchTime(date: Date | null) {
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
-
   const time = date.toLocaleTimeString("ru-RU", {
     hour: "2-digit",
     minute: "2-digit",
   });
-  if (isToday) return `Сегодня · ${time}`;
-  if (isTomorrow) return `Завтра · ${time}`;
-  return `${date.toLocaleDateString("ru-RU", { day: "2-digit", month: "short" })} · ${time}`;
+  if (isToday) return `Сегодня ${time}`;
+  if (isTomorrow) return `Завтра ${time}`;
+  return `${date.toLocaleDateString("ru-RU", { day: "2-digit", month: "short" })} ${time}`;
 }
 
 export default async function Home({
@@ -51,7 +48,7 @@ export default async function Home({
   const { locale } = await params;
   const sp = await searchParams;
   setRequestLocale(locale);
-  const t = await getTranslations("Home");
+  await getTranslations("Home");
 
   const fiveMinAgo = new Date(Date.now() - 5 * 60_000);
 
@@ -73,7 +70,7 @@ export default async function Home({
         tournament: { select: { name: true } },
       },
       orderBy: { startedAt: "desc" },
-      take: 3,
+      take: 5,
     }),
     prisma.match.findMany({
       where: { status: "SCHEDULED", startsAt: { gte: new Date() } },
@@ -83,7 +80,7 @@ export default async function Home({
         tournament: { select: { name: true } },
       },
       orderBy: { startsAt: "asc" },
-      take: 6,
+      take: 10,
     }),
     prisma.match.findMany({
       where: { status: "FINISHED" },
@@ -92,29 +89,29 @@ export default async function Home({
         teamB: { select: { name: true } },
       },
       orderBy: { finishedAt: "desc" },
-      take: 4,
+      take: 6,
     }),
     prisma.news.findMany({
       where: { publishedAt: { not: null, lte: new Date() } },
       orderBy: { publishedAt: "desc" },
-      take: 6,
+      take: 8,
     }),
     prisma.team.findMany({
       orderBy: { rating: "desc" },
-      take: 7,
+      take: 8,
       select: { id: true, name: true, tag: true, rating: true, game: true },
     }),
     prisma.user.findMany({
       where: { lastSeenAt: { gte: fiveMinAgo } },
       orderBy: { lastSeenAt: "desc" },
-      take: 10,
+      take: 12,
       select: { id: true, username: true, avatarUrl: true },
     }),
     prisma.tournament.findFirst({
       where: { status: { in: ["REGISTRATION_OPEN", "ONGOING"] } },
       orderBy: { startsAt: "asc" },
     }),
-    getRecentActivity(8),
+    getRecentActivity(6),
   ]);
 
   return (
@@ -127,11 +124,37 @@ export default async function Home({
 
       <SiteHeader />
 
-      {/* Live ticker — узкая полоса под header */}
+      {/* Featured banner — HLTV signature жёлтая полоса */}
+      {featuredTournament && (
+        <Link
+          href={`/tournaments/${featuredTournament.slug}`}
+          className="block hltv-featured hover:bg-brand-yellow-hover"
+        >
+          <div className="mx-auto max-w-7xl px-4 h-9 flex items-center gap-3 text-[12px] font-bold uppercase tracking-wide">
+            <span className="bg-text-on-yellow text-brand-yellow px-1.5 py-0.5 text-[10px] rounded-sm">
+              FEATURED
+            </span>
+            <span className="truncate flex-1">
+              {featuredTournament.name}
+            </span>
+            <span className="font-mono shrink-0">
+              {featuredTournament.status === "ONGOING"
+                ? "LIVE"
+                : "REG OPEN"}
+            </span>
+            <span className="font-mono shrink-0 tabular-nums">
+              ₸ {(Number(featuredTournament.prize) / 100).toLocaleString("ru-RU")}
+            </span>
+            <span className="shrink-0">▶</span>
+          </div>
+        </Link>
+      )}
+
+      {/* Live ticker */}
       {liveMatches.length > 0 && (
-        <div className="border-b border-rose-500/30 bg-rose-500/10">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 h-8 flex items-center gap-3 text-xs font-mono">
-            <span className="flex items-center gap-1.5 text-rose-300 font-bold">
+        <div className="border-b border-border-default bg-bg-panel">
+          <div className="mx-auto max-w-7xl px-4 h-7 flex items-center gap-3 text-[11px] font-mono">
+            <span className="flex items-center gap-1.5 text-rose-300 font-bold shrink-0">
               <span className="live-dot" />
               LIVE · {liveMatches.length}
             </span>
@@ -141,7 +164,7 @@ export default async function Home({
                   <span className="text-text-primary font-semibold">
                     {m.teamA?.name ?? "TBD"}
                   </span>
-                  <span className="mx-1.5 text-cyan-300 tabular-nums">
+                  <span className="mx-1.5 text-brand-yellow tabular-nums font-bold">
                     {m.scoreA}:{m.scoreB}
                   </span>
                   <span className="text-text-primary font-semibold">
@@ -157,36 +180,31 @@ export default async function Home({
             </div>
             <Link
               href="/matches"
-              className="text-cyan-300 hover:text-cyan-200 shrink-0"
+              className="text-brand-blue hover:text-brand-blue-hover shrink-0"
             >
-              ALL →
+              ALL »
             </Link>
           </div>
         </div>
       )}
 
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_260px] gap-6">
-            {/* LEFT — MATCHES */}
-            <aside className="space-y-5 min-w-0 lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-              <ColumnSection
-                title={
-                  <>
-                    <span className="live-dot mr-1.5" />
-                    {t("live")} · {liveMatches.length}
-                  </>
-                }
-                accent="rose"
-                viewAll="/matches"
-              >
+        <div className="mx-auto max-w-7xl px-3 sm:px-4 py-3">
+          <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_220px] gap-3">
+            {/* LEFT — MATCHES (HLTV-style: very dense, tiny rows) */}
+            <aside className="space-y-3 min-w-0">
+              <section>
+                <SectionHeader>
+                  <span className="flex items-center gap-1.5">
+                    <span className="live-dot" />
+                    LIVE · {liveMatches.length}
+                  </span>
+                  <SectionMore href="/matches" />
+                </SectionHeader>
                 {liveMatches.length === 0 ? (
-                  <EmptyState
-                    compact
-                    title="Нет идущих матчей"
-                  />
+                  <EmptySection text="Нет идущих" />
                 ) : (
-                  <div className="space-y-2">
+                  <div className="bg-bg-panel border border-border-default">
                     {liveMatches.map((m) => {
                       const aWon = m.scoreA > m.scoreB;
                       const bWon = m.scoreB > m.scoreA;
@@ -194,27 +212,25 @@ export default async function Home({
                         <Link
                           key={m.id}
                           href={`/matches/${m.id}`}
-                          className="block rounded border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 transition-colors p-2.5"
+                          className="block px-2 py-1.5 border-b border-border-default last:border-b-0 hover:bg-bg-elevated text-[12px]"
                         >
-                          <div className="flex items-center justify-between text-[10px] font-mono text-text-muted mb-1.5">
-                            <Badge variant="cyan" size="sm">CS2</Badge>
-                            <span className="truncate ml-2">
-                              {m.tournament?.name ?? "Match"}
-                            </span>
-                          </div>
-                          <ScoreRow
-                            team={m.teamA?.name ?? "TBD"}
+                          <CompactRow
+                            name={m.teamA?.name ?? "TBD"}
                             score={m.scoreA}
-                            highlight={aWon}
+                            winner={aWon}
+                            live
                           />
-                          <ScoreRow
-                            team={m.teamB?.name ?? "TBD"}
+                          <CompactRow
+                            name={m.teamB?.name ?? "TBD"}
                             score={m.scoreB}
-                            highlight={bWon}
+                            winner={bWon}
+                            live
                           />
-                          {m.map && (
-                            <div className="mt-1.5 text-[10px] font-mono text-text-muted">
-                              {m.map}
+                          {(m.map || m.tournament) && (
+                            <div className="text-[10px] font-mono text-text-muted mt-0.5 truncate">
+                              {m.map && <span>{m.map}</span>}
+                              {m.map && m.tournament && <span> · </span>}
+                              {m.tournament && <span>{m.tournament.name}</span>}
                             </div>
                           )}
                         </Link>
@@ -222,46 +238,48 @@ export default async function Home({
                     })}
                   </div>
                 )}
-              </ColumnSection>
+              </section>
 
-              <ColumnSection title="Расписание" accent="default">
+              <section>
+                <SectionHeader>
+                  <span>РАСПИСАНИЕ</span>
+                  <SectionMore href="/matches?filter=upcoming" />
+                </SectionHeader>
                 {upcomingMatches.length === 0 ? (
-                  <EmptyState compact title="Расписание пусто" />
+                  <EmptySection text="Расписание пусто" />
                 ) : (
-                  <div className="rounded border border-border-default bg-bg-panel divide-y divide-border-default/60">
+                  <div className="bg-bg-panel border border-border-default">
                     {upcomingMatches.map((m) => (
                       <Link
                         key={m.id}
                         href={`/matches/${m.id}`}
-                        className="block px-3 py-2.5 hover:bg-bg-elevated transition-colors"
+                        className="block px-2 py-1.5 border-b border-border-default last:border-b-0 hover:bg-bg-elevated text-[12px]"
                       >
-                        <div className="flex items-center justify-between text-[10px] font-mono mb-1">
-                          <Badge variant="cyan" size="sm">CS2</Badge>
-                          <span className="text-text-muted">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-text-secondary font-mono text-[10px] tabular-nums shrink-0">
                             {formatMatchTime(m.startsAt)}
                           </span>
                         </div>
-                        <div className="text-sm font-medium leading-tight text-text-primary">
+                        <div className="text-[12px] text-text-primary leading-tight">
                           {m.teamA?.name ?? "TBD"}
-                          <span className="text-text-muted font-mono text-xs mx-1.5">
-                            vs
-                          </span>
+                          <span className="text-text-muted mx-1">vs</span>
                           {m.teamB?.name ?? "TBD"}
-                        </div>
-                        <div className="text-[10px] font-mono text-text-muted mt-0.5 truncate">
-                          {m.tournament?.name ?? m.stage ?? "—"}
                         </div>
                       </Link>
                     ))}
                   </div>
                 )}
-              </ColumnSection>
+              </section>
 
-              <ColumnSection title="Результаты" accent="default">
+              <section>
+                <SectionHeader>
+                  <span>РЕЗУЛЬТАТЫ</span>
+                  <SectionMore href="/matches?filter=finished" />
+                </SectionHeader>
                 {recentResults.length === 0 ? (
-                  <EmptyState compact title="Результатов пока нет" />
+                  <EmptySection text="Нет результатов" />
                 ) : (
-                  <div className="rounded border border-border-default bg-bg-panel divide-y divide-border-default/60">
+                  <div className="bg-bg-panel border border-border-default">
                     {recentResults.map((r) => {
                       const aWon = r.scoreA > r.scoreB;
                       const bWon = r.scoreB > r.scoreA;
@@ -269,29 +287,26 @@ export default async function Home({
                         <Link
                           key={r.id}
                           href={`/matches/${r.id}`}
-                          className="block px-3 py-2.5 hover:bg-bg-elevated transition-colors"
+                          className="block px-2 py-1.5 border-b border-border-default last:border-b-0 hover:bg-bg-elevated text-[12px]"
                         >
-                          <div className="flex items-center justify-between text-[10px] font-mono text-text-muted mb-1.5">
-                            <Badge variant="cyan" size="sm">CS2</Badge>
-                            <span>
-                              {r.finishedAt
-                                ? formatRelativeTime(r.finishedAt)
-                                : "—"}
-                            </span>
-                          </div>
-                          <ScoreRow
-                            team={r.teamA?.name ?? "TBD"}
+                          <CompactRow
+                            name={r.teamA?.name ?? "TBD"}
                             score={r.scoreA}
-                            highlight={aWon}
+                            winner={aWon}
                           />
-                          <ScoreRow
-                            team={r.teamB?.name ?? "TBD"}
+                          <CompactRow
+                            name={r.teamB?.name ?? "TBD"}
                             score={r.scoreB}
-                            highlight={bWon}
+                            winner={bWon}
                           />
-                          {r.map && (
-                            <div className="text-[10px] font-mono text-text-muted mt-1">
-                              {r.map}
+                          {(r.map || r.finishedAt) && (
+                            <div className="text-[10px] font-mono text-text-muted mt-0.5 flex items-center justify-between">
+                              <span>{r.map ?? ""}</span>
+                              <span>
+                                {r.finishedAt
+                                  ? formatRelativeTime(r.finishedAt)
+                                  : ""}
+                              </span>
                             </div>
                           )}
                         </Link>
@@ -299,171 +314,48 @@ export default async function Home({
                     })}
                   </div>
                 )}
-              </ColumnSection>
-
-              {activityFeed.length > 0 && (
-                <ColumnSection title="Активность" accent="cyan">
-                  <div className="rounded border border-border-default bg-bg-panel divide-y divide-border-default/60">
-                    {activityFeed.map((a) => {
-                      const inner = (
-                        <div className="flex items-center gap-2.5 p-2.5">
-                          <div
-                            className={`shrink-0 px-1.5 py-0.5 rounded border text-base font-mono ${a.iconColor}`}
-                          >
-                            {activityIcon(a.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs text-text-primary truncate">
-                              {a.text}
-                            </div>
-                            <div className="text-[10px] font-mono text-text-muted mt-0.5">
-                              {formatRelativeTime(a.at)}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                      return a.link ? (
-                        <Link
-                          key={a.id}
-                          href={a.link}
-                          className="block hover:bg-bg-elevated transition-colors"
-                        >
-                          {inner}
-                        </Link>
-                      ) : (
-                        <div key={a.id}>{inner}</div>
-                      );
-                    })}
-                  </div>
-                </ColumnSection>
-              )}
+              </section>
             </aside>
 
-            {/* CENTER — FEATURED + NEWS */}
-            <div className="space-y-6 min-w-0">
-              {/* Featured tournament — крупная карточка */}
-              {featuredTournament && (
-                <Link
-                  href={`/tournaments/${featuredTournament.slug}`}
-                  className="block rounded border border-cyan-500/30 bg-bg-panel hover:border-cyan-500/60 transition-colors overflow-hidden"
-                >
-                  <div className="flex flex-col sm:flex-row">
-                    <div className="aspect-[16/7] sm:aspect-auto sm:w-72 shrink-0 bg-gradient-to-br from-cyan-600/20 via-cyan-500/10 to-bg-base relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-5xl font-bold text-cyan-400/30">
-                          {featuredTournament.game}
-                        </span>
-                      </div>
-                      <div className="absolute top-3 left-3">
-                        <Badge variant="cyan" size="sm">
-                          ★ Featured
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex-1 p-5">
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-text-muted mb-2">
-                        <Badge
-                          variant={
-                            featuredTournament.status === "ONGOING"
-                              ? "live"
-                              : "upcoming"
-                          }
-                          size="sm"
-                        >
-                          {featuredTournament.status === "ONGOING"
-                            ? "LIVE"
-                            : "Регистрация открыта"}
-                        </Badge>
-                        <span>
-                          {featuredTournament.format.replace("_", " ")}
-                        </span>
-                      </div>
-                      <h2 className="text-xl font-bold tracking-tight text-text-primary mb-2">
-                        {featuredTournament.name}
-                      </h2>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <div className="font-mono text-text-muted uppercase">
-                            Призовой
-                          </div>
-                          <div className="font-bold text-amber-300 text-base tabular-nums">
-                            ₸{" "}
-                            {(
-                              Number(featuredTournament.prize) / 100
-                            ).toLocaleString("ru-RU")}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="font-mono text-text-muted uppercase">
-                            Команды
-                          </div>
-                          <div className="font-bold text-base tabular-nums">
-                            {featuredTournament.maxTeams}
-                          </div>
-                        </div>
-                      </div>
-                      {featuredTournament.startsAt &&
-                        new Date(featuredTournament.startsAt).getTime() >
-                          Date.now() && (
-                          <div className="mt-4">
-                            <div className="font-mono text-[9px] uppercase tracking-widest text-text-muted mb-1.5">
-                              До старта
-                            </div>
-                            <Countdown
-                              toIso={featuredTournament.startsAt.toISOString()}
-                            />
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                </Link>
-              )}
-
-              {/* News feed */}
+            {/* CENTER — NEWS feed (HLTV: thumbnails слева от заголовка) */}
+            <div className="space-y-3 min-w-0">
               <section>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold tracking-tight">
-                    Новости
-                  </h2>
-                  <Link
-                    href="/news"
-                    className="text-xs font-mono text-text-muted hover:text-cyan-300"
-                  >
-                    ALL →
-                  </Link>
-                </div>
+                <SectionHeader>
+                  <span>НОВОСТИ</span>
+                  <SectionMore href="/news" />
+                </SectionHeader>
                 {newsFeed.length === 0 ? (
                   <EmptyState
                     title="Новостей пока нет"
-                    description="Турниры, MVP-результаты, объявления о партнёрах — всё появится здесь."
+                    description="Турниры, результаты, объявления — всё появится здесь."
                   />
                 ) : (
-                  <div className="rounded border border-border-default bg-bg-panel divide-y divide-border-default/60">
+                  <div className="bg-bg-panel border border-border-default">
                     {newsFeed.map((n) => (
                       <Link
                         key={n.id}
                         href={`/news/${n.slug}`}
-                        className="flex gap-3 px-3 py-3 hover:bg-bg-elevated transition-colors"
+                        className="flex gap-2 px-2 py-2 border-b border-border-default last:border-b-0 hover:bg-bg-elevated"
                       >
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded bg-bg-elevated border border-border-default flex items-center justify-center font-mono font-bold text-xs text-text-muted">
-                          {n.category.slice(0, 2)}
+                        <div className="w-14 h-14 shrink-0 bg-bg-elevated border border-border-default flex items-center justify-center font-mono font-bold text-[10px] text-text-muted uppercase">
+                          {n.category.slice(0, 3)}
                         </div>
                         <div className="min-w-0 flex flex-col">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="cyan" size="sm">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-brand-yellow">
                               {n.category}
-                            </Badge>
+                            </span>
                             <span className="text-[10px] font-mono text-text-muted">
                               {n.publishedAt
                                 ? formatRelativeTime(n.publishedAt)
                                 : ""}
                             </span>
                           </div>
-                          <h3 className="text-sm font-semibold leading-snug text-text-primary line-clamp-2">
+                          <h3 className="text-[13px] font-semibold leading-snug text-text-primary line-clamp-2">
                             {n.title}
                           </h3>
                           {n.excerpt && (
-                            <p className="text-xs text-text-secondary mt-1 line-clamp-2">
+                            <p className="text-[11px] text-text-secondary mt-0.5 line-clamp-1">
                               {n.excerpt}
                             </p>
                           )}
@@ -473,83 +365,106 @@ export default async function Home({
                   </div>
                 )}
               </section>
+
+              {/* Activity feed под новостями */}
+              {activityFeed.length > 0 && (
+                <section>
+                  <SectionHeader>
+                    <span>АКТИВНОСТЬ</span>
+                  </SectionHeader>
+                  <div className="bg-bg-panel border border-border-default">
+                    {activityFeed.map((a) => {
+                      const inner = (
+                        <div className="flex items-center gap-2 px-2 py-1.5 border-b border-border-default last:border-b-0">
+                          <span className="text-text-muted text-[12px] w-5 text-center">
+                            {activityIcon(a.type)}
+                          </span>
+                          <span className="text-[12px] text-text-secondary truncate flex-1">
+                            {a.text}
+                          </span>
+                          <span className="text-[10px] font-mono text-text-muted shrink-0">
+                            {formatRelativeTime(a.at)}
+                          </span>
+                        </div>
+                      );
+                      return a.link ? (
+                        <Link
+                          key={a.id}
+                          href={a.link}
+                          className="block hover:bg-bg-elevated"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div key={a.id}>{inner}</div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </div>
 
             {/* RIGHT — RANKINGS */}
-            <aside className="space-y-5 min-w-0 lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
-              <ColumnSection
-                title="Top Teams"
-                accent="amber"
-                viewAll="/teams"
-              >
+            <aside className="space-y-3 min-w-0">
+              <section>
+                <SectionHeader>
+                  <span>РЕЙТИНГ</span>
+                  <SectionMore href="/teams" />
+                </SectionHeader>
                 {topTeams.length === 0 ? (
-                  <EmptyState
-                    compact
-                    title="Команд ещё нет"
-                    description="Создайте первую"
-                    action={
-                      <Link
-                        href="/teams/new"
-                        className="text-xs text-cyan-300 hover:text-cyan-200"
-                      >
-                        Создать →
-                      </Link>
-                    }
-                  />
+                  <EmptySection text="Команд нет">
+                    <Link
+                      href="/teams/new"
+                      className="text-brand-blue hover:text-brand-blue-hover text-[11px]"
+                    >
+                      Создать »
+                    </Link>
+                  </EmptySection>
                 ) : (
-                  <div className="rounded border border-border-default bg-bg-panel divide-y divide-border-default/60">
+                  <div className="bg-bg-panel border border-border-default">
                     {topTeams.map((team, i) => (
                       <Link
                         key={team.id}
                         href={`/teams/${team.tag}`}
-                        className="flex items-center gap-2.5 px-3 py-2 hover:bg-bg-elevated transition-colors"
+                        className="flex items-center gap-2 px-2 py-1.5 border-b border-border-default last:border-b-0 hover:bg-bg-elevated text-[12px]"
                       >
                         <span
-                          className={`font-mono font-bold text-xs w-4 text-center tabular-nums ${
+                          className={`font-mono font-bold w-4 text-center tabular-nums shrink-0 ${
                             i === 0
-                              ? "text-amber-300"
-                              : i === 1
-                              ? "text-slate-300"
-                              : i === 2
-                              ? "text-amber-700"
+                              ? "text-brand-yellow"
+                              : i < 3
+                              ? "text-text-primary"
                               : "text-text-muted"
                           }`}
                         >
                           {i + 1}
                         </span>
-                        <div className="w-6 h-6 rounded bg-bg-elevated border border-border-default flex items-center justify-center text-xs font-bold text-text-secondary">
+                        <div className="w-5 h-5 shrink-0 bg-bg-elevated border border-border-default flex items-center justify-center text-[9px] font-bold text-text-secondary">
                           {team.name[0]}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold truncate text-text-primary">
-                            {team.name}
-                          </div>
-                          <div className="text-[10px] font-mono text-text-muted">
-                            {team.game}
-                          </div>
-                        </div>
-                        <span className="text-xs font-mono font-bold text-text-secondary tabular-nums">
+                        <span className="flex-1 truncate font-medium text-text-primary">
+                          {team.name}
+                        </span>
+                        <span className="font-mono font-bold tabular-nums text-[11px] text-text-secondary shrink-0">
                           {team.rating}
                         </span>
                       </Link>
                     ))}
                   </div>
                 )}
-              </ColumnSection>
+              </section>
 
               {onlineUsers.length > 0 && (
-                <ColumnSection
-                  title={
-                    <>
-                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-1.5" />
-                      Online · {onlineUsers.length}
-                    </>
-                  }
-                  accent="default"
-                  viewAll="/players"
-                >
-                  <div className="rounded border border-border-default bg-bg-panel p-3">
-                    <div className="flex flex-wrap gap-1.5">
+                <section>
+                  <SectionHeader>
+                    <span className="flex items-center gap-1.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      ОНЛАЙН · {onlineUsers.length}
+                    </span>
+                    <SectionMore href="/players" />
+                  </SectionHeader>
+                  <div className="bg-bg-panel border border-border-default p-2">
+                    <div className="flex flex-wrap gap-1">
                       {onlineUsers.map((u) => (
                         <Link
                           key={u.id}
@@ -562,10 +477,10 @@ export default async function Home({
                             <img
                               src={u.avatarUrl}
                               alt={u.username}
-                              className="w-8 h-8 rounded border border-border-default group-hover:border-cyan-500/60 transition-colors"
+                              className="w-7 h-7 border border-border-default group-hover:border-brand-yellow"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded bg-bg-elevated border border-border-default flex items-center justify-center text-xs font-bold text-text-secondary">
+                            <div className="w-7 h-7 bg-bg-elevated border border-border-default flex items-center justify-center text-[10px] font-bold text-text-secondary">
                               {u.username[0].toUpperCase()}
                             </div>
                           )}
@@ -574,24 +489,26 @@ export default async function Home({
                       ))}
                     </div>
                   </div>
-                </ColumnSection>
+                </section>
               )}
 
               {/* Sponsor slot */}
-              <div className="rounded border border-dashed border-border-strong bg-bg-panel/50 p-5 text-center">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-text-muted mb-1.5">
-                  Реклама
+              <section>
+                <SectionHeader>
+                  <span>РЕКЛАМА</span>
+                </SectionHeader>
+                <div className="border border-dashed border-border-strong bg-bg-panel/40 p-3 text-center">
+                  <p className="text-[11px] text-text-secondary mb-1.5">
+                    Здесь может быть ваш бренд
+                  </p>
+                  <Link
+                    href="/sponsors"
+                    className="inline-block text-[11px] font-mono text-brand-blue hover:text-brand-blue-hover"
+                  >
+                    СТАТЬ СПОНСОРОМ »
+                  </Link>
                 </div>
-                <div className="text-sm text-text-secondary mb-3">
-                  Здесь может быть ваш бренд
-                </div>
-                <Link
-                  href="/sponsors"
-                  className="inline-block text-xs font-mono text-cyan-300 hover:text-cyan-200"
-                >
-                  СТАТЬ СПОНСОРОМ →
-                </Link>
-              </div>
+              </section>
             </aside>
           </div>
         </div>
@@ -602,70 +519,67 @@ export default async function Home({
   );
 }
 
-/* ── helpers ─────────────────────────────────────────── */
+/* ─── helpers ─────────────────────────────────────────── */
 
-function ColumnSection({
-  title,
-  children,
-  viewAll,
-  accent = "default",
-}: {
-  title: React.ReactNode;
-  children: React.ReactNode;
-  viewAll?: string;
-  accent?: "default" | "rose" | "cyan" | "amber";
-}) {
-  const accentColor =
-    accent === "rose"
-      ? "text-rose-300"
-      : accent === "cyan"
-      ? "text-cyan-300"
-      : accent === "amber"
-      ? "text-amber-300"
-      : "text-text-muted";
+function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <section>
-      <div className="flex items-center justify-between mb-2">
-        <h3
-          className={`text-[11px] font-mono uppercase tracking-widest font-bold flex items-center ${accentColor}`}
-        >
-          {title}
-        </h3>
-        {viewAll && (
-          <Link
-            href={viewAll}
-            className="text-[10px] font-mono text-text-muted hover:text-cyan-300"
-          >
-            ALL →
-          </Link>
-        )}
-      </div>
-      {children}
-    </section>
+    <div className="flex items-center justify-between mb-1.5 h-6">
+      <h3 className="text-[10px] font-mono uppercase tracking-widest font-bold text-text-secondary">
+        {children}
+      </h3>
+    </div>
   );
 }
 
-function ScoreRow({
-  team,
-  score,
-  highlight,
+function SectionMore({ href }: { href: string }) {
+  return (
+    <Link
+      href={href}
+      className="text-[10px] font-mono text-brand-blue hover:text-brand-blue-hover"
+    >
+      ALL »
+    </Link>
+  );
+}
+
+function EmptySection({
+  text,
+  children,
 }: {
-  team: string;
-  score: number;
-  highlight: boolean;
+  text: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between text-sm">
+    <div className="bg-bg-panel border border-border-default px-2 py-3 text-[11px] text-text-muted">
+      {text}
+      {children && <span className="ml-2">{children}</span>}
+    </div>
+  );
+}
+
+function CompactRow({
+  name,
+  score,
+  winner,
+  live = false,
+}: {
+  name: string;
+  score: number;
+  winner: boolean;
+  live?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 leading-tight">
       <span
         className={`truncate ${
-          highlight ? "font-bold text-text-primary" : "text-text-secondary"
+          winner ? "font-bold text-text-primary" : "text-text-secondary"
         }`}
       >
-        {team}
+        {name}
       </span>
       <span
-        className={`font-mono font-bold tabular-nums ml-2 ${
-          highlight ? "text-cyan-300" : "text-text-muted"
+        className={`font-mono font-bold tabular-nums shrink-0 ${
+          live ? "text-brand-yellow" : winner ? "text-text-primary" : "text-text-muted"
         }`}
       >
         {score}
@@ -673,3 +587,4 @@ function ScoreRow({
     </div>
   );
 }
+

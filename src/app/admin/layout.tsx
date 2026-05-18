@@ -26,21 +26,18 @@ export default async function AdminLayout({
       <header className="border-b border-border-default bg-bg-base/95 backdrop-blur-sm sticky top-0 z-30">
         <div className="mx-auto max-w-[1600px] flex items-center justify-between px-6 h-12">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded bg-cyan-500 flex items-center justify-center font-bold text-sm text-slate-950">
-              F
-            </div>
-            <span className="font-bold text-base tracking-tight">
+            <span className="font-bold text-[15px] tracking-tight uppercase">
               <span className="text-text-primary">F16</span>
-              <span className="text-cyan-400 ml-1">ARENA</span>
+              <span className="text-brand-yellow ml-0.5">ARENA</span>
             </span>
-            <span className="ml-3 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <span className="ml-3 text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm bg-brand-yellow/15 text-brand-yellow border border-brand-yellow/40">
               SUPERADMIN
             </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="text-xs font-mono text-text-muted hover:text-cyan-300"
+              className="text-xs font-mono text-text-muted hover:text-brand-yellow"
             >
               ← На сайт
             </Link>

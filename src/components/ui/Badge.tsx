@@ -8,8 +8,8 @@ type Variant =
   | "loss"
   | "upcoming"
   | "finished"
-  | "cyan"
-  | "amber";
+  | "yellow"
+  | "blue";
 
 type Size = "sm" | "md";
 
@@ -20,26 +20,26 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 const VARIANTS: Record<Variant, string> = {
   default:
-    "bg-slate-800/70 text-text-secondary border-border-default",
+    "bg-bg-elevated text-text-secondary border-border-default",
   live:
-    "bg-rose-500/15 text-rose-300 border-rose-500/40",
+    "bg-rose-500/12 text-rose-300 border-rose-500/40",
   win:
-    "bg-emerald-500/15 text-emerald-300 border-emerald-500/40",
+    "bg-emerald-500/12 text-emerald-300 border-emerald-500/40",
   loss:
-    "bg-rose-500/15 text-rose-300 border-rose-500/40",
+    "bg-rose-500/12 text-rose-300 border-rose-500/40",
   upcoming:
-    "bg-amber-500/15 text-amber-300 border-amber-500/40",
+    "bg-brand-yellow/12 text-brand-yellow border-brand-yellow/40",
   finished:
-    "bg-slate-700/40 text-text-muted border-border-strong",
-  cyan:
-    "bg-cyan-500/15 text-cyan-300 border-cyan-500/40",
-  amber:
-    "bg-amber-500/15 text-amber-300 border-amber-500/40",
+    "bg-bg-elevated text-text-muted border-border-default",
+  yellow:
+    "bg-brand-yellow/15 text-brand-yellow border-brand-yellow/40",
+  blue:
+    "bg-brand-blue/15 text-brand-blue border-brand-blue/40",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "text-[10px] px-1.5 py-0.5",
-  md: "text-xs px-2 py-1",
+  sm: "text-[9px] px-1.5 h-[18px]",
+  md: "text-[10px] px-2 h-[20px]",
 };
 
 export function Badge({
@@ -52,8 +52,8 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 font-mono font-bold uppercase tracking-wide",
-        "rounded border whitespace-nowrap",
+        "inline-flex items-center gap-1 font-mono font-bold uppercase tracking-wider",
+        "rounded-sm border whitespace-nowrap leading-none",
         VARIANTS[variant],
         SIZES[size],
         className

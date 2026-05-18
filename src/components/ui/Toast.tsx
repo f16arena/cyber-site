@@ -31,7 +31,7 @@ const VARIANTS: Record<ToastVariant, string> = {
   default: "border-border-strong bg-bg-elevated",
   success: "border-emerald-500/40 bg-emerald-500/10",
   error: "border-rose-500/40 bg-rose-500/10",
-  info: "border-cyan-500/40 bg-cyan-500/10",
+  info: "border-brand-yellow/40 bg-brand-yellow/10",
 };
 
 const ICONS: Record<ToastVariant, string> = {
@@ -94,7 +94,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                       "w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                       v === "success" && "bg-emerald-500/30 text-emerald-200",
                       v === "error" && "bg-rose-500/30 text-rose-200",
-                      v === "info" && "bg-cyan-500/30 text-cyan-200",
+                      v === "info" && "bg-brand-yellow/30 text-brand-yellow",
                       v === "default" && "bg-slate-700 text-text-secondary"
                     )}
                   >

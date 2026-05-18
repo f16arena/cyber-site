@@ -115,7 +115,7 @@ export default async function PlayersPage({
                   name="q"
                   defaultValue={q}
                   placeholder="Поиск по нику или описанию"
-                  className="flex-1 min-w-[220px] bg-bg-panel border border-border-default rounded h-9 px-3 text-sm focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-text-muted"
+                  className="flex-1 min-w-[220px] bg-bg-panel border border-border-default rounded h-9 px-3 text-sm focus:outline-none focus:border-brand-yellow transition-colors placeholder:text-text-muted"
                 />
                 {validGame && (
                   <input
@@ -164,7 +164,7 @@ export default async function PlayersPage({
                       href={href}
                       className={`px-3 h-8 inline-flex items-center text-sm rounded border transition-colors ${
                         active
-                          ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/40"
+                          ? "bg-brand-yellow/15 text-brand-yellow border-brand-yellow/40"
                           : "border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary"
                       }`}
                     >
@@ -247,7 +247,7 @@ export default async function PlayersPage({
                               <span className="font-semibold text-text-primary">
                                 {p.author.username}
                               </span>
-                              <Badge variant="cyan" size="sm">
+                              <Badge variant="yellow" size="sm">
                                 {p.game}
                               </Badge>
                               {p.inGameRole && (
@@ -270,7 +270,7 @@ export default async function PlayersPage({
                                 {!isMine && user && (
                                   <Link
                                     href={`/profile/${p.author.username}`}
-                                    className="text-cyan-300 hover:text-cyan-200"
+                                    className="text-brand-blue hover:text-brand-blue-hover"
                                   >
                                     Профиль →
                                   </Link>
@@ -305,7 +305,7 @@ export default async function PlayersPage({
             <aside className="lg:sticky lg:top-16 self-start">
               {user ? (
                 <div className="rounded border border-border-default bg-bg-panel p-5">
-                  <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4">
+                  <h2 className="text-xs font-mono uppercase tracking-widest text-brand-yellow mb-4">
                     Опубликовать заявку
                   </h2>
                   <LfgForm />

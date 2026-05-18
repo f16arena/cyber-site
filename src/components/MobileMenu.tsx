@@ -37,7 +37,7 @@ export function MobileMenu({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="lg:hidden text-text-secondary hover:text-cyan-300 px-2 h-8 inline-flex items-center"
+        className="lg:hidden text-text-secondary hover:text-brand-yellow px-2 h-8 inline-flex items-center"
         aria-label="Меню"
       >
         <svg
@@ -95,7 +95,7 @@ export function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={`px-3 py-2.5 rounded text-sm font-medium transition-colors ${
                   active
-                    ? "bg-cyan-500/15 text-cyan-300 border-l-2 border-cyan-400"
+                    ? "bg-brand-yellow/15 text-brand-yellow border-l-2 border-brand-yellow"
                     : "text-text-secondary hover:bg-bg-elevated hover:text-text-primary border-l-2 border-transparent"
                 }`}
               >

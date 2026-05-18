@@ -19,24 +19,24 @@ export async function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border-default bg-bg-base/95 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 flex items-center justify-between h-12">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded bg-cyan-500 flex items-center justify-center font-bold text-sm text-slate-950">
-            F
-          </div>
-          <span className="font-bold text-base tracking-tight">
+    <header className="border-b border-border-default bg-bg-base">
+      <div className="mx-auto max-w-7xl px-3 sm:px-4 flex items-center justify-between h-10">
+        <Link href="/" className="flex items-center gap-2 shrink-0 pr-4">
+          <span className="font-bold text-[15px] tracking-tight uppercase">
             <span className="text-text-primary">F16</span>
-            <span className="text-cyan-400 ml-1">ARENA</span>
+            <span className="text-brand-yellow ml-0.5">ARENA</span>
+          </span>
+          <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted hidden sm:inline">
+            .kz
           </span>
         </Link>
 
-        <nav className="hidden lg:flex gap-1 text-sm font-medium items-center ml-6 flex-1">
+        <nav className="hidden lg:flex text-[12px] items-center flex-1 ml-2">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="px-3 h-12 inline-flex items-center text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+              className="px-2.5 h-10 inline-flex items-center text-text-secondary uppercase tracking-wide font-medium hover:text-text-primary hover:bg-bg-panel"
             >
               {link.label}
             </Link>
@@ -58,8 +58,8 @@ export async function SiteFooter() {
   const t = await getTranslations("Footer");
   return (
     <footer className="mt-auto border-t border-border-default bg-bg-base">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-8">
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-6">
           <FooterColumn title="Платформа">
             <FooterLink href="/tournaments">Турниры</FooterLink>
             <FooterLink href="/matches">Матчи</FooterLink>
@@ -69,12 +69,12 @@ export async function SiteFooter() {
           <FooterColumn title="Сообщество">
             <FooterLink href="/leaderboard">Лидерборды</FooterLink>
             <FooterLink href="/hall-of-fame">Зал славы</FooterLink>
-            <FooterLink href="/compare">Сравнить игроков</FooterLink>
+            <FooterLink href="/compare">Сравнить</FooterLink>
             <FooterLink href="/news">Новости</FooterLink>
           </FooterColumn>
           <FooterColumn title="Партнёрам">
             <FooterLink href="/sponsors">Для брендов</FooterLink>
-            <FooterLink href="/stats">Открытая статистика</FooterLink>
+            <FooterLink href="/stats">Статистика</FooterLink>
             <FooterLink href="/world-news">Мировые новости</FooterLink>
           </FooterColumn>
           <FooterColumn title="Аккаунт">
@@ -83,13 +83,8 @@ export async function SiteFooter() {
             <FooterLink href="/friends">Друзья</FooterLink>
           </FooterColumn>
         </div>
-        <div className="pt-6 border-t border-border-default flex flex-col sm:flex-row justify-between gap-3 text-xs text-text-muted">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-cyan-500 flex items-center justify-center font-bold text-[10px] text-slate-950">
-              F
-            </div>
-            <span className="font-mono">© 2026 F16 ARENA</span>
-          </div>
+        <div className="pt-4 border-t border-border-default flex flex-col sm:flex-row justify-between gap-2 text-[11px] text-text-muted">
+          <div className="font-mono">© 2026 F16 ARENA</div>
           <span className="font-mono uppercase tracking-wider">
             {t("tagline")}
           </span>
@@ -108,10 +103,10 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-mono uppercase tracking-widest text-text-muted mb-3">
+      <p className="text-[10px] font-mono uppercase tracking-widest text-text-muted mb-2.5">
         {title}
       </p>
-      <ul className="space-y-1.5 text-sm">{children}</ul>
+      <ul className="space-y-1 text-[12px]">{children}</ul>
     </div>
   );
 }
@@ -125,7 +120,7 @@ function FooterLink({
 }) {
   return (
     <li>
-      <Link href={href} className="text-text-secondary hover:text-cyan-300">
+      <Link href={href} className="text-text-secondary hover:text-text-primary">
         {children}
       </Link>
     </li>

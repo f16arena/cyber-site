@@ -83,10 +83,10 @@ export function TabsTrigger({
       aria-selected={isActive}
       onClick={() => setValue(value)}
       className={cn(
-        "px-3 h-9 text-sm font-medium whitespace-nowrap",
+        "px-3 h-9 text-[13px] font-medium whitespace-nowrap uppercase tracking-wide",
         "border-b-2 -mb-px transition-colors",
         isActive
-          ? "border-cyan-400 text-cyan-300"
+          ? "border-brand-yellow text-text-primary"
           : "border-transparent text-text-secondary hover:text-text-primary",
         className
       )}

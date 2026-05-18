@@ -14,19 +14,19 @@ export interface ButtonProps
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold disabled:bg-cyan-500/40 disabled:text-slate-950/60",
+    "bg-brand-yellow hover:bg-brand-yellow-hover text-text-on-yellow font-bold disabled:bg-brand-yellow/40 disabled:text-text-on-yellow/60",
   secondary:
-    "bg-bg-elevated hover:bg-slate-800 text-text-primary border border-border-default disabled:bg-bg-panel disabled:text-text-muted",
+    "bg-bg-elevated hover:bg-bg-panel text-text-primary border border-border-default hover:border-border-strong disabled:bg-bg-panel disabled:text-text-muted",
   ghost:
     "bg-transparent hover:bg-bg-elevated text-text-secondary hover:text-text-primary",
   destructive:
-    "bg-rose-500 hover:bg-rose-400 text-white font-semibold disabled:bg-rose-500/40",
+    "bg-rose-600 hover:bg-rose-500 text-white font-bold disabled:bg-rose-600/40",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-7 px-2.5 text-xs",
-  md: "h-9 px-4 text-sm",
-  lg: "h-11 px-6 text-sm",
+  sm: "h-6 px-2 text-[11px]",
+  md: "h-8 px-3 text-[12px]",
+  lg: "h-10 px-5 text-sm",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -49,7 +49,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         type={rest.type ?? "button"}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center gap-1.5 rounded font-medium",
+          "inline-flex items-center justify-center gap-1.5 rounded-sm uppercase tracking-wide",
           "disabled:cursor-not-allowed",
           VARIANTS[variant],
           SIZES[size],

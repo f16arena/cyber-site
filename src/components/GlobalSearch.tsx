@@ -79,7 +79,7 @@ export function GlobalSearch() {
         }}
         onFocus={() => setOpen(true)}
         placeholder={t("search")}
-        className="w-full bg-bg-panel border border-border-default rounded h-8 pl-8 pr-3 text-sm focus:outline-none focus:border-cyan-500 transition-colors placeholder:text-text-muted"
+        className="w-full bg-bg-panel border border-border-default rounded h-8 pl-8 pr-3 text-sm focus:outline-none focus:border-brand-yellow transition-colors placeholder:text-text-muted"
       />
       <span
         aria-hidden
@@ -176,7 +176,7 @@ function Section({
 }) {
   return (
     <div className="border-b border-border-default last:border-b-0">
-      <div className="px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-cyan-400 bg-bg-base">
+      <div className="px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-brand-yellow bg-bg-base">
         {title}
       </div>
       <div>{children}</div>

@@ -23,7 +23,7 @@ export async function UserMenu() {
         )}
         <Link
           href="/api/auth/steam"
-          className="text-sm px-4 h-8 inline-flex items-center font-medium rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 whitespace-nowrap transition-colors"
+          className="text-sm px-4 h-8 inline-flex items-center font-bold uppercase tracking-wide rounded-sm bg-brand-yellow hover:bg-brand-yellow-hover text-text-on-yellow whitespace-nowrap transition-colors"
         >
           {t("loginSteam")}
         </Link>
@@ -63,7 +63,7 @@ export async function UserMenu() {
       <NotificationsBell />
       <Link
         href="/friends"
-        className="relative text-sm text-text-secondary hover:text-cyan-300 transition-colors px-2 h-8 inline-flex items-center"
+        className="relative text-sm text-text-secondary hover:text-brand-yellow transition-colors px-2 h-8 inline-flex items-center"
         title="Друзья"
       >
         👥
@@ -75,7 +75,7 @@ export async function UserMenu() {
       </Link>
       <Link
         href="/messages"
-        className="relative text-sm text-text-secondary hover:text-cyan-300 transition-colors px-2 h-8 inline-flex items-center"
+        className="relative text-sm text-text-secondary hover:text-brand-yellow transition-colors px-2 h-8 inline-flex items-center"
         title="Сообщения"
       >
         💬
@@ -100,12 +100,12 @@ export async function UserMenu() {
           <img
             src={user.avatarUrl}
             alt={user.username || "avatar"}
-            className="w-7 h-7 rounded border border-border-default group-hover:border-cyan-500/60 transition-colors"
+            className="w-7 h-7 rounded border border-border-default group-hover:border-brand-yellow/60 transition-colors"
           />
         ) : (
           <div className="w-7 h-7 rounded bg-bg-elevated border border-border-default" />
         )}
-        <span className="text-sm font-medium hidden lg:inline text-text-secondary group-hover:text-cyan-300 transition-colors">
+        <span className="text-sm font-medium hidden lg:inline text-text-secondary group-hover:text-brand-yellow transition-colors">
           {user.username}
         </span>
       </Link>
