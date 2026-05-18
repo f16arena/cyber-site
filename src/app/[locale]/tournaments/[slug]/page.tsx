@@ -410,6 +410,19 @@ export default async function TournamentDetailPage({
             </section>
           )}
 
+          {/* Tabs: Bracket | Stats */}
+          <div className="flex gap-1 border-b border-border-default mb-3">
+            <span className="px-3 h-9 inline-flex items-center text-[12px] font-medium uppercase tracking-wide border-b-2 border-brand-yellow text-text-primary">
+              Bracket
+            </span>
+            <Link
+              href={`/tournaments/${tournament.slug}/stats`}
+              className="px-3 h-9 inline-flex items-center text-[12px] font-medium uppercase tracking-wide border-b-2 -mb-px border-transparent text-text-secondary hover:text-text-primary"
+            >
+              Stats
+            </Link>
+          </div>
+
           {/* Bracket */}
           {tournament.matches.length > 0 ? (
             <section className="mb-5">
