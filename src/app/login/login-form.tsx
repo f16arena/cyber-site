@@ -7,6 +7,8 @@ const ERROR_LABELS: Record<string, string> = {
   missing_fields: "Заполните логин и пароль",
   invalid_credentials: "Неверный логин или пароль",
   too_many_attempts: "Слишком много попыток. Подождите 5 минут.",
+  db_not_migrated:
+    "БД ещё не синхронизирована (нет таблицы AdminCredential). Дождитесь следующего деплоя Vercel — build применит миграции автоматически.",
 };
 
 export function AdminLoginForm({ to }: { to?: string }) {

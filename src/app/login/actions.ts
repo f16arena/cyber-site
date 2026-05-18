@@ -38,7 +38,7 @@ export async function adminLoginAction(
 
   const result = await authenticateAdmin(login, password);
   if (!result.ok) {
-    return { ok: false, error: "invalid_credentials" };
+    return { ok: false, error: result.error };
   }
 
   const session = await getSession();

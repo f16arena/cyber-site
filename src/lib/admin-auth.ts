@@ -92,7 +92,16 @@ export async function ensureSuperadminFromEnv(): Promise<
 
 export type AdminLoginResult =
   | { ok: true; userId: string; username: string; avatarUrl: string | null }
-  | { ok: false; error: "invalid_credentials" };
+  | { ok: false; error: "invalid_credentials" | "db_not_migrated" };
+
+function isMissingTableError(e: unknown): boolean {
+  const msg = (e as Error)?.message ?? "";
+  return (
+    /does not exist/i.test(msg) ||
+    /relation .* does not exist/i.test(msg) ||
+    /AdminCredential/i.test(msg) && /does not exist/i.test(msg)
+  );
+}
 
 /**
  * Аутентификация по login/password. timing-safe — всегда выполняется хэширование,
@@ -102,14 +111,26 @@ export async function authenticateAdmin(
   login: string,
   password: string
 ): Promise<AdminLoginResult> {
-  const cred = await prisma.adminCredential.findUnique({
-    where: { login },
-    select: {
-      id: true,
-      passwordHash: true,
-      user: { select: { id: true, username: true, avatarUrl: true, isAdmin: true } },
-    },
-  });
+  let cred: {
+    id: string;
+    passwordHash: string;
+    user: { id: string; username: string; avatarUrl: string | null; isAdmin: boolean };
+  } | null;
+  try {
+    cred = await prisma.adminCredential.findUnique({
+      where: { login },
+      select: {
+        id: true,
+        passwordHash: true,
+        user: { select: { id: true, username: true, avatarUrl: true, isAdmin: true } },
+      },
+    });
+  } catch (e) {
+    if (isMissingTableError(e)) {
+      return { ok: false, error: "db_not_migrated" };
+    }
+    throw e;
+  }
 
   // Защита от timing-атак: хэшируем пароль даже если запись не найдена
   const fakeStored = "AAAAAAAAAAAAAAAAAAAAAA==:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
