@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { generateDoubleElimination, shuffle } from "@/lib/bracket";
+import {
+  generateDoubleElimination,
+  generateSingleElimination,
+  shuffle,
+} from "@/lib/bracket";
 import { uploadImage, deleteImage } from "@/lib/storage";
 import { notify } from "@/lib/notifications";
 import { translateAll } from "@/lib/translate";
@@ -391,12 +395,19 @@ export async function generateBracket(formData: FormData) {
 
   if (!tournament) return;
   if (tournament.matches.length > 0) return; // сетка уже сгенерирована
-  if (tournament.format !== "DOUBLE_ELIMINATION") return; // пока только DE
 
   const teamIds = shuffle(tournament.registrations.map((r) => r.teamId));
   if (teamIds.length < 2) return;
 
-  const seeds = generateDoubleElimination(teamIds);
+  let seeds: ReturnType<typeof generateDoubleElimination>;
+  if (tournament.format === "SINGLE_ELIMINATION") {
+    seeds = generateSingleElimination(teamIds);
+  } else if (tournament.format === "DOUBLE_ELIMINATION") {
+    seeds = generateDoubleElimination(teamIds);
+  } else {
+    // ROUND_ROBIN, BATTLE_ROYALE_SERIES — пока не реализованы
+    return;
+  }
 
   // Создаём матчи в БД, помня соответствие "key → id"
   const keyToId = new Map<string, string>();
@@ -417,12 +428,28 @@ export async function generateBracket(formData: FormData) {
       ? keyToId.get(seed.parentMatchBKey) ?? null
       : null;
 
+    const isSE = tournament.format === "SINGLE_ELIMINATION";
     const stage =
       seed.side === "GRAND_FINAL"
         ? "Grand Final"
-        : seed.side === "UPPER"
-          ? `UB Round ${seed.round}`
-          : `LB Round ${seed.round}`;
+        : isSE
+          ? `Round ${seed.round}`
+          : seed.side === "UPPER"
+            ? `UB Round ${seed.round}`
+            : `LB Round ${seed.round}`;
+
+    // BO-схема: для SE по умолчанию BO1, финал BO3. Для DE — BO3 везде, GF BO5.
+    const isFinal =
+      tournament.format === "SINGLE_ELIMINATION" &&
+      seed.round === Math.log2(Math.max(2, nextPowerOfTwo(seeds.length / 2 || 1)));
+    let bestOf: number;
+    if (seed.side === "GRAND_FINAL") {
+      bestOf = 5;
+    } else if (tournament.format === "SINGLE_ELIMINATION") {
+      bestOf = isFinal ? 3 : 1;
+    } else {
+      bestOf = 3;
+    }
 
     const created = await prisma.match.create({
       data: {
@@ -434,7 +461,7 @@ export async function generateBracket(formData: FormData) {
         bracketPosition: seed.position,
         parentMatchAId: parentAId,
         parentMatchBId: parentBId,
-        bestOf: seed.side === "GRAND_FINAL" ? 5 : 3,
+        bestOf,
         stage,
         status: "SCHEDULED",
       },
@@ -449,6 +476,30 @@ export async function generateBracket(formData: FormData) {
 
   revalidatePath(`/admin/tournaments/${tournamentId}`);
   revalidatePath(`/tournaments/${tournament.slug}`);
+}
+
+function nextPowerOfTwo(n: number): number {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
+}
+
+export async function resetBracket(formData: FormData) {
+  "use server";
+  await requireAdmin();
+  const tournamentId = formData.get("tournamentId") as string | null;
+  if (!tournamentId) return;
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { slug: true },
+  });
+  await prisma.match.deleteMany({ where: { tournamentId } });
+  await prisma.tournament.update({
+    where: { id: tournamentId },
+    data: { status: "REGISTRATION_CLOSED" },
+  });
+  revalidatePath(`/admin/tournaments/${tournamentId}`);
+  if (tournament) revalidatePath(`/tournaments/${tournament.slug}`);
 }
 
 export async function setMatchResult(formData: FormData) {

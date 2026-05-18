@@ -1,10 +1,8 @@
 /**
- * Генератор сетки Double Elimination (для CS2).
+ * Генератор турнирных сеток.
  *
- * Стандартная схема для 4/8/16 команд:
- *   - Upper Bracket: log2(N) раундов
- *   - Lower Bracket: 2*log2(N) - 1 раундов (чередующиеся UB/LB feeders)
- *   - Grand Final: победитель UB vs победитель LB
+ * Single Elimination — простая сетка, проигравший вылетает.
+ * Double Elimination — UB + LB + Grand Final (для CS2-турниров).
  *
  * Для не-степени-двойки команд — добавляются BYE (автоматический проход).
  */
@@ -20,10 +18,6 @@ export type BracketMatchSeed = {
   key: string;          // уникальный ключ матча для линковки (UB1-1, UB2-1, LB1-1...)
 };
 
-function isPowerOfTwo(n: number) {
-  return n > 0 && (n & (n - 1)) === 0;
-}
-
 /**
  * Перетасовка для seeding'а: 1 vs 8, 2 vs 7, 3 vs 6, 4 vs 5 (8 команд).
  * Если нужен random — пользователь сам передаёт уже перемешанный массив.
@@ -35,6 +29,59 @@ function pairsForBracket(teamIds: (string | null)[]): Array<[string | null, stri
     pairs.push([teamIds[i], teamIds[n - 1 - i]]);
   }
   return pairs;
+}
+
+/**
+ * Генерирует список матчей для Single Elimination.
+ * Стандартный bracket: log2(N) раундов, последний матч = final.
+ * Все матчи в side=UPPER.
+ */
+export function generateSingleElimination(
+  teamIdsRaw: string[]
+): BracketMatchSeed[] {
+  if (teamIdsRaw.length < 2) return [];
+
+  let size = 1;
+  while (size < teamIdsRaw.length) size *= 2;
+  const teamIds: (string | null)[] = [...teamIdsRaw];
+  while (teamIds.length < size) teamIds.push(null);
+
+  const totalRounds = Math.log2(size);
+  const matches: BracketMatchSeed[] = [];
+
+  // Round 1 — посеянные пары
+  const r1Pairs = pairsForBracket(teamIds);
+  r1Pairs.forEach((pair, i) => {
+    matches.push({
+      side: "UPPER",
+      round: 1,
+      position: i + 1,
+      teamAId: pair[0],
+      teamBId: pair[1],
+      key: `R1-${i + 1}`,
+    });
+  });
+
+  // Раунды 2..N — победители из предыдущего раунда
+  let prevCount = r1Pairs.length;
+  for (let round = 2; round <= totalRounds; round++) {
+    const thisCount = prevCount / 2;
+    for (let pos = 1; pos <= thisCount; pos++) {
+      matches.push({
+        side: "UPPER",
+        round,
+        position: pos,
+        teamAId: null,
+        teamBId: null,
+        parentMatchAKey: `R${round - 1}-${pos * 2 - 1}`,
+        parentMatchBKey: `R${round - 1}-${pos * 2}`,
+        key: `R${round}-${pos}`,
+      });
+    }
+    prevCount = thisCount;
+  }
+
+  return matches;
 }
 
 /**
