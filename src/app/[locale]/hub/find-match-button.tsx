@@ -16,6 +16,11 @@ export function FindMatchButton({ locale }: { locale: string }) {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        if (data?.error === "ask_party_leader") {
+          setError("Вы в party — пусть лидер ищет матч");
+          setLoading(false);
+          return;
+        }
         if (data?.error === "in_lobby" || data?.error === "in_match") {
           setError("Вы уже в активном лобби/матче");
           setLoading(false);

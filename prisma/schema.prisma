@@ -187,6 +187,9 @@ model User {
   hubLobbyPlayer  HubLobbyPlayer[]
   hubEloHistory   HubEloHistory[]
   hubAuditEvents  HubAuditEvent[]
+  hubPartyLed     HubParty?         @relation("HubPartyLeader")
+  hubPartyMember  HubPartyMember?   @relation("HubPartyMember")
+  hubPartyInvites HubPartyInvite[]  @relation("HubPartyInvitee")
   adminCredential AdminCredential?
 
   @@index([status])
@@ -671,15 +674,15 @@ model EmailLog {
 // Учётка суперадмина клиента — вход по login/password, независимо от Steam.
 
 model AdminCredential {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  login        String   @unique
-  passwordHash String           // scrypt: <saltB64>:<hashB64>
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  login        String    @unique
+  passwordHash String // scrypt: <saltB64>:<hashB64>
   lastLoginAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── F16 HUB (CS2 matchmaking, FACEIT-like) ──────────────
@@ -731,15 +734,64 @@ enum HubTeam {
 model HubQueueTicket {
   id           String         @id @default(cuid())
   userId       String         @unique
+  partyId      String?
   status       HubQueueStatus @default(SEARCHING)
-  elo          Int // снимок ELO на момент входа
+  elo          Int // снимок ELO на момент входа (соло — свой; party — средний)
+  partySize    Int            @default(1) // 1..5; сколько мест занимает в очереди
   joinedAt     DateTime       @default(now())
   readyCheckId String?
 
   user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   readyCheck HubReadyCheck? @relation(fields: [readyCheckId], references: [id], onDelete: SetNull)
+  party      HubParty?      @relation(fields: [partyId], references: [id], onDelete: SetNull)
 
   @@index([status, joinedAt])
+}
+
+// Party (группа друзей до 5 человек, играющих вместе).
+model HubParty {
+  id        String   @id @default(cuid())
+  leaderId  String   @unique // один user может быть лидером только одной party
+  createdAt DateTime @default(now())
+
+  leader  User             @relation("HubPartyLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  members HubPartyMember[]
+  invites HubPartyInvite[]
+  tickets HubQueueTicket[]
+}
+
+model HubPartyMember {
+  id       String   @id @default(cuid())
+  partyId  String
+  userId   String   @unique
+  joinedAt DateTime @default(now())
+
+  party HubParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  user  User     @relation("HubPartyMember", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
+}
+
+enum HubPartyInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+model HubPartyInvite {
+  id            String               @id @default(cuid())
+  partyId       String
+  invitedUserId String
+  status        HubPartyInviteStatus @default(PENDING)
+  createdAt     DateTime             @default(now())
+  respondedAt   DateTime?
+
+  party       HubParty @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  invitedUser User     @relation("HubPartyInvitee", fields: [invitedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([partyId, invitedUserId])
+  @@index([invitedUserId, status])
 }
 
 // Ready-check после нахождения 10 игроков.

@@ -9,6 +9,8 @@ import { getQueueSnapshot } from "@/lib/hub/queue";
 import { FindMatchButton } from "./find-match-button";
 import { LevelBadge } from "@/components/hub/LevelBadge";
 import { levelProgress, levelFor } from "@/lib/hub/level";
+import { getPartyForUser, getIncomingInvites } from "@/lib/hub/party";
+import { PartyBlock } from "./party-block";
 
 function formatRelative(date: Date) {
   const diff = (Date.now() - date.getTime()) / 1000;
@@ -98,7 +100,21 @@ export default async function HubDashboardPage({
     redirect(`/${locale}/hub/lobby/${queueSnap.lobbyId}`);
   }
 
-  // Последние матчи hub (на этапе 1 их ещё нет, но запрос подготовлен)
+  // Party (если есть) и входящие инвайты
+  const [party, incomingInvitesRaw] = await Promise.all([
+    getPartyForUser(user.id),
+    getIncomingInvites(user.id),
+  ]);
+  const incomingInvites = incomingInvitesRaw.map((inv) => ({
+    id: inv.id,
+    partyId: inv.party.id,
+    leaderUsername: inv.party.leader.username,
+    leaderAvatar: inv.party.leader.avatarUrl,
+    leaderElo: inv.party.leader.hubElo,
+    memberCount: inv.party._count.members,
+  }));
+
+  // Последние матчи hub
   const recentMatches = await prisma.hubMatch.findMany({
     where: {
       OR: [
@@ -235,6 +251,22 @@ export default async function HubDashboardPage({
           </span>
         </div>
       )}
+
+      {/* Party */}
+      <PartyBlock
+        meUserId={user.id}
+        party={
+          party
+            ? {
+                id: party.id,
+                leaderId: party.leaderId,
+                members: party.members,
+                pendingInvites: party.pendingInvites,
+              }
+            : null
+        }
+        incoming={incomingInvites}
+      />
 
       {/* Статы */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">

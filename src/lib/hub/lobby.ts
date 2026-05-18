@@ -77,17 +77,86 @@ export async function createLobbyFromReadyCheck(
       });
       if (users.length !== 10) return null;
 
-      const sorted = [...users].sort((a, b) => {
-        if (b.hubElo !== a.hubElo) return b.hubElo - a.hubElo;
-        const aBot = a.steamId.startsWith("bot_") ? 1 : 0;
-        const bBot = b.steamId.startsWith("bot_") ? 1 : 0;
-        if (aBot !== bBot) return aBot - bBot;
-        return a.username.localeCompare(b.username);
+      // Загрузим party-составы для участников
+      const partyMembers = await tx.hubPartyMember.findMany({
+        where: { userId: { in: users.map((u) => u.id) } },
+        select: { userId: true, partyId: true, party: { select: { leaderId: true } } },
       });
+      const partyByUser = new Map<string, { partyId: string; leaderId: string }>();
+      for (const pm of partyMembers) {
+        partyByUser.set(pm.userId, {
+          partyId: pm.partyId,
+          leaderId: pm.party.leaderId,
+        });
+      }
 
-      const captainA = sorted[0];
-      const captainB = sorted[1];
-      const rest = sorted.slice(2);
+      // Группируем по party (только те у кого 2+ член в лобби)
+      const partyGroups = new Map<string, { leaderId: string; members: typeof users }>();
+      for (const u of users) {
+        const p = partyByUser.get(u.id);
+        if (!p) continue;
+        const group = partyGroups.get(p.partyId);
+        if (group) {
+          group.members.push(u);
+        } else {
+          partyGroups.set(p.partyId, { leaderId: p.leaderId, members: [u] });
+        }
+      }
+      // Оставляем только реальные party (2+ человека)
+      const realParties = Array.from(partyGroups.values()).filter(
+        (g) => g.members.length >= 2
+      );
+
+      // Сортируем party по размеру убыванию — самые большие распределяем первыми
+      realParties.sort((a, b) => b.members.length - a.members.length);
+
+      // Выбор капитанов:
+      //  - если есть party: их лидеры → капитаны (до 2-х);
+      //  - оставшиеся слоты капитанов: top-ELO из не-party игроков.
+      const captains: { id: string; steamId: string; username: string; hubElo: number; team: "A" | "B" }[] = [];
+      const assigned = new Map<string, "A" | "B">(); // userId → team
+      const usersById = new Map(users.map((u) => [u.id, u]));
+
+      const partyLeaders: string[] = [];
+      for (const p of realParties) {
+        if (captains.length >= 2) break;
+        const leader = usersById.get(p.leaderId);
+        if (!leader) continue;
+        const team: "A" | "B" = captains.length === 0 ? "A" : "B";
+        captains.push({ ...leader, team });
+        assigned.set(leader.id, team);
+        partyLeaders.push(leader.id);
+
+        // Помещаем членов party (кроме лидера) в команду капитана
+        for (const m of p.members) {
+          if (m.id === leader.id) continue;
+          assigned.set(m.id, team);
+        }
+      }
+
+      // Добиваем капитанов из не-party (top-ELO)
+      if (captains.length < 2) {
+        const remaining = users
+          .filter((u) => !assigned.has(u.id))
+          .sort((a, b) => {
+            if (b.hubElo !== a.hubElo) return b.hubElo - a.hubElo;
+            const aBot = a.steamId.startsWith("bot_") ? 1 : 0;
+            const bBot = b.steamId.startsWith("bot_") ? 1 : 0;
+            if (aBot !== bBot) return aBot - bBot;
+            return a.username.localeCompare(b.username);
+          });
+        for (const u of remaining) {
+          if (captains.length >= 2) break;
+          const team: "A" | "B" = captains.length === 0 ? "A" : "B";
+          captains.push({ ...u, team });
+          assigned.set(u.id, team);
+        }
+      }
+
+      if (captains.length !== 2) return null;
+
+      const captainA = captains.find((c) => c.team === "A")!;
+      const captainB = captains.find((c) => c.team === "B")!;
 
       const lobby = await tx.hubLobby.create({
         data: {
@@ -98,19 +167,25 @@ export async function createLobbyFromReadyCheck(
           pickTurn: "A",
           expiresAt: new Date(Date.now() + LOBBY_TTL_MS),
           players: {
-            create: [
-              { userId: captainA.id, team: "A", isCaptain: true },
-              { userId: captainB.id, team: "B", isCaptain: true },
-              ...rest.map((u) => ({
-                userId: u.id,
-                team: null,
-                isCaptain: false,
-              })),
-            ],
+            create: users.map((u) => ({
+              userId: u.id,
+              team: assigned.get(u.id) ?? null,
+              isCaptain: u.id === captainA.id || u.id === captainB.id,
+              // Pre-assigned party-членам сразу выставляем pickOrder, чтобы они
+              // не считались "доступными для пика"
+              pickOrder:
+                assigned.has(u.id) &&
+                u.id !== captainA.id &&
+                u.id !== captainB.id
+                  ? 0
+                  : null,
+            })),
           },
         },
         select: { id: true },
       });
+
+      const sorted = users; // для audit / совместимости снизу
 
       // Тикеты в очереди удаляем — они больше не нужны, лобби создано
       await tx.hubQueueTicket.deleteMany({ where: { readyCheckId } });
@@ -219,7 +294,11 @@ export async function pickPlayer(
         data: { team: captainTeam, pickOrder: nextOrder },
       });
 
-      const isLastPick = nextOrder >= PICK_COUNT;
+      // Проверим, остались ли свободные кандидаты (team=null, не капитан)
+      const remaining = await tx.hubLobbyPlayer.count({
+        where: { lobbyId, team: null, isCaptain: false },
+      });
+      const isLastPick = remaining === 0;
       const newPickTurn: "A" | "B" = captainTeam === "A" ? "B" : "A";
 
       await tx.hubLobby.update({
