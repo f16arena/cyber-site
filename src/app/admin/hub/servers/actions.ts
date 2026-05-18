@@ -30,36 +30,45 @@ export async function createHubServer(formData: FormData): Promise<ServerActionR
     return { ok: false, error: "rcon_too_short" };
   }
 
-  const existing = await prisma.hubServer.findUnique({
-    where: { ip_port: { ip, port } },
-    select: { id: true },
-  });
-  if (existing) return { ok: false, error: "ip_port_exists" };
+  try {
+    const existing = await prisma.hubServer.findUnique({
+      where: { ip_port: { ip, port } },
+      select: { id: true },
+    });
+    if (existing) return { ok: false, error: "ip_port_exists" };
 
-  const created = await prisma.hubServer.create({
-    data: {
-      name,
-      ip,
-      port,
-      rconPassword: encryptSecret(rconPassword),
-      status: "FREE",
-      notes,
-    },
-    select: { id: true },
-  });
+    const created = await prisma.hubServer.create({
+      data: {
+        name,
+        ip,
+        port,
+        rconPassword: encryptSecret(rconPassword),
+        status: "FREE",
+        notes,
+      },
+      select: { id: true },
+    });
 
-  await prisma.adminActionLog.create({
-    data: {
-      adminId: admin.id,
-      action: "HUB_SERVER_CREATE",
-      entity: "hub_server",
-      entityId: created.id,
-      metadata: { name, ip, port } as object,
-    },
-  });
+    await prisma.adminActionLog.create({
+      data: {
+        adminId: admin.id,
+        action: "HUB_SERVER_CREATE",
+        entity: "hub_server",
+        entityId: created.id,
+        metadata: { name, ip, port } as object,
+      },
+    });
 
-  revalidatePath("/admin/hub/servers");
-  return { ok: true };
+    revalidatePath("/admin/hub/servers");
+    return { ok: true };
+  } catch (e) {
+    const msg = (e as Error).message;
+    console.error("[admin:hub:server-create] failed:", msg);
+    if (/does not exist/i.test(msg) || /relation .* does not exist/i.test(msg)) {
+      return { ok: false, error: "db_not_migrated" };
+    }
+    return { ok: false, error: `unexpected: ${msg.slice(0, 200)}` };
+  }
 }
 
 export async function deleteHubServer(id: string): Promise<ServerActionResult> {

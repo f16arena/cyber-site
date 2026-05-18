@@ -10,7 +10,15 @@ const ERROR_LABELS: Record<string, string> = {
   port_invalid: "Порт должен быть 1..65535",
   rcon_too_short: "RCON-пароль слишком короткий",
   ip_port_exists: "Сервер с таким ip:port уже есть",
+  db_not_migrated:
+    "Таблица HubServer не создана. После следующего деплоя Vercel build применит миграции автоматически.",
 };
+
+function describeError(code: string): string {
+  if (code in ERROR_LABELS) return ERROR_LABELS[code];
+  if (code.startsWith("unexpected:")) return code;
+  return code;
+}
 
 export function CreateServerForm() {
   const router = useRouter();
@@ -25,7 +33,7 @@ export function CreateServerForm() {
         router.refresh();
         (document.getElementById("hub-server-form") as HTMLFormElement | null)?.reset();
       } else {
-        setError(ERROR_LABELS[res.error] ?? res.error);
+        setError(describeError(res.error));
       }
     });
   };
