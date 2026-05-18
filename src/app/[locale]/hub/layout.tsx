@@ -37,6 +37,12 @@ export default async function HubLayout({
                 Дашборд
               </Link>
               <Link
+                href={`/${locale}/hub/create`}
+                className="text-orange-300 hover:text-orange-200 transition-colors font-bold"
+              >
+                + Создать матч
+              </Link>
+              <Link
                 href={`/${locale}/hub/queue`}
                 className="text-zinc-400 hover:text-orange-300 transition-colors"
               >

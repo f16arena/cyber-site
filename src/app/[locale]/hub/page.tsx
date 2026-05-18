@@ -205,12 +205,17 @@ export default async function HubDashboardPage({
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 flex flex-col items-center justify-center min-w-[260px]">
-          <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
-            Матчмейкинг
+        <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 via-zinc-900 to-rose-600/10 p-6 flex flex-col items-stretch justify-center min-w-[280px] gap-2">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400">
+            Кастомные матчи
           </div>
           {canPlay ? (
-            <FindMatchButton locale={locale} />
+            <Link
+              href={`/${locale}/hub/create`}
+              className="block w-full h-14 rounded font-black tracking-wide bg-gradient-to-r from-orange-500 to-rose-600 text-white hover:from-orange-400 hover:to-rose-500 transition-all flex items-center justify-center text-base"
+            >
+              СОЗДАТЬ МАТЧ
+            </Link>
           ) : (
             <button
               type="button"
@@ -222,12 +227,22 @@ export default async function HubDashboardPage({
               }
               className="w-full h-14 rounded font-black tracking-wide bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700"
             >
-              FIND MATCH
+              СОЗДАТЬ МАТЧ
             </button>
           )}
-          <div className="text-[10px] font-mono text-zinc-500 mt-2 text-center">
-            5v5 · BO1 · MM
+          <div className="text-[10px] font-mono text-zinc-500 text-center">
+            Свои настройки · приглашения · BO1/3/5
           </div>
+          {canPlay && (
+            <details className="text-[11px] font-mono text-zinc-500 mt-1">
+              <summary className="cursor-pointer hover:text-zinc-300 select-none">
+                Или авто-matchmaking
+              </summary>
+              <div className="mt-2">
+                <FindMatchButton locale={locale} />
+              </div>
+            </details>
+          )}
         </div>
       </section>
 
@@ -292,6 +307,93 @@ export default async function HubDashboardPage({
           accent={wr !== null && wr >= 50 ? "text-emerald-300" : "text-zinc-300"}
           hint={`${user.hubMatchesPlayed} матчей`}
         />
+      </section>
+
+      {/* Открытые матчи (mock — пока бекенд не подключён) */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-mono uppercase tracking-widest text-orange-400">
+            Открытые матчи
+          </h2>
+          <Link
+            href={`/${locale}/hub/create`}
+            className="text-[11px] font-mono text-orange-300 hover:text-orange-200"
+          >
+            + Создать свой →
+          </Link>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[
+            {
+              id: "demo-1",
+              name: "Friday scrim",
+              host: "Arsen",
+              mode: "5 vs 5",
+              format: "BO1",
+              filled: 7,
+              total: 10,
+            },
+            {
+              id: "demo-2",
+              name: "Quick duel",
+              host: "Player_42",
+              mode: "1 vs 1",
+              format: "BO3",
+              filled: 1,
+              total: 2,
+            },
+            {
+              id: "demo-3",
+              name: "2v2 wingman",
+              host: "Esports_KZ",
+              mode: "2 vs 2",
+              format: "BO3",
+              filled: 3,
+              total: 4,
+            },
+          ].map((m) => (
+            <Link
+              key={m.id}
+              href={`/${locale}/hub/arena/${m.id}?name=${encodeURIComponent(
+                m.name
+              )}&mode=${
+                m.mode === "1 vs 1"
+                  ? "SOLO"
+                  : m.mode === "2 vs 2"
+                  ? "DUO"
+                  : "FIVE"
+              }&format=${m.format}&privacy=OPEN&pool=mirage,inferno,nuke,ancient,anubis,vertigo,dust2`}
+              className="rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 hover:border-orange-500/40 p-4 transition-all"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="font-bold truncate">{m.name}</div>
+                <span
+                  className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${
+                    m.filled === m.total
+                      ? "bg-rose-500/15 text-rose-300 border-rose-500/40"
+                      : "bg-emerald-500/15 text-emerald-300 border-emerald-500/40"
+                  }`}
+                >
+                  {m.filled}/{m.total}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-300 border border-orange-500/40">
+                  {m.mode}
+                </span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/40">
+                  {m.format}
+                </span>
+              </div>
+              <div className="text-[11px] font-mono text-zinc-500 mt-2">
+                хост · {m.host}
+              </div>
+            </Link>
+          ))}
+        </div>
+        <div className="text-[11px] font-mono text-zinc-600 mt-2">
+          frontend-only превью · бекенд подключится когда переедете на сервер
+        </div>
       </section>
 
       {/* Последние матчи */}
