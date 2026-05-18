@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, type HubGameMode } from "@prisma/client";
+import { MODE_PLAYER_COUNTS, maxPartySizeFor } from "@/lib/hub/modes";
 
-export const QUEUE_SIZE = 10;
 export const READY_CHECK_DURATION_MS = 30_000;
 
 export type QueueJoinResult =
@@ -21,8 +21,14 @@ export type QueueJoinResult =
  *  - и он лидер — создаётся party-ticket для всей party (1 тикет, partySize=N);
  *  - и он не лидер — отказ "ask_party_leader".
  * Если party нет — обычный соло-ticket.
+ *
+ * mode задаёт режим (SOLO=1v1, DUO=2v2, FIVE=5v5). Очередь у каждого
+ * режима своя — игроки разных режимов друг с другом не пересекаются.
  */
-export async function joinQueue(userId: string): Promise<QueueJoinResult> {
+export async function joinQueue(
+  userId: string,
+  mode: HubGameMode = "FIVE"
+): Promise<QueueJoinResult> {
   const result = await prisma.$transaction(async (tx) => {
     // Уже в очереди — вернуть тикет (или ticket party-лидера)
     const existing = await tx.hubQueueTicket.findUnique({
@@ -105,6 +111,11 @@ export async function joinQueue(userId: string): Promise<QueueJoinResult> {
         members.reduce((sum, m) => sum + m.user.hubElo, 0) / members.length
       );
 
+      // Party не должна быть больше размера команды в режиме
+      if (members.length > maxPartySizeFor(mode)) {
+        return { ok: false as const, error: "in_lobby" as const };
+      }
+
       // Если кто-то из членов уже в очереди / лобби — отказ
       const memberIds = members.map((m) => m.userId);
       const conflictTicket = await tx.hubQueueTicket.findFirst({
@@ -136,6 +147,7 @@ export async function joinQueue(userId: string): Promise<QueueJoinResult> {
           partySize: members.length,
           elo: avgElo,
           status: "SEARCHING",
+          mode,
         },
         select: { id: true },
       });
@@ -144,7 +156,7 @@ export async function joinQueue(userId: string): Promise<QueueJoinResult> {
         data: {
           userId,
           kind: "QUEUE_JOIN",
-          payload: { partyId: party.id, partySize: members.length },
+          payload: { partyId: party.id, partySize: members.length, mode },
         },
       });
       return { ok: true as const, ticketId: ticket.id, readyCheckId: null };
@@ -157,12 +169,13 @@ export async function joinQueue(userId: string): Promise<QueueJoinResult> {
         elo: user.hubElo,
         status: "SEARCHING",
         partySize: 1,
+        mode,
       },
       select: { id: true },
     });
 
     await tx.hubAuditEvent.create({
-      data: { userId, kind: "QUEUE_JOIN" },
+      data: { userId, kind: "QUEUE_JOIN", payload: { mode } },
     });
 
     return { ok: true as const, ticketId: ticket.id, readyCheckId: null };
@@ -196,13 +209,21 @@ export async function leaveQueue(userId: string): Promise<{ ok: true } | { ok: f
 }
 
 /**
- * Атомарно пытается собрать матч на 10 мест из SEARCHING-тикетов.
- * Тикет может представлять 1..5 игроков (соло или party).
- * Жадный подбор по времени ожидания (FIFO) — берём пока сумма partySize<=10.
- * Если перебор (например, party=5 + party=5 + party=3 = 13) — пропускаем
- * последний и пытаемся добрать соло.
+ * Атомарно пытается собрать матч на N мест из SEARCHING-тикетов в каждом режиме.
+ * Тикет может представлять 1..M игроков (соло или party).
+ * Идём по режимам по очереди — возвращаем id первого собранного ready-check.
+ * Если ни в одном режиме не хватает — null.
  */
 export async function tryFormMatch(): Promise<string | null> {
+  for (const mode of Object.keys(MODE_PLAYER_COUNTS) as HubGameMode[]) {
+    const rcId = await tryFormMatchForMode(mode);
+    if (rcId) return rcId;
+  }
+  return null;
+}
+
+async function tryFormMatchForMode(mode: HubGameMode): Promise<string | null> {
+  const targetSize = MODE_PLAYER_COUNTS[mode];
   return prisma.$transaction(
     async (tx) => {
       const locked = await tx.$queryRaw<
@@ -217,25 +238,24 @@ export async function tryFormMatch(): Promise<string | null> {
         Prisma.sql`
           SELECT id, "userId", elo, "partyId", "partySize"
           FROM "HubQueueTicket"
-          WHERE status = 'SEARCHING'
+          WHERE status = 'SEARCHING' AND mode = ${mode}::"HubGameMode"
           ORDER BY "joinedAt" ASC
           LIMIT 50
           FOR UPDATE SKIP LOCKED
         `
       );
 
-      // Жадно набираем тикеты пока не получим ровно 10 мест.
-      // Если очередной тикет переполнит — пропускаем (но не возвращаем lock).
+      // Жадно набираем тикеты пока не получим ровно targetSize мест.
       const picked: typeof locked = [];
       let totalSize = 0;
       for (const t of locked) {
-        if (totalSize + t.partySize <= QUEUE_SIZE) {
+        if (totalSize + t.partySize <= targetSize) {
           picked.push(t);
           totalSize += t.partySize;
-          if (totalSize === QUEUE_SIZE) break;
+          if (totalSize === targetSize) break;
         }
       }
-      if (totalSize !== QUEUE_SIZE) return null;
+      if (totalSize !== targetSize) return null;
 
       // Собираем userId всех попавших (включая членов party)
       const leaderUserIds = picked.map((t) => t.userId);
@@ -261,7 +281,7 @@ export async function tryFormMatch(): Promise<string | null> {
       const expiresAt = new Date(Date.now() + READY_CHECK_DURATION_MS);
 
       const userIdsArr = Array.from(allUserIds);
-      if (userIdsArr.length !== QUEUE_SIZE) {
+      if (userIdsArr.length !== targetSize) {
         // Расхождение между partySize и фактическими членами party — отказ
         return null;
       }
@@ -302,20 +322,34 @@ export type QueueSnapshot = {
     status: "SEARCHING" | "READY_CHECK" | "MATCHED" | "CANCELLED";
     joinedAt: string;
     readyCheckId: string | null;
+    mode: HubGameMode;
   } | null;
   queueCount: number;
+  targetSize: number;
   /** Если попал в активное лобби — куда вести. */
   lobbyId: string | null;
 };
 
 /** Снапшот состояния очереди для конкретного пользователя — пушится по SSE. */
 export async function getQueueSnapshot(userId: string): Promise<QueueSnapshot> {
-  const [ticket, queueCount, activeLobbyPlayer] = await Promise.all([
-    prisma.hubQueueTicket.findUnique({
-      where: { userId },
-      select: { id: true, status: true, joinedAt: true, readyCheckId: true },
+  const ticket = await prisma.hubQueueTicket.findUnique({
+    where: { userId },
+    select: {
+      id: true,
+      status: true,
+      joinedAt: true,
+      readyCheckId: true,
+      mode: true,
+    },
+  });
+
+  const mode: HubGameMode = ticket?.mode ?? "FIVE";
+
+  const [queueCount, activeLobbyPlayer] = await Promise.all([
+    // Считаем "сколько в очереди" в том же режиме что и пользователь
+    prisma.hubQueueTicket.count({
+      where: { status: "SEARCHING", mode },
     }),
-    prisma.hubQueueTicket.count({ where: { status: "SEARCHING" } }),
     prisma.hubLobbyPlayer.findFirst({
       where: {
         userId,
@@ -336,9 +370,11 @@ export async function getQueueSnapshot(userId: string): Promise<QueueSnapshot> {
           status: ticket.status,
           joinedAt: ticket.joinedAt.toISOString(),
           readyCheckId: ticket.readyCheckId,
+          mode: ticket.mode,
         }
       : null,
     queueCount,
+    targetSize: MODE_PLAYER_COUNTS[mode],
     lobbyId: activeLobbyPlayer?.lobbyId ?? null,
   };
 }

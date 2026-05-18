@@ -689,10 +689,16 @@ model AdminCredential {
 // На MVP — один общий пул, без регионов. Полностью изолировано от турнирной части.
 
 enum HubQueueStatus {
-  SEARCHING // в очереди, ищем 10 игроков
-  READY_CHECK // нашли 10, ждём accept
+  SEARCHING // в очереди, ищем нужное число игроков
+  READY_CHECK // нашли всех, ждём accept
   MATCHED // accept-чек пройден, переход в лобби
   CANCELLED
+}
+
+enum HubGameMode {
+  SOLO // 1v1 (2 игрока, без капитанов и пика)
+  DUO // 2v2 (4 игрока, без пика — авто-разбивка по ELO)
+  FIVE // 5v5 (10 игроков, капитаны, пик)
 }
 
 enum HubLobbyState {
@@ -735,6 +741,7 @@ model HubQueueTicket {
   id           String         @id @default(cuid())
   userId       String         @unique
   partyId      String?
+  mode         HubGameMode    @default(FIVE)
   status       HubQueueStatus @default(SEARCHING)
   elo          Int // снимок ELO на момент входа (соло — свой; party — средний)
   partySize    Int            @default(1) // 1..5; сколько мест занимает в очереди
@@ -820,10 +827,11 @@ model HubReadyResponse {
   @@unique([readyCheckId, userId])
 }
 
-// Лобби: 10 игроков, 2 капитана, фаза пика/вето → создание матча.
+// Лобби: 2/4/10 игроков, опционально капитаны, фаза пика/вето → создание матча.
 model HubLobby {
   id           String        @id @default(cuid())
   readyCheckId String?       @unique
+  mode         HubGameMode   @default(FIVE)
   state        HubLobbyState @default(CAPTAIN_SELECT)
   captainAId   String
   captainBId   String
@@ -898,6 +906,7 @@ model HubServer {
 // Матч hub — отдельно от существующего Match, у которого турнирная семантика.
 model HubMatch {
   id             String        @id @default(cuid())
+  mode           HubGameMode   @default(FIVE)
   state          HubMatchState @default(PENDING)
   map            String
   serverId       String

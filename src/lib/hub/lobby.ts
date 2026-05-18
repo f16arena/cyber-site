@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, type HubGameMode } from "@prisma/client";
 import { HUB_MAP_POOL } from "@/lib/hub/maps";
+import { MODE_PLAYER_COUNTS, modeHasPickPhase } from "@/lib/hub/modes";
 
 /** Сколько живёт лобби максимум (защита от зависших). */
 export const LOBBY_TTL_MS = 15 * 60 * 1000;
@@ -9,6 +10,7 @@ export const PICK_COUNT = 8;
 
 export type LobbySnapshot = {
   id: string;
+  mode: HubGameMode;
   state:
     | "CAPTAIN_SELECT"
     | "PICKING"
@@ -64,18 +66,26 @@ export async function createLobbyFromReadyCheck(
       if (rc.lobby) return rc.lobby.id; // уже создано
       if (rc.state !== "ACCEPTED") return null;
 
+      // Определяем режим лобби по тикетам этого ready-check
+      const sampleTicket = await tx.hubQueueTicket.findFirst({
+        where: { readyCheckId },
+        select: { mode: true },
+      });
+      const mode: HubGameMode = sampleTicket?.mode ?? "FIVE";
+      const expectedCount = MODE_PLAYER_COUNTS[mode];
+
       // Все участники
       const responses = await tx.hubReadyResponse.findMany({
         where: { readyCheckId, accepted: true },
         select: { userId: true },
       });
-      if (responses.length !== 10) return null;
+      if (responses.length !== expectedCount) return null;
 
       const users = await tx.user.findMany({
         where: { id: { in: responses.map((r) => r.userId) } },
         select: { id: true, steamId: true, username: true, hubElo: true },
       });
-      if (users.length !== 10) return null;
+      if (users.length !== expectedCount) return null;
 
       // Загрузим party-составы для участников
       const partyMembers = await tx.hubPartyMember.findMany({
@@ -158,10 +168,30 @@ export async function createLobbyFromReadyCheck(
       const captainA = captains.find((c) => c.team === "A")!;
       const captainB = captains.find((c) => c.team === "B")!;
 
+      const skipPick = !modeHasPickPhase(mode);
+
+      // Для не-FIVE режимов сразу балансируем оставшихся:
+      // top-3 → к капитану с ниже ELO, top-4 → к капитану с выше ELO и т.д.
+      // (zig-zag по убыванию ELO в порядке слабый/сильный капитан)
+      if (skipPick) {
+        const unassigned = users.filter((u) => !assigned.has(u.id));
+        const sortedDesc = unassigned.sort((a, b) => b.hubElo - a.hubElo);
+        // Капитан с меньшим ELO получает первого top игрока для балансировки
+        const weakerCaptain =
+          captainA.hubElo <= captainB.hubElo ? captainA : captainB;
+        const strongerCaptain =
+          captainA.hubElo <= captainB.hubElo ? captainB : captainA;
+        for (let i = 0; i < sortedDesc.length; i++) {
+          const targetTeam = i % 2 === 0 ? weakerCaptain.team : strongerCaptain.team;
+          assigned.set(sortedDesc[i].id, targetTeam);
+        }
+      }
+
       const lobby = await tx.hubLobby.create({
         data: {
           readyCheckId,
-          state: "PICKING",
+          mode,
+          state: skipPick ? "VETO" : "PICKING",
           captainAId: captainA.id,
           captainBId: captainB.id,
           pickTurn: "A",
@@ -171,8 +201,8 @@ export async function createLobbyFromReadyCheck(
               userId: u.id,
               team: assigned.get(u.id) ?? null,
               isCaptain: u.id === captainA.id || u.id === captainB.id,
-              // Pre-assigned party-членам сразу выставляем pickOrder, чтобы они
-              // не считались "доступными для пика"
+              // Pre-assigned игрокам сразу выставляем pickOrder=0,
+              // чтобы они не считались "доступными для пика"
               pickOrder:
                 assigned.has(u.id) &&
                 u.id !== captainA.id &&
@@ -340,6 +370,7 @@ export async function getLobbySnapshot(
     where: { id: lobbyId },
     select: {
       id: true,
+      mode: true,
       state: true,
       pickTurn: true,
       vetoTurn: true,
@@ -431,6 +462,7 @@ export async function getLobbySnapshot(
 
   return {
     id: lobby.id,
+    mode: lobby.mode,
     state: lobby.state as LobbySnapshot["state"],
     pickTurn: lobby.pickTurn as "A" | "B",
     matchId: lobby.matchId,

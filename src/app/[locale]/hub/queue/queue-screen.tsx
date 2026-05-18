@@ -9,9 +9,17 @@ type Snapshot = {
     status: "SEARCHING" | "READY_CHECK" | "MATCHED" | "CANCELLED";
     joinedAt: string;
     readyCheckId: string | null;
+    mode: "SOLO" | "DUO" | "FIVE";
   } | null;
   queueCount: number;
+  targetSize: number;
   lobbyId: string | null;
+};
+
+const MODE_LABEL: Record<string, string> = {
+  SOLO: "1 vs 1",
+  DUO: "2 vs 2",
+  FIVE: "5 vs 5",
 };
 
 function formatElapsed(seconds: number) {
@@ -101,14 +109,15 @@ export function QueueScreen({
   };
 
   const queueCount = snap?.queueCount ?? 1;
-  const needed = 10;
+  const needed = snap?.targetSize ?? 10;
   const progress = Math.min(queueCount / needed, 1);
+  const modeLabel = snap?.ticket ? MODE_LABEL[snap.ticket.mode] : "...";
 
   return (
     <div className="mx-auto max-w-xl px-6 py-16">
       <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-br from-zinc-900 to-zinc-950 p-8 text-center">
         <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400 mb-2">
-          Поиск матча
+          Поиск матча · {modeLabel}
         </div>
         <h1 className="text-3xl font-black tracking-tight mb-2">SEARCHING</h1>
         <div className="text-5xl font-black tabular-nums text-orange-300 my-6">

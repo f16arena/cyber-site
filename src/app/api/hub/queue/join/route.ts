@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getHubUser } from "@/lib/hub/auth";
 import { joinQueue, tryFormMatch } from "@/lib/hub/queue";
+import { isValidGameMode } from "@/lib/hub/modes";
 
-export async function POST() {
+export async function POST(req: Request) {
   const auth = await getHubUser();
   if (!auth.ok) {
     if (auth.error.kind === "unauthenticated") {
@@ -20,7 +21,13 @@ export async function POST() {
     );
   }
 
-  const result = await joinQueue(auth.user.id);
+  const body = (await req.json().catch(() => ({}))) as { mode?: unknown };
+  const mode =
+    typeof body.mode === "string" && isValidGameMode(body.mode)
+      ? body.mode
+      : "FIVE";
+
+  const result = await joinQueue(auth.user.id, mode);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 409 });
   }
