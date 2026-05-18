@@ -24,5 +24,5 @@ export default async function HubQueuePage({
   }
   if (snap.lobbyId) redirect(`/${locale}/hub/lobby/${snap.lobbyId}`);
 
-  return <QueueScreen locale={locale} />;
+  return <QueueScreen locale={locale} canSeedBots={user.isAdmin} />;
 }

@@ -20,7 +20,13 @@ function formatElapsed(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function QueueScreen({ locale }: { locale: string }) {
+export function QueueScreen({
+  locale,
+  canSeedBots = false,
+}: {
+  locale: string;
+  canSeedBots?: boolean;
+}) {
   const router = useRouter();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -139,10 +145,10 @@ export function QueueScreen({ locale }: { locale: string }) {
           <div className="mt-4 text-sm text-rose-300 font-mono">{error}</div>
         )}
 
-        {process.env.NODE_ENV !== "production" && (
+        {(process.env.NODE_ENV !== "production" || canSeedBots) && (
           <div className="mt-6 pt-4 border-t border-zinc-800">
             <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
-              DEV
+              {process.env.NODE_ENV !== "production" ? "DEV" : "ADMIN"}
             </div>
             <button
               type="button"

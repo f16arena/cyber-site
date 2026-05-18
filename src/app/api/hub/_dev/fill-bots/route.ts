@@ -3,19 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { getHubUser } from "@/lib/hub/auth";
 
 /**
- * DEV-ONLY: создаёт 9 ботов и ставит их в очередь, чтобы пользователь мог
+ * Создаёт 9 ботов и ставит их в очередь, чтобы пользователь мог
  * проверить полный flow один. Боты auto-accept в ready-check (см. runTick).
  *
- * Заблокировано в production.
+ * Доступно:
+ *  - всегда в dev (NODE_ENV != production)
+ *  - админу в production (для проверки flow на проде)
  */
 export async function POST() {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "disabled_in_prod" }, { status: 403 });
-  }
-
   const auth = await getHubUser();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error.kind }, { status: 401 });
+  }
+
+  if (process.env.NODE_ENV === "production" && !auth.user.isAdmin) {
+    return NextResponse.json({ error: "admin_only_in_prod" }, { status: 403 });
   }
 
   const created: string[] = [];
