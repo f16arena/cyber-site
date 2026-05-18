@@ -103,6 +103,34 @@ export function CreateServerForm() {
           className="mt-1 w-full h-10 rounded bg-zinc-900 border border-zinc-800 px-3 text-sm focus:border-violet-500 focus:outline-none"
         />
       </label>
+
+      <label className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 cursor-pointer hover:bg-amber-500/10 transition-colors">
+        <input
+          type="checkbox"
+          name="allowSkins"
+          value="1"
+          className="mt-0.5 w-4 h-4 rounded accent-orange-500"
+        />
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-amber-200">
+            Сервер со скинами (WeaponPaints)
+          </div>
+          <div className="text-[11px] font-mono text-amber-200/70 mt-0.5 leading-relaxed">
+            На сервере установлен CounterStrikeSharp + WeaponPaints плагин,
+            игроки видят свои выбранные скины. Только для community-серверов
+            (без VAC). Подробнее:{" "}
+            <a
+              href="https://github.com/Nereziel/cs2-WeaponPaints"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-amber-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              cs2-WeaponPaints
+            </a>
+          </div>
+        </div>
+      </label>
       <div className="flex items-center gap-3">
         <button
           type="submit"

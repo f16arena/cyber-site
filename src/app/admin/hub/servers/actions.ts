@@ -17,6 +17,7 @@ export async function createHubServer(formData: FormData): Promise<ServerActionR
   const portRaw = String(formData.get("port") ?? "").trim();
   const rconPassword = String(formData.get("rconPassword") ?? "");
   const notes = String(formData.get("notes") ?? "").trim() || null;
+  const allowSkins = formData.get("allowSkins") === "1";
 
   if (!name) return { ok: false, error: "name_required" };
   if (!/^([0-9]{1,3}\.){3}[0-9]{1,3}$|^[a-zA-Z0-9.-]+$/.test(ip)) {
@@ -44,6 +45,7 @@ export async function createHubServer(formData: FormData): Promise<ServerActionR
         port,
         rconPassword: encryptSecret(rconPassword),
         status: "FREE",
+        allowSkins,
         notes,
       },
       select: { id: true },
@@ -55,7 +57,7 @@ export async function createHubServer(formData: FormData): Promise<ServerActionR
         action: "HUB_SERVER_CREATE",
         entity: "hub_server",
         entityId: created.id,
-        metadata: { name, ip, port } as object,
+        metadata: { name, ip, port, allowSkins } as object,
       },
     });
 

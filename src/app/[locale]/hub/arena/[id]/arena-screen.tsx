@@ -12,6 +12,7 @@ export type ArenaSettings = {
   format: "BO1" | "BO3" | "BO5";
   privacy: "OPEN" | "INVITE";
   pool: string[];
+  serverType: "NORMAL" | "SKINS";
   host: string;
 };
 
@@ -223,6 +224,18 @@ export function ArenaScreen({
               <span className="text-[10px] font-mono font-bold px-2 py-1 rounded bg-zinc-700/40 text-zinc-300 border border-zinc-700">
                 {settings.pool.length} карт в pool
               </span>
+              {settings.serverType === "SKINS" ? (
+                <span
+                  className="text-[10px] font-mono font-bold px-2 py-1 rounded border bg-amber-500/15 text-amber-300 border-amber-500/40"
+                  title="WeaponPaints — игроки видят свои скины"
+                >
+                  ✦ СО СКИНАМИ
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono font-bold px-2 py-1 rounded border bg-zinc-700/40 text-zinc-300 border-zinc-700">
+                  🎮 Обычный сервер
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">

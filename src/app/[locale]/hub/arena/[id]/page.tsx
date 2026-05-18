@@ -30,6 +30,11 @@ function parsePrivacy(v: string | undefined): ArenaSettings["privacy"] {
   return "OPEN";
 }
 
+function parseServerType(v: string | undefined): ArenaSettings["serverType"] {
+  if (v === "NORMAL" || v === "SKINS") return v;
+  return "NORMAL";
+}
+
 export default async function HubArenaPage({
   params,
   searchParams,
@@ -41,6 +46,7 @@ export default async function HubArenaPage({
     format?: string;
     privacy?: string;
     pool?: string;
+    server?: string;
     host?: string;
   }>;
 }) {
@@ -62,6 +68,7 @@ export default async function HubArenaPage({
     format: parseFormat(sp.format),
     privacy: parsePrivacy(sp.privacy),
     pool: pool.length >= 7 ? pool : DEFAULT_POOL,
+    serverType: parseServerType(sp.server),
     host: sp.host ?? "me",
   };
 

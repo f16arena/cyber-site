@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 type Mode = "SOLO" | "DUO" | "FIVE";
 type Format = "BO1" | "BO3" | "BO5";
 type Privacy = "OPEN" | "INVITE";
+type ServerType = "NORMAL" | "SKINS";
+
+const SERVER_TYPES: { id: ServerType; label: string; sub: string; icon: string }[] = [
+  { id: "NORMAL", label: "Обычный", sub: "Стандартный CS2", icon: "🎮" },
+  { id: "SKINS", label: "Со скинами", sub: "WeaponPaints на сервере", icon: "✦" },
+];
 
 const MODES: { id: Mode; label: string; sub: string }[] = [
   { id: "SOLO", label: "1 vs 1", sub: "Дуэль" },
@@ -42,6 +48,7 @@ export function CreateMatchForm({ locale }: { locale: string }) {
   const [mode, setMode] = useState<Mode>("FIVE");
   const [format, setFormat] = useState<Format>("BO1");
   const [privacy, setPrivacy] = useState<Privacy>("OPEN");
+  const [serverType, setServerType] = useState<ServerType>("NORMAL");
   const [pool, setPool] = useState<string[]>(DEFAULT_POOL);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +85,7 @@ export function CreateMatchForm({ locale }: { locale: string }) {
       format,
       privacy,
       pool: pool.join(","),
+      server: serverType,
       host: "me",
     });
     router.push(`/${locale}/hub/arena/${mockId}?${params.toString()}`);
@@ -228,6 +236,44 @@ export function CreateMatchForm({ locale }: { locale: string }) {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Тип сервера */}
+      <section>
+        <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400 mb-2">
+          Тип сервера
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {SERVER_TYPES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setServerType(s.id)}
+              className={`flex items-center gap-3 rounded-lg p-4 transition-all border-2 text-left ${
+                serverType === s.id
+                  ? s.id === "SKINS"
+                    ? "bg-zinc-900 border-amber-400 text-amber-100"
+                    : "bg-zinc-900 border-orange-400 text-zinc-100"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+              }`}
+            >
+              <span className="text-2xl">{s.icon}</span>
+              <div className="min-w-0">
+                <div className="font-bold text-sm">{s.label}</div>
+                <div className="text-[11px] font-mono text-zinc-500">
+                  {s.sub}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+        {serverType === "SKINS" && (
+          <div className="mt-2 text-[11px] font-mono text-amber-200/80">
+            ⚠ Сервер должен иметь установленный CounterStrikeSharp +
+            WeaponPaints. Иначе матч не запустится — выберется fallback на
+            обычный.
+          </div>
+        )}
       </section>
 
       {error && (

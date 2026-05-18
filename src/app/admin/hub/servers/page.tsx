@@ -23,6 +23,7 @@ export default async function AdminHubServersPage() {
       ip: true,
       port: true,
       status: true,
+      allowSkins: true,
       reservedForLobbyId: true,
       notes: true,
       createdAt: true,
@@ -76,7 +77,17 @@ export default async function AdminHubServersPage() {
                 {servers.map((s) => (
                   <tr key={s.id}>
                     <td className="px-4 py-3">
-                      <div className="font-bold">{s.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">{s.name}</span>
+                        {s.allowSkins && (
+                          <span
+                            className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-amber-500/15 text-amber-300 border-amber-500/40"
+                            title="WeaponPaints включён"
+                          >
+                            ✦ SKINS
+                          </span>
+                        )}
+                      </div>
                       {s.notes && (
                         <div className="text-[11px] text-zinc-500">{s.notes}</div>
                       )}

@@ -891,6 +891,9 @@ model HubServer {
   port               Int
   rconPassword       String // в БД хранится зашифрованным (AES-GCM)
   status             HubServerStatus @default(FREE)
+  // Если true — на сервере стоит CounterStrikeSharp + WeaponPaints плагин,
+  // и игрокам применяются их выбранные скины. По умолчанию обычный сервер.
+  allowSkins         Boolean         @default(false)
   reservedForLobbyId String?         @unique
   notes              String?
   createdAt          DateTime        @default(now())

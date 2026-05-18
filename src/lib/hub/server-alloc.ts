@@ -17,7 +17,18 @@ export type AllocateResult =
  * Атомарно через SELECT FOR UPDATE SKIP LOCKED, чтобы параллельные вызовы
  * не захватывали один и тот же сервер.
  */
-export async function allocateServer(lobbyId: string): Promise<AllocateResult> {
+/**
+ * Захватывает свободный CS2-сервер для лобби.
+ *
+ * preferSkins:
+ *  - true  — пытается захватить сервер с allowSkins=true; если нет —
+ *            fallback на обычный (matches all FREE).
+ *  - false (default) — берёт любой FREE.
+ */
+export async function allocateServer(
+  lobbyId: string,
+  preferSkins: boolean = false
+): Promise<AllocateResult> {
   const allocation = await prisma.$transaction(
     async (tx) => {
       const lobby = await tx.hubLobby.findUnique({
@@ -43,16 +54,32 @@ export async function allocateServer(lobbyId: string): Promise<AllocateResult> {
         return { ok: false as const, error: "no_map" as const };
       }
 
-      // Атомарный захват одного свободного сервера
-      const locked = await tx.$queryRaw<{ id: string }[]>(
-        Prisma.sql`
-          SELECT id FROM "HubServer"
-          WHERE status = 'FREE'
-          ORDER BY "createdAt" ASC
-          LIMIT 1
-          FOR UPDATE SKIP LOCKED
-        `
-      );
+      // Атомарный захват свободного сервера.
+      // Если preferSkins=true — сначала ищем сервер с allowSkins=true.
+      // Если такой не нашёлся — пробуем любой FREE (fallback).
+      let locked = preferSkins
+        ? await tx.$queryRaw<{ id: string }[]>(
+            Prisma.sql`
+              SELECT id FROM "HubServer"
+              WHERE status = 'FREE' AND "allowSkins" = true
+              ORDER BY "createdAt" ASC
+              LIMIT 1
+              FOR UPDATE SKIP LOCKED
+            `
+          )
+        : [];
+
+      if (locked.length === 0) {
+        locked = await tx.$queryRaw<{ id: string }[]>(
+          Prisma.sql`
+            SELECT id FROM "HubServer"
+            WHERE status = 'FREE'
+            ORDER BY "createdAt" ASC
+            LIMIT 1
+            FOR UPDATE SKIP LOCKED
+          `
+        );
+      }
       if (locked.length === 0) {
         // Серверов нет — отменяем лобби, без cooldown игрокам
         await tx.hubLobby.update({
