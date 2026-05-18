@@ -143,7 +143,7 @@ export default async function HubLeaderboardPage({
                           </div>
                         )}
                         <Link
-                          href={`/${locale}/players/${encodeURIComponent(
+                          href={`/${locale}/hub/players/${encodeURIComponent(
                             p.username
                           )}`}
                           className="font-bold truncate hover:text-orange-300"

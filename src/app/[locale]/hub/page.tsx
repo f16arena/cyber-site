@@ -11,6 +11,7 @@ import { LevelBadge } from "@/components/hub/LevelBadge";
 import { levelProgress, levelFor } from "@/lib/hub/level";
 import { getPartyForUser, getIncomingInvites } from "@/lib/hub/party";
 import { PartyBlock } from "./party-block";
+import { getFriendsActivity } from "@/lib/hub/friends-activity";
 
 function formatRelative(date: Date) {
   const diff = (Date.now() - date.getTime()) / 1000;
@@ -100,10 +101,11 @@ export default async function HubDashboardPage({
     redirect(`/${locale}/hub/lobby/${queueSnap.lobbyId}`);
   }
 
-  // Party (если есть) и входящие инвайты
-  const [party, incomingInvitesRaw] = await Promise.all([
+  // Party (если есть) + входящие инвайты + активные друзья
+  const [party, incomingInvitesRaw, friendsActivity] = await Promise.all([
     getPartyForUser(user.id),
     getIncomingInvites(user.id),
+    getFriendsActivity(user.id, locale),
   ]);
   const incomingInvites = incomingInvitesRaw.map((inv) => ({
     id: inv.id,
@@ -282,6 +284,62 @@ export default async function HubDashboardPage({
         }
         incoming={incomingInvites}
       />
+
+      {/* Friends activity */}
+      {friendsActivity.length > 0 && (
+        <section>
+          <h2 className="text-sm font-mono uppercase tracking-widest text-orange-400 mb-3">
+            Друзья сейчас в игре · {friendsActivity.length}
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {friendsActivity.map((f) => {
+              const badge =
+                f.status === "MATCH"
+                  ? { label: "LIVE", cls: "bg-rose-500/15 text-rose-300 border-rose-500/40" }
+                  : f.status === "LOBBY"
+                  ? { label: "В ЛОББИ", cls: "bg-amber-500/15 text-amber-300 border-amber-500/40" }
+                  : { label: "В ОЧЕРЕДИ", cls: "bg-orange-500/15 text-orange-300 border-orange-500/40" };
+              const inner = (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 hover:border-orange-500/30 p-3 transition-colors h-full">
+                  <div className="flex items-center gap-2">
+                    {f.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={f.avatarUrl}
+                        alt={f.username}
+                        className="w-8 h-8 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500">
+                        {f.username[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-sm truncate">{f.username}</div>
+                      <div className="text-[10px] font-mono text-zinc-500 tabular-nums">
+                        {f.hubElo} ELO
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`mt-2 inline-block text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${badge.cls}`}
+                  >
+                    {badge.label}
+                  </div>
+                </div>
+              );
+              return f.link ? (
+                <Link key={f.userId} href={f.link}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={f.userId}>{inner}</div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
 
       {/* Статы */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
