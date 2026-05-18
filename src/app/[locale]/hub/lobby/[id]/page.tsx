@@ -24,9 +24,16 @@ export default async function HubLobbyPage({
     snap.teamB.some((p) => p.userId === user.id) ||
     snap.available.some((p) => p.userId === user.id);
 
-  if (!isParticipant) {
+  if (!isParticipant && !user.isAdmin) {
     redirect(`/${locale}/hub`);
   }
 
-  return <LobbyScreen locale={locale} lobbyId={id} meUserId={user.id} />;
+  return (
+    <LobbyScreen
+      locale={locale}
+      lobbyId={id}
+      meUserId={user.id}
+      isAdmin={user.isAdmin}
+    />
+  );
 }

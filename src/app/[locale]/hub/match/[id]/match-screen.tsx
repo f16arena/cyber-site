@@ -93,13 +93,60 @@ function PlayerRow({ p, side }: { p: Player; side: "A" | "B" }) {
 export function MatchScreen({
   locale,
   matchId,
+  isAdmin = false,
 }: {
   locale: string;
   matchId: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [copied, setCopied] = useState(false);
+  const [adminBusy, setAdminBusy] = useState(false);
+
+  const adminFinish = async () => {
+    const aRaw = prompt("Счёт Team A:", "16");
+    if (aRaw === null) return;
+    const bRaw = prompt("Счёт Team B:", "0");
+    if (bRaw === null) return;
+    const a = Number(aRaw);
+    const b = Number(bRaw);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return;
+    if (a === b) {
+      alert("Ничьи не бывает в BO1 — счёт должен различаться");
+      return;
+    }
+    setAdminBusy(true);
+    try {
+      const res = await fetch(`/api/admin/hub/match/${matchId}/finish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scoreA: a, scoreB: b, winner: a > b ? "A" : "B" }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Ошибка: ${data?.error ?? res.status}`);
+      }
+    } finally {
+      setAdminBusy(false);
+    }
+  };
+
+  const adminCancel = async () => {
+    if (!confirm("Отменить матч? ELO не изменится.")) return;
+    setAdminBusy(true);
+    try {
+      const res = await fetch(`/api/admin/hub/match/${matchId}/cancel`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Ошибка: ${data?.error ?? res.status}`);
+      }
+    } finally {
+      setAdminBusy(false);
+    }
+  };
 
   useEffect(() => {
     const es = new EventSource(`/api/hub/match/${matchId}/stream`);
@@ -138,8 +185,39 @@ export function MatchScreen({
     );
   }
 
+  const matchActive =
+    snap.state === "PENDING" ||
+    snap.state === "WARMUP" ||
+    snap.state === "LIVE";
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
+      {isAdmin && matchActive && (
+        <section className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-amber-300">
+            ⚙ Admin tools
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={adminFinish}
+              disabled={adminBusy}
+              className="text-xs font-mono font-bold px-3 h-9 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-50"
+            >
+              ✓ Завершить со счётом
+            </button>
+            <button
+              type="button"
+              onClick={adminCancel}
+              disabled={adminBusy}
+              className="text-xs font-mono font-bold px-3 h-9 rounded border border-rose-500/40 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20 disabled:opacity-50"
+            >
+              × Отменить матч
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Header с превью карты */}
       <header className="grid lg:grid-cols-[280px_1fr] gap-4">
         <MapCard mapId={snap.map} state="selected" size="lg" />

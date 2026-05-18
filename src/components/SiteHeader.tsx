@@ -9,6 +9,7 @@ export async function SiteHeader() {
   const t = await getTranslations("Nav");
 
   const navLinks = [
+    { href: "/hub", label: "F16 HUB" },
     { href: "/tournaments", label: t("tournaments") },
     { href: "/matches", label: t("matches") },
     { href: "/teams", label: t("teams") },
@@ -32,16 +33,27 @@ export async function SiteHeader() {
             <span className="text-zinc-500 font-mono">.kz</span>
           </span>
         </Link>
-        <nav className="hidden lg:flex gap-5 text-sm font-medium">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-zinc-400 hover:text-violet-300 transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden lg:flex gap-5 text-sm font-medium items-center">
+          {navLinks.map((link) =>
+            link.href === "/hub" ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="font-black tracking-tight bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent hover:from-orange-300 hover:to-rose-300 transition-all"
+                title="CS2 матчмейкинг"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-zinc-400 hover:text-violet-300 transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
           <GlobalSearch />

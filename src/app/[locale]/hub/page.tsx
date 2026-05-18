@@ -416,7 +416,7 @@ export default async function HubDashboardPage({
               return (
                 <Link
                   key={m.id}
-                  href={`/hub/match/${m.id}`}
+                  href={`/${locale}/hub/match/${m.id}`}
                   className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 px-4 py-3 transition-colors"
                 >
                   <div className="flex items-center gap-3">

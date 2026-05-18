@@ -209,6 +209,37 @@ export default async function Home({
         reason={sp.reason}
         detail={sp.detail}
       />
+
+      {/* F16 HUB CTA — CS2 matchmaking */}
+      <Link
+        href={`/${locale}/hub`}
+        className="block bg-gradient-to-r from-orange-600/20 via-rose-600/20 to-amber-500/20 border-y border-orange-500/30 hover:from-orange-600/30 hover:via-rose-600/30 hover:to-amber-500/30 transition-all group"
+      >
+        <div className="mx-auto max-w-7xl px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center font-black text-xs shrink-0">
+              F
+            </div>
+            <div className="min-w-0">
+              <div className="font-black text-base tracking-tight">
+                <span className="bg-gradient-to-r from-orange-300 to-rose-300 bg-clip-text text-transparent">
+                  F16 HUB
+                </span>
+                <span className="text-zinc-400 ml-2 font-medium">
+                  · CS2 Matchmaking
+                </span>
+              </div>
+              <div className="text-[11px] font-mono text-zinc-500">
+                1v1 / 2v2 / 5v5 · кастомные матчи · ELO ранкинг
+              </div>
+            </div>
+          </div>
+          <span className="text-xs font-mono font-bold text-orange-300 group-hover:text-orange-200">
+            Войти →
+          </span>
+        </div>
+      </Link>
+
       {/* TICKER */}
       {liveMatches.length > 0 && (
         <div className="bg-gradient-to-r from-violet-600/30 via-fuchsia-600/30 to-rose-600/30 border-b border-violet-500/20">

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapCard } from "@/components/hub/MapCard";
+import { useToast } from "@/components/hub/Toast";
 
 export type ArenaSettings = {
   id: string;
@@ -58,6 +59,7 @@ export function ArenaScreen({
   meName: string;
 }) {
   const router = useRouter();
+  const { toast, ToastContainer } = useToast();
   const teamSize = TEAM_SIZE[settings.mode];
   const totalSlots = teamSize * 2;
 
@@ -73,6 +75,37 @@ export function ArenaScreen({
   const [vetoTurn, setVetoTurn] = useState<"A" | "B">("A");
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
+
+  // Host actions (на frontend-mock пользователь всегда хост)
+  const resetPhase = () => {
+    setBans([]);
+    setSelectedMap(null);
+    setVetoTurn("A");
+    setScoreA(0);
+    setScoreB(0);
+    setSlots((curr) => curr.map((s) => ({ ...s, ready: false })));
+  };
+  const restartMatch = () => {
+    if (!confirm("Начать матч заново? Прогресс сбросится.")) return;
+    resetPhase();
+    setPhase("LOBBY");
+  };
+  const closeArena = () => {
+    if (!confirm("Закрыть лобби? Все игроки будут выгнаны.")) return;
+    router.push(`/${locale}/hub`);
+  };
+  const finishWithCustomScore = () => {
+    const aRaw = prompt("Счёт Team A:", String(scoreA));
+    if (aRaw === null) return;
+    const bRaw = prompt("Счёт Team B:", String(scoreB));
+    if (bRaw === null) return;
+    const a = Number(aRaw);
+    const b = Number(bRaw);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0) return;
+    setScoreA(a);
+    setScoreB(b);
+    setPhase("FINISHED");
+  };
 
   // Сколько банов нужно: для BO1 — все кроме 1. Для BO3 — все кроме 3 (но пара pick). Упростим.
   const targetPicks =
@@ -217,6 +250,54 @@ export function ArenaScreen({
         </div>
       </header>
 
+      {/* Host toolbar — управление матчем */}
+      <section className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-amber-300">
+          ⚙ Управление (хост)
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {phase !== "LOBBY" && (
+            <button
+              type="button"
+              onClick={restartMatch}
+              className="text-xs font-mono font-bold px-3 h-9 rounded border border-orange-500/40 bg-orange-500/10 text-orange-200 hover:bg-orange-500/20"
+            >
+              ↻ Начать заново
+            </button>
+          )}
+          {phase === "VETO" && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!confirm("Сбросить veto?")) return;
+                setBans([]);
+                setSelectedMap(null);
+                setVetoTurn("A");
+              }}
+              className="text-xs font-mono font-bold px-3 h-9 rounded border border-violet-500/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"
+            >
+              ↺ Сбросить veto
+            </button>
+          )}
+          {(phase === "LIVE" || phase === "VETO") && (
+            <button
+              type="button"
+              onClick={finishWithCustomScore}
+              className="text-xs font-mono font-bold px-3 h-9 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20"
+            >
+              ✓ Завершить со счётом
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={closeArena}
+            className="text-xs font-mono font-bold px-3 h-9 rounded border border-rose-500/40 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+          >
+            × Закрыть лобби
+          </button>
+        </div>
+      </section>
+
       {/* Команды */}
       <div className="grid sm:grid-cols-2 gap-4">
         <TeamColumn
@@ -261,14 +342,18 @@ export function ArenaScreen({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => alert("Mock: открыть список друзей (бекенд позже)")}
+                onClick={() =>
+                  toast("Список друзей — подключим, когда переедем на сервер", "info")
+                }
                 className="text-sm font-bold px-4 h-10 rounded border border-orange-500/40 bg-orange-500/10 text-orange-200 hover:bg-orange-500/20"
               >
                 + Из друзей
               </button>
               <button
                 type="button"
-                onClick={() => alert("Mock: открыть список ваших команд (бекенд позже)")}
+                onClick={() =>
+                  toast("Свои команды — подключим, когда переедем на сервер", "info")
+                }
                 className="text-sm font-bold px-4 h-10 rounded border border-violet-500/40 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"
               >
                 + Свою команду
@@ -277,8 +362,12 @@ export function ArenaScreen({
                 type="button"
                 onClick={() => {
                   const link = `${window.location.origin}/${locale}/hub/arena/${settings.id}`;
-                  navigator.clipboard.writeText(link).catch(() => {});
-                  alert("Ссылка скопирована");
+                  navigator.clipboard
+                    .writeText(link)
+                    .then(() => toast("Ссылка скопирована", "success"))
+                    .catch(() =>
+                      toast("Не удалось скопировать", "error")
+                    );
                 }}
                 className="text-sm font-mono px-4 h-10 rounded border border-zinc-700 text-zinc-400 hover:bg-zinc-800"
               >
@@ -294,7 +383,9 @@ export function ArenaScreen({
                   <button
                     key={s.username}
                     type="button"
-                    onClick={() => alert(`Mock: invite ${s.username}`)}
+                    onClick={() =>
+                      toast(`Приглашение для ${s.username} — заглушка`, "info")
+                    }
                     className="text-[11px] font-mono px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 text-zinc-400"
                   >
                     + {s.username}
@@ -459,6 +550,8 @@ export function ArenaScreen({
           frontend-only превью · бекенд подключим когда переедете на сервер
         </div>
       )}
+
+      <ToastContainer />
     </div>
   );
 }

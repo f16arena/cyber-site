@@ -143,10 +143,12 @@ export function LobbyScreen({
   locale,
   lobbyId,
   meUserId,
+  isAdmin = false,
 }: {
   locale: string;
   lobbyId: string;
   meUserId: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [snap, setSnap] = useState<Snapshot | null>(null);
@@ -257,8 +259,35 @@ export function LobbyScreen({
   const vetoCaptainName =
     snap.vetoTurn === "A" ? snap.captainA.username : snap.captainB.username;
 
+  const adminCancelLobby = async () => {
+    if (!confirm("Отменить лобби? Все игроки уйдут, сервер освободится.")) return;
+    const res = await fetch(`/api/admin/hub/lobby/${lobbyId}/cancel`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Ошибка: ${data?.error ?? res.status}`);
+      return;
+    }
+    router.push(`/${locale}/hub`);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
+      {isAdmin && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-amber-300">
+            ⚙ Admin tools
+          </div>
+          <button
+            type="button"
+            onClick={adminCancelLobby}
+            className="text-xs font-mono font-bold px-3 h-9 rounded border border-rose-500/40 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+          >
+            × Отменить лобби
+          </button>
+        </div>
+      )}
       {/* Хедер фазы */}
       <div className="rounded-xl border border-orange-500/30 bg-gradient-to-r from-zinc-900 to-zinc-950 p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>

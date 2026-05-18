@@ -21,9 +21,11 @@ export default async function HubMatchPage({
     snap.teamA.some((p) => p.steamId === user.steamId) ||
     snap.teamB.some((p) => p.steamId === user.steamId) ||
     user.isAdmin;
-  if (!isParticipant) {
+  if (!isParticipant && !user.isAdmin) {
     redirect(`/${locale}/hub`);
   }
 
-  return <MatchScreen locale={locale} matchId={id} />;
+  return (
+    <MatchScreen locale={locale} matchId={id} isAdmin={user.isAdmin} />
+  );
 }
