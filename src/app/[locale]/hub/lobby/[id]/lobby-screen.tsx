@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MapCard } from "@/components/hub/MapCard";
 
 type Player = {
   userId: string;
@@ -431,73 +432,71 @@ export function LobbyScreen({
       </div>
 
       {inVetoPhase && (
-        <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-mono uppercase tracking-widest text-zinc-400">
-              Map Veto · BO1
-            </h2>
-            <span className="text-[10px] font-mono text-zinc-500">
-              {snap.bannedMaps.length} / 6 банов
-            </span>
+        <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400 mb-1">
+                Map Veto
+              </div>
+              <h2 className="text-lg font-black tracking-tight">
+                Best of 1 · по очереди банят карты
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5, 6].map((step) => {
+                const done = snap.bannedMaps.length >= step;
+                const isCurrent = snap.bannedMaps.length === step - 1;
+                const teamForStep = step % 2 === 1 ? "A" : "B";
+                return (
+                  <div
+                    key={step}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-mono font-bold border-2 ${
+                      done
+                        ? teamForStep === "A"
+                          ? "bg-orange-500/20 border-orange-400 text-orange-200"
+                          : "bg-rose-500/20 border-rose-400 text-rose-200"
+                        : isCurrent
+                        ? "border-amber-400 text-amber-300 bg-amber-500/10 animate-pulse"
+                        : "border-zinc-700 text-zinc-600"
+                    }`}
+                  >
+                    {step}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-5">
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-5">
             {MAP_POOL_IDS.map((mapId) => {
               const ban = snap.bannedMaps.find((b) => b.map === mapId);
               const isSelected = snap.selectedMap === mapId;
               const isBanned = !!ban;
               const clickable = myVetoTurn && !isBanned && !isSelected;
               return (
-                <button
+                <MapCard
                   key={mapId}
-                  type="button"
-                  disabled={!clickable || banning !== null}
-                  onClick={clickable ? () => onBan(mapId) : undefined}
-                  className={`relative rounded-lg p-3 text-center transition-all overflow-hidden ${
+                  mapId={mapId}
+                  state={
                     isSelected
-                      ? "border-2 border-emerald-500/60 bg-emerald-500/15"
+                      ? "selected"
                       : isBanned
-                      ? "border border-zinc-800 bg-zinc-950/60 opacity-50"
+                      ? "banned"
                       : clickable
-                      ? "border border-zinc-700 bg-zinc-900 hover:border-orange-500 hover:bg-orange-500/10 cursor-pointer"
-                      : "border border-zinc-800 bg-zinc-900/40"
-                  } ${banning === mapId ? "animate-pulse" : ""}`}
-                >
-                  {isBanned && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-full h-0.5 bg-rose-500 rotate-[-15deg] absolute" />
-                    </div>
-                  )}
-                  <div
-                    className={`text-sm font-bold ${
-                      isSelected
-                        ? "text-emerald-300"
-                        : isBanned
-                        ? "text-zinc-600 line-through"
-                        : "text-zinc-200"
-                    }`}
-                  >
-                    {MAP_DISPLAY[mapId]}
-                  </div>
-                  {isBanned && (
-                    <div
-                      className={`text-[9px] font-mono mt-1 ${
-                        ban.team === "A" ? "text-orange-400" : "text-rose-400"
-                      }`}
-                    >
-                      BAN · {ban.team} · #{ban.order}
-                    </div>
-                  )}
-                  {isSelected && (
-                    <div className="text-[9px] font-mono mt-1 text-emerald-400 font-bold">
-                      ВЫБРАНА
-                    </div>
-                  )}
-                </button>
+                      ? "available"
+                      : "disabled"
+                  }
+                  team={ban?.team}
+                  order={ban?.order}
+                  disabled={banning !== null}
+                  onClick={clickable ? () => onBan(mapId) : undefined}
+                />
               );
             })}
           </div>
+
           {snap.bannedMaps.length > 0 && (
-            <div className="border-t border-zinc-800 pt-3">
+            <div className="border-t border-zinc-800 pt-4">
               <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
                 История банов
               </div>
@@ -505,13 +504,13 @@ export function LobbyScreen({
                 {snap.bannedMaps.map((b) => (
                   <span
                     key={b.order}
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                    className={`text-[11px] font-mono font-bold px-2 py-1 rounded border ${
                       b.team === "A"
-                        ? "border-orange-500/30 text-orange-300 bg-orange-500/10"
-                        : "border-rose-500/30 text-rose-300 bg-rose-500/10"
+                        ? "border-orange-500/40 text-orange-200 bg-orange-500/15"
+                        : "border-rose-500/40 text-rose-200 bg-rose-500/15"
                     }`}
                   >
-                    #{b.order} · {b.team} · {MAP_DISPLAY[b.map] ?? b.map}
+                    #{b.order} · {b.team} ban · {MAP_DISPLAY[b.map] ?? b.map}
                   </span>
                 ))}
               </div>

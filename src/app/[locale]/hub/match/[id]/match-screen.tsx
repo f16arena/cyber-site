@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MapCard } from "@/components/hub/MapCard";
 
 type Player = {
   steamId: string;
@@ -139,31 +140,33 @@ export function MatchScreen({
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 space-y-6">
-      {/* Header */}
-      <header className="rounded-xl border border-orange-500/30 bg-gradient-to-r from-zinc-900 to-zinc-950 p-5 flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400 mb-1">
-            Матч #{snap.id.slice(0, 8)}
+      {/* Header с превью карты */}
+      <header className="grid lg:grid-cols-[280px_1fr] gap-4">
+        <MapCard mapId={snap.map} state="selected" size="lg" />
+        <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-widest text-orange-400 mb-1">
+              Матч #{snap.id.slice(0, 8)}
+            </div>
+            <h1 className="text-3xl font-black tracking-tight">
+              {MAP_DISPLAY[snap.map] ?? snap.map}
+            </h1>
           </div>
-          <h1 className="text-2xl font-black tracking-tight">
-            {MAP_DISPLAY[snap.map] ?? snap.map}
-          </h1>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="text-center">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
-              Счёт
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                Счёт
+              </div>
+              <div className="text-4xl font-black tabular-nums">
+                <span className="text-orange-300">{snap.scoreA}</span>
+                <span className="text-zinc-600 mx-2">:</span>
+                <span className="text-rose-300">{snap.scoreB}</span>
+              </div>
             </div>
-            <div className="text-3xl font-black tabular-nums">
-              <span className="text-orange-300">{snap.scoreA}</span>
-              <span className="text-zinc-600 mx-2">:</span>
-              <span className="text-rose-300">{snap.scoreB}</span>
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
-              Состояние
-            </div>
+            <div className="text-center">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                Состояние
+              </div>
             <div
               className={`text-sm font-bold font-mono ${
                 snap.state === "LIVE"
@@ -176,6 +179,7 @@ export function MatchScreen({
               {STATE_LABEL[snap.state]}
             </div>
           </div>
+        </div>
         </div>
       </header>
 
