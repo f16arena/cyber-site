@@ -322,25 +322,25 @@ model Tournament {
   updatedAt            DateTime         @updatedAt
 
   // Состав
-  rosterSize           Int              @default(5)  // основной состав
-  substitutesAllowed   Int              @default(2)  // макс. запасных
-  allowSubstitutions   Boolean          @default(true)
+  rosterSize         Int     @default(5) // основной состав
+  substitutesAllowed Int     @default(2) // макс. запасных
+  allowSubstitutions Boolean @default(true)
 
   // BO-схема по этапам — JSON: { default: 1, playoff: 3, final: 5 }
   // или { round1: 1, round2: 3, ... }
-  bestOfSchedule       Json?
+  bestOfSchedule Json?
 
   // Map pool как массив id ("mirage","inferno",...).
-  mapPool              Json             @default("[]")
+  mapPool Json @default("[]")
 
   // Veto preset (AUTO | FACEIT_BO1 | PGL_BO3 | PGL_BO5).
-  vetoPreset           String           @default("AUTO")
+  vetoPreset String @default("AUTO")
 
   // Управление регистрацией команд
-  autoApproveTeams     Boolean          @default(false)
+  autoApproveTeams Boolean @default(false)
 
   // Этапы (GROUP / PLAYOFF_R1 / SWISS_R3 / GRAND_FINAL)
-  currentStage         String?
+  currentStage String?
 
   registrations TournamentRegistration[]
   rosters       TournamentRoster[]
@@ -359,7 +359,7 @@ model TournamentRoster {
   tournamentId String
   teamId       String
   userId       String
-  isMain       Boolean  @default(true)  // true=стартовый, false=запасной
+  isMain       Boolean  @default(true) // true=стартовый, false=запасной
   isCaptain    Boolean  @default(false)
   addedAt      DateTime @default(now())
 
@@ -416,13 +416,13 @@ model Match {
   createdAt       DateTime     @default(now())
 
   // F16 ARENA: связь с CS2-сервером (Phase 8) + connect-строка для игроков
-  serverId        String?
-  connectString   String?
+  serverId      String?
+  connectString String?
   // Veto / pick&ban (Phase 6)
-  vetoStartedAt   DateTime?
-  vetoEndsAt      DateTime?
+  vetoStartedAt DateTime?
+  vetoEndsAt    DateTime?
   // Сыгранные карты в BO3/BO5: [{map, scoreA, scoreB, winner, demoUrl}]
-  mapsPlayed      Json?
+  mapsPlayed    Json?
 
   tournament   Tournament?       @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
   teamA        Team?             @relation("MatchTeamA", fields: [teamAId], references: [id])
@@ -448,11 +448,11 @@ model Match {
 model MatchVetoAction {
   id        String   @id @default(cuid())
   matchId   String
-  team      String   // "A" | "B"
-  action    String   // "BAN" | "PICK" | "DECIDER"
-  map       String   // id карты ("mirage", "inferno", ...)
-  order     Int      // 1..N по последовательности
-  decidedBy String?  // userId капитана, который сделал выбор (или null для AUTO/системы)
+  team      String // "A" | "B"
+  action    String // "BAN" | "PICK" | "DECIDER"
+  map       String // id карты ("mirage", "inferno", ...)
+  order     Int // 1..N по последовательности
+  decidedBy String? // userId капитана, который сделал выбор (или null для AUTO/системы)
   createdAt DateTime @default(now())
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
@@ -753,13 +753,13 @@ model EmailLog {
 // User.emailVerifiedAt выставляется. Используется для уведомлений и
 // в будущем для входа без Steam (если понадобится).
 model EmailVerification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  email     String   // тот email на который послан токен (может отличаться от User.email если ещё не подтвердили)
-  token     String   @unique
+  email     String // тот email на который послан токен (может отличаться от User.email если ещё не подтвердили)
+  token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -810,6 +810,25 @@ model GameServer {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
+  commandLogs ServerCommandLog[]
+
   @@unique([ip, port])
   @@index([status])
+}
+
+// Лог RCON-команд для аудита и истории. adminId = userId админа который дёрнул.
+model ServerCommandLog {
+  id        String   @id @default(cuid())
+  serverId  String
+  matchId   String?
+  adminId   String?
+  command   String
+  response  String?
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  server GameServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([serverId, createdAt])
+  @@index([matchId])
 }
